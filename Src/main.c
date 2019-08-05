@@ -57,7 +57,7 @@
 
 #define _ACR_ENABLE_		1
 
-#define _ASR_ENABLE_		1
+#define _ASR_ENABLE_		0
 
 #define _APR_ENABLE_		0
 
@@ -151,6 +151,29 @@ volatile float p_theta = 0.0f;
 
 volatile float omega = 0.0f;
 
+
+
+/********** Forced commutation **********/
+
+volatile uint8_t forcedCommuteEnable = 0;
+
+volatile float forced_theta = 0.0f;
+
+volatile float _forced_theta_re = 0.0f;
+volatile float forced_theta_re = 0.0f;
+
+#define FORCED_COMMUTE_STEPS	10000
+
+volatile uint32_t forced_commute_step = 0;
+
+const float forced_I_gamma_ref = 0.0f;
+const float forced_I_delta_ref = 5.0f;
+
+
+volatile float sensedTheta[FORCED_COMMUTE_STEPS] = {0.0f};
+
+
+#define _FC_DUMP_	1
 
 
 
@@ -485,6 +508,27 @@ int main(void)
 		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
 
 
+		  if(forcedCommuteEnable == 1)
+		  {
+
+
+			  if(forced_commute_step < 10000)
+			  {
+				  sensedTheta[forced_commute_step] = theta;
+				  forced_theta = forced_commute_step * 2.0f * M_PI / FORCED_COMMUTE_STEPS;
+				  forced_commute_step += 1;
+			  }
+			  else
+			  {
+				  forcedCommuteEnable = 0;
+				  break;
+			  }
+
+
+		  }
+
+
+
 #if _ACR_DUMP_
 
 		  if(Iq_ref <= 0.0f)
@@ -611,7 +655,6 @@ int main(void)
   }
 
 
-
   Id_ref = 0.0f;
   Iq_ref = 0.0f;
 
@@ -628,6 +671,23 @@ int main(void)
   HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_3);
 
   HAL_Delay(10);
+
+#if _FC_DUMP_
+
+  printf("forcedTheta[rad], measuredTheta[rad]\n");
+
+  for(count = 0; count < FORCED_COMMUTE_STEPS; count++)
+  {
+	  printFloat(count * 2.0f * M_PI / FORCED_COMMUTE_STEPS);
+	  printf(", ");
+	  printFloat(sensedTheta[count]);
+	  printf("\n");
+  }
+
+
+#endif
+
+
 
 #if _ACR_DUMP_
 
@@ -818,18 +878,35 @@ inline static void currentControl(void)
 
 	if(_theta < 0.0f)			theta = _theta + 2 * M_PI;
 	else if(_theta >= 2 * M_PI)	theta = _theta - 2 * M_PI;
-	else							theta = _theta;
-
-	_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLES / 2, 2.0f * M_PI) + THETA_RE_OFFSET;
-
-	if(_theta_re < 0.0f)			theta_re = _theta_re + 2 * M_PI;
-	else if(_theta_re >= 2 * M_PI)	theta_re = _theta_re - 2 * M_PI;
-	else							theta_re = _theta_re;
+	else						theta = _theta;
 
 
 	// calculate sin(theta_re), cos(theta_re)
-	cos_theta_re = sin_table2[(int)((theta_re * 0.3183f + 0.5f) * 5000.0f)];
-	sin_theta_re = sin_table2[(int)(theta_re * 1591.54943f)];
+	if(forcedCommuteEnable == 1)
+	{
+
+		_forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
+
+		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
+		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
+		else									forced_theta_re = _forced_theta_re;
+
+		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
+	}
+	else
+	{
+
+		_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLES / 2, 2.0f * M_PI) + THETA_RE_OFFSET;
+
+		if(_theta_re < 0.0f)			theta_re = _theta_re + 2 * M_PI;
+		else if(_theta_re >= 2 * M_PI)	theta_re = _theta_re - 2 * M_PI;
+		else							theta_re = _theta_re;
+
+		cos_theta_re = sin_table2[(int)((theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		sin_theta_re = sin_table2[(int)(theta_re * 1591.54943f)];
+	}
+
 
 
 	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu - ADI_Offset;
@@ -908,9 +985,17 @@ inline static void currentControl(void)
 	else if(Iq_ref > Iq_limit)	_Iq_ref = Iq_limit;
 	else						_Iq_ref = Iq_ref;
 
+	if(forcedCommuteEnable == 1)
+	{
+		Id_error = forced_I_gamma_ref - Id;
+		Iq_error = forced_I_delta_ref - Iq;
+	}
+	else
+	{
+		Id_error = _Id_ref - Id;
+		Iq_error = _Iq_ref - Iq;
+	}
 
-	Id_error = _Id_ref - Id;
-	Iq_error = _Iq_ref - Iq;
 
 	// integral
 	Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
