@@ -56,13 +56,10 @@
 
 
 #define _ACR_ENABLE_		1
-volatile int ACR_enable = 1;
 
 #define _ASR_ENABLE_		1
-volatile int ASR_enable = 0;
 
 #define _APR_ENABLE_		0
-volatile int APR_enable = 0;
 
 
 
@@ -127,7 +124,7 @@ int ASR_dump_count = 0;
 float theta_offset = 0.0f;
 
 // RealElecAngle = MeasuredElecAngle + this
-float theta_re_offset = 1.6593f;
+float theta_re_offset = -3.0723f;
 
 // Encoder Resolution
 #define ENCODER_RESOL 16384
@@ -158,7 +155,7 @@ volatile float omega = 0.0f;
 
 /********** Forced commutation **********/
 
-volatile uint8_t forced_commute_state = 1;
+volatile uint8_t forced_commute_state = 0;
 
 volatile float forced_theta = 0.0f;
 
@@ -210,7 +207,7 @@ float V_Iv_offset = -0.0275f;
 float V_Iw_offset = -0.0325f;
 
 
-const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain)[A / V]
+const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
 
 
 // Current Moving Average Filter
@@ -258,8 +255,8 @@ const float refVector[6+1][2] = {
 /********** for ACR (Auto Current Regulator) **********/
 
 
-const float Kp_ACR = 0.3;
-const float Ki_ACR = 300.0;
+float Kp_ACR = 0.3;
+float Ki_ACR = 300.0;
 
 const float ACR_cycleTime = 100E-6;
 
@@ -293,12 +290,12 @@ volatile float Iq_error_integ = 0.0f;
 /********** for ASR (Auto Speed Regulator) **********/
 
 
-const float Kp_ASR = 0.3;
-const float Ki_ASR = 20.0;
+float Kp_ASR = 0.3;
+float Ki_ASR = 20.0;
 
 int ASR_flg = 0;
 int ASR_prescalerCount = 0;
-const int ASR_prescale = 10;
+const int ASR_prescale = 100;
 
 
 const float ASR_cycleTime = 1E-3;
@@ -337,6 +334,9 @@ volatile float theta_ref = 0.0f;
 volatile float theta_error = 0.0f;
 
 volatile float theta_error_diff = 0.0f;
+
+
+
 
 
 
@@ -685,13 +685,13 @@ int main(void)
 
 		  // integral
 		  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
-		  if(omega_error_integ_temp1 < -1000000.0)
+		  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
 		  {
-			  omega_error_integ_temp1 = -1000000.0;
+			  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
 		  }
-		  else if(omega_error_integ_temp1 > 1000000.0)
+		  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
 		  {
-			  omega_error_integ_temp1 = 1000000.0;
+			  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
 		  }
 		  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
 		  omega_error_integ_temp2 = omega_error_integ_temp1;
