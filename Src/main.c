@@ -338,6 +338,14 @@ volatile float theta_error_diff = 0.0f;
 
 
 
+/********** CAN **********/
+
+CAN_FilterTypeDef sFilterConfig;
+
+
+CAN_RxHeaderTypeDef can1RxHeader;
+uint8_t can1RxData[8];
+uint8_t can1RxFlg = 0;
 
 
 
@@ -437,6 +445,38 @@ int main(void)
   MX_ADC3_Init();
   MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
+
+
+  /********** CAN Setting **********/
+
+
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x0000;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x0000;
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.SlaveStartFilterBank = 14;
+
+  if(HAL_CAN_ConfigFilter(&hcan1,&sFilterConfig) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+
+  if(HAL_CAN_Start(&hcan1) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+
+  if(HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+
+
 
 
 
@@ -802,7 +842,7 @@ int main(void)
 
 #if _ASR_DUMP_
 
-  printf("time[s], ω[rad/s], ???��?��??��?��?*[rad/s], Torque*[N・m]\n");
+  printf("time[s], ω[rad/s], ????��?��??��?��???��?��??��?��?*[rad/s], Torque*[N・m]\n");
 
   for(count = 0; count < ASR_DUMP_STEPS; count++)
   {
@@ -873,6 +913,76 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+
+
+
+void HAL_CAN_TxMailbox0CompleteCallback (CAN_HandleTypeDef * hcan)
+{
+	if(hcan->Instance == CAN1)
+	{
+	}
+	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
+
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback (CAN_HandleTypeDef * hcan)
+{
+	if(hcan->Instance == CAN1)
+	{
+	}
+	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
+
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback (CAN_HandleTypeDef * hcan)
+{
+	if(hcan->Instance == CAN1)
+	{
+	}
+	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
+
+}
+
+
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+
+	union _rcdata{
+		struct{
+			float fval;
+		};
+		struct{
+			uint8_t byte[4];
+		};
+	}controlRef;
+
+
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can1RxHeader, can1RxData);
+
+	can1RxFlg = 1;
+
+
+	if(can1RxHeader.StdId == 0x004 && can1RxHeader.DLC == 0x4)
+	{
+
+		controlRef.byte[0] = can1RxData[0];
+		controlRef.byte[1] = can1RxData[1];
+		controlRef.byte[2] = can1RxData[2];
+		controlRef.byte[3] = can1RxData[3];
+
+		omega_ref = controlRef.fval;
+
+	}
+
+	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
+
+}
+
+
+
+
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {

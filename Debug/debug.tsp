@@ -1,5 +1,5 @@
 #STM Studio project file - do not edit
-#Mon Aug 05 20:36:26 JST 2019
+#Sun Aug 11 01:15:17 JST 2019
 Main.Version=1
 Root.Child0.IsActive=true
 Root.Child0.Name=debug
