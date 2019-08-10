@@ -215,13 +215,13 @@ const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
 
 
 
-volatile float Vdc = 20.0f;
+volatile float Vdc = 12.0f;
 
 
 /********** for PWM Output **********/
 
 
-
+#define PWM_RESOL	8000.0f
 
 volatile float Vd_ref = 0.0f;
 volatile float Vq_ref = 0.0f;
@@ -295,7 +295,7 @@ float Ki_ASR = 20.0;
 
 int ASR_flg = 0;
 int ASR_prescalerCount = 0;
-const int ASR_prescale = 100;
+const int ASR_prescale = 10;
 
 
 const float ASR_cycleTime = 1E-3;
@@ -523,7 +523,7 @@ int main(void)
 			  switch(forced_commute_state)
 			  {
 			  case 1:
-				  if(forced_commute_count < 200)
+				  if(forced_commute_count < 500)
 					  forced_commute_count += 1;
 				  else
 				  {
@@ -554,7 +554,7 @@ int main(void)
 				  break;
 
 			  case 3:
-				  if(forced_commute_count < 200)
+				  if(forced_commute_count < 500)
 					  forced_commute_count += 1;
 				  else
 				  {
@@ -652,7 +652,7 @@ int main(void)
 		  if(d_theta < - M_PI)		d_theta += 2 * M_PI;
 		  else if(d_theta > M_PI)	d_theta -= 2 * M_PI;
 
-		  omega = omega * 0.9 + 0.1 * d_theta / ASR_cycleTime;
+		  omega = omega * 0.5 + 0.5 * d_theta / ASR_cycleTime;
 
 
 		  /********** APR (Auto Position Regulator) **********/
@@ -802,7 +802,7 @@ int main(void)
 
 #if _ASR_DUMP_
 
-  printf("time[s], ω[rad/s], ω*[rad/s], Torque*[N・m]\n");
+  printf("time[s], ω[rad/s], ???��?��??��?��?*[rad/s], Torque*[N・m]\n");
 
   for(count = 0; count < ASR_DUMP_STEPS; count++)
   {
@@ -840,7 +840,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
@@ -849,8 +849,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLN = 320;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -863,10 +863,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1198,9 +1198,9 @@ inline static void setSVM_dq()
 	if(duty[1] < -1.0f) duty[1] = -1.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
 	if(duty[2] < -1.0f) duty[2] = -1.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
 
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200.0f * (1.0f - (amp_u = duty[0])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200.0f * (1.0f - (amp_v = duty[1])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 4200.0f * (1.0f - (amp_w = duty[2])));
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, PWM_RESOL * (1.0f - (amp_u = duty[0])));
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, PWM_RESOL * (1.0f - (amp_v = duty[1])));
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, PWM_RESOL * (1.0f - (amp_w = duty[2])));
 
 
 	return;
