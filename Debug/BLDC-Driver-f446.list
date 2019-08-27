@@ -35,11 +35,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  15 .debug_ranges 00001020  00000000  00000000  000483f8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_line   00009071  00000000  00000000  00049418  2**0
+ 16 .debug_line   00009073  00000000  00000000  00049418  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_str    000058da  00000000  00000000  00052489  2**0
+ 17 .debug_str    000058da  00000000  00000000  0005248b  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .comment      0000007b  00000000  00000000  00057d63  2**0
+ 18 .comment      0000007b  00000000  00000000  00057d65  2**0
                   CONTENTS, READONLY
  19 .debug_frame  00005504  00000000  00000000  00057de0  2**2
                   CONTENTS, READONLY, DEBUGGING
@@ -17629,7 +17629,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
  8006e26:	2201      	movs	r2, #1
  8006e28:	701a      	strb	r2, [r3, #0]
 
-
+#if _ASR_ENABLE_ && !_APR_ENABLE_
 	if(can1RxHeader.StdId == 0x004 && can1RxHeader.DLC == 0x4)
  8006e2a:	4b11      	ldr	r3, [pc, #68]	; (8006e70 <HAL_CAN_RxFifo0MsgPendingCallback+0x60>)
  8006e2c:	681b      	ldr	r3, [r3, #0]
@@ -17640,7 +17640,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
  8006e36:	2b04      	cmp	r3, #4
  8006e38:	d10e      	bne.n	8006e58 <HAL_CAN_RxFifo0MsgPendingCallback+0x48>
 	{
-
 		controlRef.byte[0] = can1RxData[0];
  8006e3a:	4b0c      	ldr	r3, [pc, #48]	; (8006e6c <HAL_CAN_RxFifo0MsgPendingCallback+0x5c>)
  8006e3c:	781b      	ldrb	r3, [r3, #0]
@@ -17662,8 +17661,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
  8006e52:	68fb      	ldr	r3, [r7, #12]
  8006e54:	4a08      	ldr	r2, [pc, #32]	; (8006e78 <HAL_CAN_RxFifo0MsgPendingCallback+0x68>)
  8006e56:	6013      	str	r3, [r2, #0]
-
+		theta_ref = controlRef.fval;
 	}
+#endif
+
 
 	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
  8006e58:	2201      	movs	r2, #1

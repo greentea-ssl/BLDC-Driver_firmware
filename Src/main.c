@@ -215,7 +215,7 @@ const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
 
 
 
-volatile float Vdc = 12.0f;
+volatile float Vdc = 20.0f;
 
 
 /********** for PWM Output **********/
@@ -270,8 +270,8 @@ volatile float Iv = 0.0;
 volatile float Iw = 0.0;
 
 
-float Id_limit = 15.0f;
-float Iq_limit = 15.0f;
+float Id_limit = 30.0f;
+float Iq_limit = 30.0f;
 
 
 volatile float Id_ref = 0.0f;
@@ -322,7 +322,7 @@ float torque_ref = 0.0;
 
 /********** APR **********/
 
-float Kp_APR = 15.0f;
+float Kp_APR = 50.0f;
 float Kd_APR = 0.02f;
 
 
@@ -963,18 +963,30 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	can1RxFlg = 1;
 
-
+#if _ASR_ENABLE_ && !_APR_ENABLE_
 	if(can1RxHeader.StdId == 0x004 && can1RxHeader.DLC == 0x4)
 	{
-
 		controlRef.byte[0] = can1RxData[0];
 		controlRef.byte[1] = can1RxData[1];
 		controlRef.byte[2] = can1RxData[2];
 		controlRef.byte[3] = can1RxData[3];
 
 		omega_ref = controlRef.fval;
-
 	}
+#endif
+
+#if _APR_ENABLE_
+	if(can1RxHeader.StdId == 0x008 && can1RxHeader.DLC == 0x4)
+	{
+		controlRef.byte[0] = can1RxData[0];
+		controlRef.byte[1] = can1RxData[1];
+		controlRef.byte[2] = can1RxData[2];
+		controlRef.byte[3] = can1RxData[3];
+
+		theta_ref = controlRef.fval;
+	}
+#endif
+
 
 	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
 
