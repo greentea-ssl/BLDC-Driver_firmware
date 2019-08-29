@@ -38,7 +38,7 @@ all: BLDC-Driver-f446.elf secondary-outputs
 
 # Tool invocations
 BLDC-Driver-f446.elf: $(OBJS) $(USER_OBJS) C:\Users\Akito\OneDrive\ -\ stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld
-	arm-none-eabi-gcc -o "BLDC-Driver-f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Akito\OneDrive - stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BLDC-Driver-f446.map" -Wl,--gc-sections -static -Wl,--print-memory-usage -u _printf_float -u _sprintf_float -u _vsprintf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "BLDC-Driver-f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Akito\OneDrive - stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BLDC-Driver-f446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
