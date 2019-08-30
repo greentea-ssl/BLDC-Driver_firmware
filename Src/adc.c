@@ -22,6 +22,42 @@
 
 /* USER CODE BEGIN 0 */
 
+
+
+const float Vref_AD = 3.3f;
+
+const int32_t AD_Range = 4096;
+
+volatile uint32_t AD_Iu = 0;
+volatile uint32_t AD_Iv = 0;
+volatile uint32_t AD_Iw = 0;
+
+
+int32_t ADI_Offset = 2048;
+
+volatile float V_Iu = 0.0f;
+volatile float V_Iv = 0.0f;
+volatile float V_Iw = 0.0f;
+
+
+float V_Iu_offset = -0.0445f;
+float V_Iv_offset = -0.0275f;
+float V_Iw_offset = -0.0325f;
+
+
+const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
+
+
+volatile float Iu = 0.0;
+volatile float Iv = 0.0;
+volatile float Iw = 0.0;
+
+
+// Current Moving Average Filter
+#define N_MAF_I		2
+
+
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -323,6 +359,109 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 } 
 
 /* USER CODE BEGIN 1 */
+
+
+void ADC_Init(void)
+{
+
+	  // ADC Starting
+	  HAL_ADC_Start_DMA(&hadc1, &AD_Iu, 1);
+	  HAL_ADC_Start_DMA(&hadc2, &AD_Iv, 1);
+	  HAL_ADC_Start_DMA(&hadc3, &AD_Iw, 1);
+
+}
+
+
+void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, float sin_theta_re)
+{
+
+	// Moving Average Filter
+
+	static int32_t pos_MAF_I = 0;
+
+	static int32_t AD_Iu_buf[N_MAF_I] = {0};
+	static int32_t AD_Iv_buf[N_MAF_I] = {0};
+	static int32_t AD_Iw_buf[N_MAF_I] = {0};
+
+	static int32_t AD_Iu_MAF = 0;
+	static int32_t AD_Iv_MAF = 0;
+	static int32_t AD_Iw_MAF = 0;
+
+
+	// Read ADC
+	/*
+	AD_Iu = HAL_ADC_GetValue(&hadc1);
+	AD_Iv = HAL_ADC_GetValue(&hadc2);
+	AD_Iw = HAL_ADC_GetValue(&hadc3);
+	*/
+
+	HAL_ADC_Start_DMA(&hadc1, &AD_Iu, 1);
+	HAL_ADC_Start_DMA(&hadc2, &AD_Iv, 1);
+	HAL_ADC_Start_DMA(&hadc3, &AD_Iw, 1);
+
+
+
+	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu - ADI_Offset;
+	AD_Iv_buf[pos_MAF_I] = (int32_t)AD_Iv - ADI_Offset;
+	AD_Iw_buf[pos_MAF_I] = (int32_t)AD_Iw - ADI_Offset;
+
+
+	AD_Iu_MAF += AD_Iu_buf[pos_MAF_I];
+	AD_Iv_MAF += AD_Iv_buf[pos_MAF_I];
+	AD_Iw_MAF += AD_Iw_buf[pos_MAF_I];
+
+	// Writing position Update
+	pos_MAF_I += 1;
+	if(pos_MAF_I >= N_MAF_I)
+	{
+		pos_MAF_I = 0;
+	}
+
+	V_Iu = (float)AD_Iu_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iu_offset;
+	V_Iv = (float)AD_Iv_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iv_offset;
+	V_Iw = (float)AD_Iw_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iw_offset;
+
+	AD_Iu_MAF -= AD_Iu_buf[pos_MAF_I];
+	AD_Iv_MAF -= AD_Iv_buf[pos_MAF_I];
+	AD_Iw_MAF -= AD_Iw_buf[pos_MAF_I];
+
+
+
+	/*
+	V_Iu = V_Iu * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iu) / AD_Range * Vref_AD - V_Iu_offset);
+	V_Iv = V_Iv * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iv) / AD_Range * Vref_AD - V_Iv_offset);
+	V_Iw = V_Iw * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iw) / AD_Range * Vref_AD - V_Iw_offset);
+	*/
+
+
+	switch(SVM_sector)
+	{
+	case 0: case 5:
+		Iv = V_Iv * Gain_currentSense;
+		Iw = V_Iw * Gain_currentSense;
+		Iu = - Iv - Iw;
+		break;
+
+	case 1: case 2:
+		Iw = V_Iw * Gain_currentSense;
+		Iu = V_Iu * Gain_currentSense;
+		Iv = - Iw - Iu;
+		break;
+
+	case 3: case 4:
+		Iu = V_Iu * Gain_currentSense;
+		Iv = V_Iv * Gain_currentSense;
+		Iw = - Iu - Iv;
+		break;
+	}
+
+	*Id = 0.8165f * (Iu * cos_theta_re + Iv * (-0.5f * cos_theta_re + 0.855f * sin_theta_re) + Iw * (-0.5f * cos_theta_re - 0.855f * sin_theta_re));
+	*Iq = 0.8165f * (-Iu * sin_theta_re + Iv * (0.5f * sin_theta_re + 0.855f * cos_theta_re) + Iw * (0.5f * sin_theta_re - 0.855f * cos_theta_re));
+
+
+	return;
+
+}
 
 /* USER CODE END 1 */
 

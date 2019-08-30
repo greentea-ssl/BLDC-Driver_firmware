@@ -44,6 +44,11 @@ void MX_ADC3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+inline void ADC_Init(void);
+
+inline void get_current_dq(float *, float *, int, float, float);
+
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
