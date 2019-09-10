@@ -70,6 +70,12 @@ void Error_Handler(void);
 #define DB1_GPIO_Port GPIOA
 #define SPI2_NSS_Pin GPIO_PIN_12
 #define SPI2_NSS_GPIO_Port GPIOB
+#define CH_b0_Pin GPIO_PIN_13
+#define CH_b0_GPIO_Port GPIOB
+#define CH_b1_Pin GPIO_PIN_14
+#define CH_b1_GPIO_Port GPIOB
+#define CH_b2_Pin GPIO_PIN_15
+#define CH_b2_GPIO_Port GPIOB
 #define BR_FLT_Pin GPIO_PIN_8
 #define BR_FLT_GPIO_Port GPIOA
 #define OP_CAL_Pin GPIO_PIN_9
