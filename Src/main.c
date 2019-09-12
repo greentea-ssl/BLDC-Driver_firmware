@@ -305,34 +305,9 @@ int main(void)
 
 
 
+  TIM_Init();
 
-  // Setting Timer Interrupts
-  /*
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC1);
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC2);
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC3);
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC4);
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_COM);
-  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_BREAK);*/
-  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
-  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
-
-
-
-  // 3phase PWM Starting
-  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
-
-  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
-  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
-
-
-
-  // SPI Interrupt Setting
-  __HAL_SPI_ENABLE_IT(&hspi2, SPI_IT_TXE | SPI_IT_RXNE);
-
+  SPI_Init();
 
 
 

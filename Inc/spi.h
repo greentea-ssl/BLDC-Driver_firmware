@@ -53,10 +53,11 @@ extern volatile float sin_theta_re;
 
 /* USER CODE BEGIN Prototypes */
 
+void SPI_Init();
 
-inline void requestEncoder();
+void requestEncoder();
 
-inline int refreshEncoder();
+int refreshEncoder();
 
 
 /* USER CODE END Prototypes */

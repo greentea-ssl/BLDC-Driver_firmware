@@ -195,6 +195,36 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 
 
+void TIM_Init()
+{
+
+
+	  // Setting Timer Interrupts
+	  /*
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC1);
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC2);
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC3);
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC4);
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_COM);
+	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_BREAK);*/
+	  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
+	  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
+
+
+
+	  // 3phase PWM Starting
+	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
+	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
+	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
+
+	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
+	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
+	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
+
+
+
+}
+
 
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
@@ -218,7 +248,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 
 
-void setPWM(const float *duty){
+inline void setPWM(const float *duty){
 
 	if(duty[0] <= 1.0 && duty[0] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200 * (1.0 - (amp_u = duty[0])));
 	if(duty[1] <= 1.0 && duty[1] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200 * (1.0 - (amp_v = duty[1])));

@@ -46,8 +46,11 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                     
 /* USER CODE BEGIN Prototypes */
 
+void TIM_Init();
 
-inline static void setPWM(const float *duty);
+void setPWM(const float *duty);
+
+
 
 
 /* USER CODE END Prototypes */

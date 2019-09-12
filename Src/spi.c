@@ -250,8 +250,16 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 
 /* USER CODE BEGIN 1 */
 
+void SPI_Init()
+{
 
-void requestEncoder()
+
+	  // SPI Interrupt Setting
+	  __HAL_SPI_ENABLE_IT(&hspi2, SPI_IT_TXE | SPI_IT_RXNE);
+
+}
+
+inline void requestEncoder()
 {
 
 
@@ -265,7 +273,7 @@ void requestEncoder()
 }
 
 
-int refreshEncoder()
+inline int refreshEncoder()
 {
 	uint16_t angle_raw = 0;
 	float _theta;
