@@ -40,7 +40,24 @@ extern SPI_HandleTypeDef hspi3;
 void MX_SPI2_Init(void);
 void MX_SPI3_Init(void);
 
+// Rotor mechanical position
+extern volatile float theta;
+
+// Rotor electrical position
+extern volatile float theta_re;
+
+
+extern volatile float cos_theta_re;
+extern volatile float sin_theta_re;
+
+
 /* USER CODE BEGIN Prototypes */
+
+
+inline void requestEncoder();
+
+inline int refreshEncoder();
+
 
 /* USER CODE END Prototypes */
 

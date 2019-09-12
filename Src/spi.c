@@ -22,6 +22,39 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "parameters.h"
+#include "sin_t.h"
+
+
+// Sensing Data
+volatile uint8_t spi2txBuf[2] = {0};
+volatile uint8_t spi2rxBuf[2] = {0};
+
+float theta_offset = 0.0f;
+
+float theta_re_offset = -3.0723f;
+
+
+// Rotor rotation angle
+volatile float theta = 0.0f;
+
+// Rotor electrical position
+volatile float theta_re = 0.0f;
+
+
+volatile float cos_theta_re = 1.0;
+volatile float sin_theta_re = 0.0;
+
+
+
+
+uint16_t angle_raw = 0;
+
+
+
+
+
+
 /* USER CODE END 0 */
 
 SPI_HandleTypeDef hspi2;
@@ -216,6 +249,53 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 } 
 
 /* USER CODE BEGIN 1 */
+
+
+void requestEncoder()
+{
+
+
+	// Reading Encoder for next sampling
+	spi2txBuf[0] = 0xff;
+	spi2txBuf[1] = 0xff;
+	HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive_IT(&hspi2, spi2txBuf, spi2rxBuf, 1);
+
+
+}
+
+
+int refreshEncoder()
+{
+	uint16_t angle_raw = 0;
+	float _theta;
+	float _theta_re;
+
+	// Reading RX Data from SPI Encoder
+	HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
+	angle_raw = (spi2rxBuf[1] & 0x3f) << 8 | spi2rxBuf[0];
+
+	_theta = (float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI + theta_offset;
+
+	if(_theta < 0.0f)			theta = _theta + 2 * M_PI;
+	else if(_theta >= 2 * M_PI)	theta = _theta - 2 * M_PI;
+	else						theta = _theta;
+
+	_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLES / 2, 2.0f * M_PI) + theta_re_offset;
+
+	if(_theta_re < 0.0f)			theta_re = _theta_re + 2 * M_PI;
+	else if(_theta_re >= 2 * M_PI)	theta_re = _theta_re - 2 * M_PI;
+	else							theta_re = _theta_re;
+
+	cos_theta_re = sin_table2[(int)((theta_re * 0.3183f + 0.5f) * 5000.0f)];
+	sin_theta_re = sin_table2[(int)(theta_re * 1591.54943f)];
+
+
+	return 0;
+
+}
+
+
 
 /* USER CODE END 1 */
 

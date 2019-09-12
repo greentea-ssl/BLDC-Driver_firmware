@@ -34,7 +34,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-#include "sin_t.h"
+//#include "sin_t.h"
+#include "parameters.h"
 
 /* USER CODE END Includes */
 
@@ -115,36 +116,6 @@ int ASR_dump_count = 0;
 
 
 /********** for Magnetic Rotary Encoder **********/
-
-
-// Magnet Poles
-#define POLES	22
-
-// RealRotorAngle = MeasuredAngle + this
-float theta_offset = 0.0f;
-
-// RealElecAngle = MeasuredElecAngle + this
-float theta_re_offset = -3.0723f;
-
-// Encoder Resolution
-#define ENCODER_RESOL 16384
-
-
-// Sensing Data
-volatile uint8_t spi2txBuf[2] = {0};
-volatile uint8_t spi2rxBuf[2] = {0};
-
-uint32_t angle_raw = 0;
-
-// Rotor rotation angle
-volatile float theta = 0.0f;
-
-// Rotor electrical position
-volatile float theta_re = 0.0f;
-
-
-volatile float cos_theta_re = 1.0;
-volatile float sin_theta_re = 0.0;
 
 
 volatile float p_theta = 0.0f;
@@ -807,7 +778,7 @@ int main(void)
 
 #if _ASR_DUMP_
 
-  printf("time[s], Ï‰[rad/s], ?????¿½?¿½??¿½?¿½???¿½?¿½??¿½?¿½????¿½?¿½??¿½?¿½???¿½?¿½??¿½?¿½?*[rad/s], Torque*[Nãƒ»m]\n");
+  printf("time[s], Ï‰[rad/s], ?????ï¿½ï¿½?ï¿½ï¿½??ï¿½ï¿½?ï¿½ï¿½???ï¿½ï¿½?ï¿½ï¿½??ï¿½ï¿½?ï¿½ï¿½????ï¿½ï¿½?ï¿½ï¿½??ï¿½ï¿½?ï¿½ï¿½???ï¿½ï¿½?ï¿½ï¿½??ï¿½ï¿½?ï¿½ï¿½?*[rad/s], Torque*[Nãƒ»m]\n");
 
   for(count = 0; count < ASR_DUMP_STEPS; count++)
   {
@@ -997,9 +968,6 @@ void HAL_SPI_RxCpltCallback (SPI_HandleTypeDef *hspi)
 inline static void currentControl(void)
 {
 
-	static float _theta;
-	static float _theta_re;
-
 	static float _Id_ref;
 	static float _Iq_ref;
 
@@ -1012,18 +980,10 @@ inline static void currentControl(void)
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
 
-
-	// Reading RX Data from SPI Encoder
-	HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_SET);
-	angle_raw = (spi2rxBuf[1] & 0x3f) << 8 | spi2rxBuf[0];
-
-	_theta = (float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI + theta_offset;
-
-	if(_theta < 0.0f)			theta = _theta + 2 * M_PI;
-	else if(_theta >= 2 * M_PI)	theta = _theta - 2 * M_PI;
-	else						theta = _theta;
+	refreshEncoder();
 
 
+#if 0
 	// calculate sin(theta_re), cos(theta_re)
 	if(forced_commute_state > 0)
 	{
@@ -1037,22 +997,10 @@ inline static void currentControl(void)
 		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
 		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
 	}
-	else
-	{
-
-		_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLES / 2, 2.0f * M_PI) + theta_re_offset;
-
-		if(_theta_re < 0.0f)			theta_re = _theta_re + 2 * M_PI;
-		else if(_theta_re >= 2 * M_PI)	theta_re = _theta_re - 2 * M_PI;
-		else							theta_re = _theta_re;
-
-		cos_theta_re = sin_table2[(int)((theta_re * 0.3183f + 0.5f) * 5000.0f)];
-		sin_theta_re = sin_table2[(int)(theta_re * 1591.54943f)];
-	}
+#endif
 
 
 	get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
-
 
 
 	if(theta_re < M_PI)
@@ -1126,11 +1074,8 @@ inline static void currentControl(void)
 #endif
 
 
-	// Reading Encoder for next sampling
-	spi2txBuf[0] = 0xff;
-	spi2txBuf[1] = 0xff;
-	HAL_GPIO_WritePin(SPI2_NSS_GPIO_Port, SPI2_NSS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive_IT(&hspi2, spi2txBuf, spi2rxBuf, 1);
+
+	requestEncoder();
 
 
 	// Auto Speed Regulator launching
@@ -1213,6 +1158,7 @@ inline static void setSVM_dq()
 }
 
 
+#if 0
 inline static void setSVM(float ampl, float phase){
 	//float rate[3] = {0};
 	//float _duty[3] = {0};
@@ -1318,6 +1264,7 @@ inline static void setSVM(float ampl, float phase){
 	return;
 
 }
+#endif
 
 inline static void setPWM(const float *duty){
 
