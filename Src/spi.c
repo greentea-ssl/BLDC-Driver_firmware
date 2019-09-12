@@ -297,6 +297,20 @@ int refreshEncoder()
 
 
 
+#if 0
+
+// SPI RX CallBack function
+void HAL_SPI_RxCpltCallback (SPI_HandleTypeDef *hspi)
+{
+
+
+}
+
+#endif
+
+
+
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

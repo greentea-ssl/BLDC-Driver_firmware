@@ -22,6 +22,16 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "ACR.h"
+
+
+
+volatile float amp_u = 0.0;
+volatile float amp_v = 0.0;
+volatile float amp_w = 0.0;
+
+
+
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim8;
@@ -182,6 +192,43 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 } 
 
 /* USER CODE BEGIN 1 */
+
+
+
+
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
+{
+
+	if(htim->Instance == TIM8)
+	{
+
+		if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+		{
+
+			currentControl();
+
+		}
+
+
+	}
+
+}
+
+
+
+
+void setPWM(const float *duty){
+
+	if(duty[0] <= 1.0 && duty[0] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200 * (1.0 - (amp_u = duty[0])));
+	if(duty[1] <= 1.0 && duty[1] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200 * (1.0 - (amp_v = duty[1])));
+	if(duty[2] <= 1.0 && duty[2] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 4200 * (1.0 - (amp_w = duty[2])));
+
+	return 0;
+}
+
+
+
 
 /* USER CODE END 1 */
 

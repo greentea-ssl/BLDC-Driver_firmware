@@ -18,10 +18,26 @@ extern float theta_re_offset;
 #define POLES	22
 
 
+#define 	KV	370.0
+
+#define 	KE	(60.0f / (KV * 2 * M_PI))
+
+#define 	KT	(POLES / 2 * KE)
+
+
+
+
 // For Encoder
 
 // Encoder Resolution
 #define ENCODER_RESOL 16384
+
+
+
+// For PWM
+
+// PWM resolution
+#define PWM_RESOL	8000.0f
 
 
 

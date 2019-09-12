@@ -34,8 +34,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-//#include "sin_t.h"
 #include "parameters.h"
+#include "ACR.h"
+#include "ASR.h"
 
 /* USER CODE END Includes */
 
@@ -56,9 +57,7 @@
 
 
 
-#define _ACR_ENABLE_		1
 
-#define _ASR_ENABLE_		1
 
 #define _APR_ENABLE_		0
 
@@ -118,10 +117,6 @@ int ASR_dump_count = 0;
 /********** for Magnetic Rotary Encoder **********/
 
 
-volatile float p_theta = 0.0f;
-
-volatile float omega = 0.0f;
-
 
 
 /********** Forced commutation **********/
@@ -159,39 +154,7 @@ volatile float sensedTheta_b[FORCED_COMMUTE_STEPS] = {0.0f};
 
 
 
-
 /********** for PWM Output **********/
-
-
-volatile float Vdc = 20.0f;
-
-#define PWM_RESOL	8000.0f
-
-volatile float Vd_ref = 0.0f;
-volatile float Vq_ref = 0.0f;
-
-
-volatile int sector_SVM = 0;
-
-
-volatile float amp_u = 0.0;
-volatile float amp_v = 0.0;
-volatile float amp_w = 0.0;
-
-
-
-// reference vectors for SVM
-const float refVector[6+1][2] = {
-	{ 1.000,  0.000},
-	{ 0.500,  0.866},
-	{-0.500,  0.866},
-	{-1.000,  0.000},
-	{-0.500, -0.866},
-	{ 0.500, -0.866},
-	{ 1.000,  0.000},
-};
-
-
 
 
 
@@ -199,64 +162,12 @@ const float refVector[6+1][2] = {
 /********** for ACR (Auto Current Regulator) **********/
 
 
-float Kp_ACR = 0.3;
-float Ki_ACR = 300.0;
-
-const float ACR_cycleTime = 100E-6;
-
-
-volatile float Id = 0.0;
-volatile float Iq = 0.0;
-
-
-float Id_limit = 30.0f;
-float Iq_limit = 30.0f;
-
-
-volatile float Id_ref = 0.0f;
-volatile float Iq_ref = 0.0f;
-
-
-volatile float Id_error = 0.0f;
-volatile float Iq_error = 0.0f;
-
-volatile float Id_error_integ = 0.0f;
-volatile float Iq_error_integ = 0.0f;
-
 
 
 
 /********** for ASR (Auto Speed Regulator) **********/
 
 
-float Kp_ASR = 0.3;
-float Ki_ASR = 20.0;
-
-int ASR_flg = 0;
-int ASR_prescalerCount = 0;
-const int ASR_prescale = 10;
-
-
-const float ASR_cycleTime = 1E-3;
-
-float omega_limit = 1000000.0;
-
-volatile float omega_ref = 0.0f;
-
-
-volatile float omega_error = 0.0f;
-
-volatile float omega_error_integ = 0.0f;
-
-
-#define 	KV	370.0
-
-#define 	KE	(60.0f / (KV * 2 * M_PI))
-
-#define 	KT	(POLES / 2 * KE)
-
-
-float torque_ref = 0.0;
 
 
 /********** APR **********/
@@ -279,13 +190,6 @@ volatile float theta_error_diff = 0.0f;
 
 /********** CAN **********/
 
-CAN_FilterTypeDef sFilterConfig;
-
-
-CAN_RxHeaderTypeDef can1RxHeader;
-uint8_t can1RxData[8];
-uint8_t can1RxFlg = 0;
-
 
 
 
@@ -300,14 +204,8 @@ inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...);
 
 int32_t printFloat(float val);
 
-inline static void setPWM(const float *duty);
-
-inline static void setSVM(float ampl, float phase);
-
-inline static void setSVM_dq();
 
 
-inline static void currentControl(void);
 
 
 #ifdef __GNUC__
@@ -342,16 +240,6 @@ int main(void)
 
 	/********** for ASR ***********/
 
-	int ASR_steps = 0;
-
-	float d_theta;
-
-	float _omega_ref;
-
-	float omega_error_integ_temp1 = 0.0f;
-	float omega_error_integ_temp2 = 0.0f;
-
-	float p_theta_error = 0.0f;
 
 
   /* USER CODE END 1 */
@@ -392,33 +280,7 @@ int main(void)
   /********** CAN Setting **********/
 
 
-  sFilterConfig.FilterBank = 0;
-  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  sFilterConfig.FilterIdHigh = 0x0000;
-  sFilterConfig.FilterIdLow = 0x0000;
-  sFilterConfig.FilterMaskIdHigh = 0x0000;
-  sFilterConfig.FilterMaskIdLow = 0x0000;
-  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-  sFilterConfig.FilterActivation = ENABLE;
-  sFilterConfig.SlaveStartFilterBank = 14;
-
-  if(HAL_CAN_ConfigFilter(&hcan1,&sFilterConfig) != HAL_OK)
-  {
-	  Error_Handler();
-  }
-
-  if(HAL_CAN_Start(&hcan1) != HAL_OK)
-  {
-	  Error_Handler();
-  }
-
-  if(HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY) != HAL_OK)
-  {
-	  Error_Handler();
-  }
-
-
+  CAN_Init();
 
 
   UartPrintf(&huart2, "Hello world\n");
@@ -613,23 +475,6 @@ int main(void)
 
 
 
-		  if(ASR_steps <= 0)
-		  {
-			  d_theta = 0.0f;
-		  }
-		  else
-		  {
-			  d_theta = theta - p_theta;
-		  }
-		  ASR_steps += 1;
-
-		  p_theta = theta;
-
-		  if(d_theta < - M_PI)		d_theta += 2 * M_PI;
-		  else if(d_theta > M_PI)	d_theta -= 2 * M_PI;
-
-		  omega = omega * 0.5 + 0.5 * d_theta / ASR_cycleTime;
-
 
 		  /********** APR (Auto Position Regulator) **********/
 
@@ -650,35 +495,8 @@ int main(void)
 
 		  /********** ASR (Auto Speed Regulator) **********/
 
-#if _ASR_ENABLE_
 
-
-		  if(omega_ref < -omega_limit)		_omega_ref = -omega_limit;
-		  else if(omega_ref > omega_limit)	_omega_ref = omega_limit;
-		  else								_omega_ref = omega_ref;
-
-		  omega_error = _omega_ref - omega;
-
-		  // integral
-		  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
-		  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
-		  }
-		  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
-		  }
-		  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
-		  omega_error_integ_temp2 = omega_error_integ_temp1;
-
-
-		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
-
-		  Id_ref = 0.0f;
-		  Iq_ref = KT * torque_ref;
-
-#endif
+		  speedControl();
 
 
 #if _ASR_DUMP_
@@ -853,426 +671,6 @@ void SystemClock_Config(void)
 
 
 
-void HAL_CAN_TxMailbox0CompleteCallback (CAN_HandleTypeDef * hcan)
-{
-	if(hcan->Instance == CAN1)
-	{
-	}
-	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
-
-}
-
-void HAL_CAN_TxMailbox1CompleteCallback (CAN_HandleTypeDef * hcan)
-{
-	if(hcan->Instance == CAN1)
-	{
-	}
-	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
-
-}
-
-void HAL_CAN_TxMailbox2CompleteCallback (CAN_HandleTypeDef * hcan)
-{
-	if(hcan->Instance == CAN1)
-	{
-	}
-	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
-
-}
-
-
-
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-
-	union _rcdata{
-		struct{
-			float fval;
-		};
-		struct{
-			uint8_t byte[4];
-		};
-	}controlRef;
-
-
-	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can1RxHeader, can1RxData);
-
-	can1RxFlg = 1;
-
-#if _ASR_ENABLE_ && !_APR_ENABLE_
-	if(can1RxHeader.StdId == 0x004 && can1RxHeader.DLC == 0x4)
-	{
-		controlRef.byte[0] = can1RxData[0];
-		controlRef.byte[1] = can1RxData[1];
-		controlRef.byte[2] = can1RxData[2];
-		controlRef.byte[3] = can1RxData[3];
-
-		omega_ref = controlRef.fval;
-	}
-#endif
-
-#if _APR_ENABLE_
-	if(can1RxHeader.StdId == 0x008 && can1RxHeader.DLC == 0x4)
-	{
-		controlRef.byte[0] = can1RxData[0];
-		controlRef.byte[1] = can1RxData[1];
-		controlRef.byte[2] = can1RxData[2];
-		controlRef.byte[3] = can1RxData[3];
-
-		theta_ref = controlRef.fval;
-	}
-#endif
-
-
-	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
-
-}
-
-
-
-
-
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
-{
-
-	if(htim->Instance == TIM8)
-	{
-
-		if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
-		{
-
-			currentControl();
-
-		}
-
-
-	}
-
-}
-
-
-#if 0
-
-// SPI RX CallBack function
-void HAL_SPI_RxCpltCallback (SPI_HandleTypeDef *hspi)
-{
-
-
-}
-
-#endif
-
-
-
-
-inline static void currentControl(void)
-{
-
-	static float _Id_ref;
-	static float _Iq_ref;
-
-
-	static float Id_error_integ_temp1 = 0.0f;
-	static float Id_error_integ_temp2 = 0.0f;
-	static float Iq_error_integ_temp1 = 0.0f;
-	static float Iq_error_integ_temp2 = 0.0f;
-
-
-	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
-
-	refreshEncoder();
-
-
-#if 0
-	// calculate sin(theta_re), cos(theta_re)
-	if(forced_commute_state > 0)
-	{
-
-		_forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
-
-		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
-		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
-		else									forced_theta_re = _forced_theta_re;
-
-		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
-		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
-	}
-#endif
-
-
-	get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
-
-
-	if(theta_re < M_PI)
-		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
-	else
-		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
-
-
-	/********** ACR (Auto Current Regulator) **********/
-
-#if _ACR_ENABLE_
-
-	if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
-	else if(Id_ref > Id_limit)	_Id_ref = Id_limit;
-	else						_Id_ref = Id_ref;
-
-	if(Iq_ref < -Iq_limit)		_Iq_ref = -Iq_limit;
-	else if(Iq_ref > Iq_limit)	_Iq_ref = Iq_limit;
-	else						_Iq_ref = Iq_ref;
-
-	if(forced_commute_state > 0)
-	{
-		Id_error = forced_I_gamma_ref - Id;
-		Iq_error = forced_I_delta_ref - Iq;
-	}
-	else
-	{
-		Id_error = _Id_ref - Id;
-		Iq_error = _Iq_ref - Iq;
-	}
-
-
-	// integral
-	Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
-	if(Id_error_integ_temp1 < -1000000.0) Id_error_integ_temp1 = -1000000.0;
-	else if(Id_error_integ_temp1 > 1000000.0) Id_error_integ_temp1 = 1000000.0;
-	Id_error_integ = ACR_cycleTime * 0.5f * (Id_error_integ_temp1 + Id_error_integ_temp2);
-	Id_error_integ_temp2 = Id_error_integ_temp1;
-
-	Iq_error_integ_temp1 = Iq_error + Iq_error_integ_temp2;
-	if(Iq_error_integ_temp1 < -1000000.0) Iq_error_integ_temp1 = -1000000.0;
-	else if(Iq_error_integ_temp1 > 1000000.0) Iq_error_integ_temp1 = 1000000.0;
-	Iq_error_integ = ACR_cycleTime * 0.5f * (Iq_error_integ_temp1 + Iq_error_integ_temp2);
-	Iq_error_integ_temp2 = Iq_error_integ_temp1;
-
-
-	Vd_ref = Kp_ACR * Id_error + Ki_ACR * Id_error_integ;
-	Vq_ref = Kp_ACR * Iq_error + Ki_ACR * Iq_error_integ;
-
-#endif
-
-	/********* end of ACR **********/
-
-
-	setSVM_dq();
-
-
-#if _ACR_DUMP_
-
-	if(ACR_dump_count < ACR_DUMP_STEPS)
-	{
-		Id_dump[ACR_dump_count] = Id;
-		Iq_dump[ACR_dump_count] = Iq;
-		Id_ref_dump[ACR_dump_count] = Id_ref;
-		Iq_ref_dump[ACR_dump_count] = Iq_ref;
-		Vd_ref_dump[ACR_dump_count] = Vd_ref;
-		Vq_ref_dump[ACR_dump_count] = Vq_ref;
-		ACR_dump_count += 1;
-	}
-
-#endif
-
-
-
-	requestEncoder();
-
-
-	// Auto Speed Regulator launching
-	ASR_prescalerCount += 1;
-	if(ASR_prescalerCount >= ASR_prescale)
-	{
-		ASR_flg = 1;
-		ASR_prescalerCount = 0;
-	}
-
-
-
-	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
-
-	return;
-}
-
-
-inline static void setSVM_dq()
-{
-
-	static float cross0 = 0.0;
-	static float cross1 = 0.0;
-	static float duty[3] = {0};
-	static float x1, y1, x2, y2;
-	static float x, y;
-	static float vect1, vect2;
-
-
-
-
-	x = Vd_ref * cos_theta_re - Vq_ref * sin_theta_re;
-	y = Vd_ref * sin_theta_re + Vq_ref * cos_theta_re;
-
-	cross0 = refVector[0][0] * y - refVector[0][1] * x;
-	cross1 = refVector[1][0] * y - refVector[1][1] * x;
-
-	if(cross0 >= 0)
-	{
-		if(cross1 <= 0)				sector_SVM = 0;
-		else if(cross0 >= cross1)	sector_SVM = 1;
-		else						sector_SVM = 2;
-	}
-	else
-	{
-		if(cross1 >= 0)				sector_SVM = 3;
-		else if(cross0 <= cross1)	sector_SVM = 4;
-		else						sector_SVM = 5;
-	}
-
-	x1 = refVector[sector_SVM][0];
-	y1 = refVector[sector_SVM][1];
-	x2 = refVector[sector_SVM + 1][0];
-	y2 = refVector[sector_SVM + 1][1];
-
-	vect1 = (y2 * x - x2 * y) / ((x1 * y2 - y1 * x2) * Vdc);
-	vect2 = (-y1 * x + x1 * y) / ((x1 * y2 - y1 * x2) * Vdc);
-
-	switch(sector_SVM)
-	{
-	case 0: duty[2] = (1.0 - vect1 - vect2) * 0.5f; 	duty[1] = duty[2] + vect2; 	duty[0] = duty[1] + vect1;  break;
-	case 1: duty[2] = (1.0 - vect1 - vect2) * 0.5f; 	duty[0] = duty[2] + vect1; 	duty[1] = duty[0] + vect2; 	break;
-	case 2: duty[0] = (1.0 - vect1 - vect2) * 0.5f; 	duty[2] = duty[0] + vect2; 	duty[1] = duty[2] + vect1; 	break;
-	case 3: duty[0] = (1.0 - vect1 - vect2) * 0.5f; 	duty[1] = duty[0] + vect1; 	duty[2] = duty[1] + vect2; 	break;
-	case 4: duty[1] = (1.0 - vect1 - vect2) * 0.5f; 	duty[0] = duty[1] + vect2; 	duty[2] = duty[0] + vect1; 	break;
-	case 5: duty[1] = (1.0 - vect1 - vect2) * 0.5f; 	duty[2] = duty[1] + vect1; 	duty[0] = duty[2] + vect2; 	break;
-	}
-
-
-	if(duty[0] < -1.0f) duty[0] = -1.0f; else if (duty[0] > 1.0f) duty[0] = 1.0f;
-	if(duty[1] < -1.0f) duty[1] = -1.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
-	if(duty[2] < -1.0f) duty[2] = -1.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
-
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, PWM_RESOL * (1.0f - (amp_u = duty[0])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, PWM_RESOL * (1.0f - (amp_v = duty[1])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, PWM_RESOL * (1.0f - (amp_w = duty[2])));
-
-
-	return;
-}
-
-
-#if 0
-inline static void setSVM(float ampl, float phase){
-	//float rate[3] = {0};
-	//float _duty[3] = {0};
-	static float duty[3] = {0};
-	static float x1, y1, x2, y2;
-	static float x, y;
-	static float vect1, vect2;
-
-	// reference vectors for SVM
-	const float refVector[6+1][2] = {
-			{ 1.000,  0.000},
-			{ 0.500,  0.866},
-			{-0.500,  0.866},
-			{-1.000,  0.000},
-			{-0.500, -0.866},
-			{ 0.500, -0.866},
-			{ 1.000,  0.000},
-	};
-
-	// Select two from 6 vector
-	int sector = (int)(phase * 0.95493f);
-
-
-
-	x = sin_table2[(int)((phase * 0.3183f + 0.5f) * 5000.0f)];
-	y = sin_table2[(int)(phase * 1591.54943f)];
-
-
-	x1 = refVector[sector][0];
-	y1 = refVector[sector][1];
-	x2 = refVector[sector + 1][0];
-	y2 = refVector[sector + 1][1];
-
-
-	vect1 = ampl / (x1 * y2 - y1 * x2) * (y2 * x - x2 * y);
-	vect2 = ampl / (x1 * y2 - y1 * x2) * (-y1 * x + x1 * y);
-
-	switch(sector)
-	{
-	case 0: duty[2] = (1.0 - vect1 - vect2) * 0.5f; 	duty[1] = duty[2] + vect2; 	duty[0] = duty[1] + vect1;  break;
-	case 1: duty[2] = (1.0 - vect1 - vect2) * 0.5f; 	duty[0] = duty[2] + vect1; 	duty[1] = duty[0] + vect2; 	break;
-	case 2: duty[0] = (1.0 - vect1 - vect2) * 0.5f; 	duty[2] = duty[0] + vect2; 	duty[1] = duty[2] + vect1; 	break;
-	case 3: duty[0] = (1.0 - vect1 - vect2) * 0.5f; 	duty[1] = duty[0] + vect1; 	duty[2] = duty[1] + vect2; 	break;
-	case 4: duty[1] = (1.0 - vect1 - vect2) * 0.5f; 	duty[0] = duty[1] + vect2; 	duty[2] = duty[0] + vect1; 	break;
-	case 5: duty[1] = (1.0 - vect1 - vect2) * 0.5f; 	duty[2] = duty[1] + vect1; 	duty[0] = duty[2] + vect2; 	break;
-	}
-
-
-	if(duty[0] < -1.0f) duty[0] = -1.0f; else if (duty[0] > 1.0f) duty[0] = 1.0f;
-	if(duty[1] < -1.0f) duty[1] = -1.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
-	if(duty[2] < -1.0f) duty[2] = -1.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
-
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200.0f * (1.0f - (amp_u = duty[0])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200.0f * (1.0f - (amp_v = duty[1])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 4200.0f * (1.0f - (amp_w = duty[2])));
-
-
-/*
-	x = sin_t(phase + M_PI * 0.5);
-	y = sin_t(phase);
-
-	float x1 = refVector[sector][0];
-	float y1 = refVector[sector][1];
-	float x2 = refVector[sector + 1][0];
-	float y2 = refVector[sector + 1][1];
-
-	float vect1 = ampl / (x1 * y2 - y1 * x2) * (y2 * x - x2 * y);
-	float vect2 = ampl / (x1 * y2 - y1 * x2) * (-y1 * x + x1 * y);
-
-	if(sector%2 != 0){
-		rate[1] = vect2;
-		rate[2] = vect1;
-	}
-	else{
-		rate[1] = vect1;
-		rate[2] = vect2;
-	}
-
-	rate[0] = 1.0 - rate[1] - rate[2];
-
-
-	_duty[0]   = rate[0] * 0.5 + rate[1] + rate[2];
-	_duty[1]   = rate[0] * 0.5 + rate[2];
-	_duty[2]   = rate[0] / 2.0;
-
-	switch(sector){
-		case 0: duty[0] = _duty[0]; duty[1] = _duty[1]; duty[2] = _duty[2]; break;
-		case 1: duty[0] = _duty[1]; duty[1] = _duty[0]; duty[2] = _duty[2]; break;
-		case 2: duty[0] = _duty[2]; duty[1] = _duty[0]; duty[2] = _duty[1]; break;
-		case 3: duty[0] = _duty[2]; duty[1] = _duty[1]; duty[2] = _duty[0]; break;
-		case 4: duty[0] = _duty[1]; duty[1] = _duty[2]; duty[2] = _duty[0]; break;
-		case 5: duty[0] = _duty[0]; duty[1] = _duty[2]; duty[2] = _duty[1]; break;
-	}
-
-	if(duty[0] < -1.0f) duty[0] = -1.0; else if (duty[0] > 1.0) duty[0] = 1.0;
-	if(duty[1] < -1.0f) duty[1] = -1.0; else if (duty[1] > 1.0) duty[1] = 1.0;
-	if(duty[2] < -1.0f) duty[2] = -1.0; else if (duty[2] > 1.0) duty[2] = 1.0;
-
-	setPWM(duty);
-
-*/
-
-	return;
-
-}
-#endif
-
-inline static void setPWM(const float *duty){
-
-	if(duty[0] <= 1.0 && duty[0] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200 * (1.0 - (amp_u = duty[0])));
-	if(duty[1] <= 1.0 && duty[1] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200 * (1.0 - (amp_v = duty[1])));
-	if(duty[2] <= 1.0 && duty[2] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 4200 * (1.0 - (amp_w = duty[2])));
-
-}
 
 
 

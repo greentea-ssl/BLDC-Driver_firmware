@@ -34,6 +34,10 @@ extern TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN Private defines */
 
+extern volatile float amp_u;
+extern volatile float amp_v;
+extern volatile float amp_w;
+
 /* USER CODE END Private defines */
 
 void MX_TIM8_Init(void);
@@ -41,6 +45,10 @@ void MX_TIM8_Init(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                     
 /* USER CODE BEGIN Prototypes */
+
+
+inline static void setPWM(const float *duty);
+
 
 /* USER CODE END Prototypes */
 

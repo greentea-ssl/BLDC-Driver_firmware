@@ -40,6 +40,12 @@ void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void CAN_Init();
+
+
+
+
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
