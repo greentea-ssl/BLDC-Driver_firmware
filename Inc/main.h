@@ -33,11 +33,37 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+
+// ACR variables dump enable
+
+#define _ACR_DUMP_			0
+
+#define _ASR_DUMP_			0
+
+
+#if _ACR_DUMP_
+
+#define ACR_DUMP_STEPS		500
+
+
+extern float Id_dump[ACR_DUMP_STEPS];
+extern float Iq_dump[ACR_DUMP_STEPS];
+extern float Id_ref_dump[ACR_DUMP_STEPS];
+extern float Iq_ref_dump[ACR_DUMP_STEPS];
+extern float Vd_ref_dump[ACR_DUMP_STEPS];
+extern float Vq_ref_dump[ACR_DUMP_STEPS];
+
+
+extern int ACR_dump_count;
+
+#endif
 
 /* USER CODE END ET */
 
@@ -48,6 +74,9 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+
+
+
 
 /* USER CODE END EM */
 

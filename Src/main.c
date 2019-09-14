@@ -49,11 +49,6 @@
 /* USER CODE BEGIN PD */
 
 
-// ACR variables dump enable
-
-#define _ACR_DUMP_			0
-
-#define _ASR_DUMP_			0
 
 
 
@@ -79,8 +74,6 @@
 /********** ACR DUMP DEBUG **********/
 
 #if _ACR_DUMP_
-
-#define ACR_DUMP_STEPS		400
 
 
 float Id_dump[ACR_DUMP_STEPS] = {0.0f};
@@ -205,8 +198,7 @@ inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...);
 int32_t printFloat(float val);
 
 
-
-
+#if 0
 
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
@@ -216,6 +208,20 @@ int32_t printFloat(float val);
 void __io_putchar(uint8_t ch)
 {
 	HAL_UART_Transmit(&huart2, &ch, 1, 1);
+}
+
+#endif
+
+
+
+int _write(int file, char *ptr, int len)
+{
+  int DataIdx;
+  for(DataIdx=0; DataIdx<len; DataIdx++)
+  {
+    ITM_SendChar(*ptr++);
+  }
+  return len;
 }
 
 
@@ -252,6 +258,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -283,8 +290,9 @@ int main(void)
   CAN_Init();
 
 
-  UartPrintf(&huart2, "Hello world\n");
+  //UartPrintf(&huart2, "Hello world\n");
 
+  printf("Hello\n");
 
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
@@ -421,15 +429,21 @@ int main(void)
 
 #if _ACR_DUMP_
 
+#if 0
+
 		  if(Iq_ref <= 0.0f)
 			  Iq_ref = 5.0f;
 		  else
 			  Iq_ref = -5.0f;
 
+#endif
+
 		  if(ACR_dump_count >= ACR_DUMP_STEPS)
 			  break;
 
+
 #endif
+
 
 
 #if _ASR_DUMP_
@@ -564,6 +578,8 @@ int main(void)
 	  printf(", ");
 	  printFloat(Vq_ref_dump[count]);
 	  printf("\n");
+
+	  HAL_Delay(1);
 
   }
 

@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "ACR.h"
+#include "main.h"
 
 #include "ASR.h"
 
@@ -14,8 +15,8 @@
 
 
 
-float Kp_ACR = 0.3;
-float Ki_ACR = 300.0;
+float Kp_ACR = 0.1;
+float Ki_ACR = 400.0;
 
 const float ACR_cycleTime = 100E-6;
 

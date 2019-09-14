@@ -40,9 +40,9 @@ volatile float V_Iv = 0.0f;
 volatile float V_Iw = 0.0f;
 
 
-float V_Iu_offset = -0.0445f;
-float V_Iv_offset = -0.0275f;
-float V_Iw_offset = -0.0325f;
+float V_Iu_offset = 1.67497551f;
+float V_Iv_offset = 1.67578125f;
+float V_Iw_offset = 1.67819822f;
 
 
 const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
@@ -53,8 +53,16 @@ volatile float Iv = 0.0;
 volatile float Iw = 0.0;
 
 
-// Current Moving Average Filter
-#define N_MAF_I		2
+// Moving Average Filter
+#define _MAF_ENABLE_	0
+
+// Median Filter
+#define _MEDF_ENABLE_	1
+
+#define N_MAF_I			2
+
+
+#define N_MEDF_I		3
 
 
 
@@ -386,6 +394,7 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 {
 
 	// Moving Average Filter
+#if _MAF_ENABLE_
 
 	static int32_t pos_MAF_I = 0;
 
@@ -396,6 +405,24 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 	static int32_t AD_Iu_MAF = 0;
 	static int32_t AD_Iv_MAF = 0;
 	static int32_t AD_Iw_MAF = 0;
+
+#endif
+
+#if _MEDF_ENABLE_
+
+	static int32_t pos_MEDF_I = 0;
+
+	static int32_t AD_Iu_buf[N_MEDF_I] = {0};
+	static int32_t AD_Iv_buf[N_MEDF_I] = {0};
+	static int32_t AD_Iw_buf[N_MEDF_I] = {0};
+
+	static int32_t AD_Iu_MEDF = 0;
+	static int32_t AD_Iv_MEDF = 0;
+	static int32_t AD_Iw_MEDF = 0;
+
+#endif
+
+
 
 
 	// Read ADC
@@ -409,11 +436,11 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 	HAL_ADC_Start_DMA(&hadc2, &AD_Iv, 1);
 	HAL_ADC_Start_DMA(&hadc3, &AD_Iw, 1);
 
+#if _MAF_ENABLE_
 
-
-	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu - ADI_Offset;
-	AD_Iv_buf[pos_MAF_I] = (int32_t)AD_Iv - ADI_Offset;
-	AD_Iw_buf[pos_MAF_I] = (int32_t)AD_Iw - ADI_Offset;
+	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu;
+	AD_Iv_buf[pos_MAF_I] = (int32_t)AD_Iv;
+	AD_Iw_buf[pos_MAF_I] = (int32_t)AD_Iw;
 
 
 	AD_Iu_MAF += AD_Iu_buf[pos_MAF_I];
@@ -427,21 +454,48 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 		pos_MAF_I = 0;
 	}
 
-	V_Iu = (float)AD_Iu_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iu_offset;
-	V_Iv = (float)AD_Iv_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iv_offset;
-	V_Iw = (float)AD_Iw_MAF / (N_MAF_I * AD_Range) * Vref_AD + V_Iw_offset;
+	V_Iu = (float)AD_Iu_MAF / (N_MAF_I * AD_Range) * Vref_AD - V_Iu_offset;
+	V_Iv = (float)AD_Iv_MAF / (N_MAF_I * AD_Range) * Vref_AD - V_Iv_offset;
+	V_Iw = (float)AD_Iw_MAF / (N_MAF_I * AD_Range) * Vref_AD - V_Iw_offset;
 
 	AD_Iu_MAF -= AD_Iu_buf[pos_MAF_I];
 	AD_Iv_MAF -= AD_Iv_buf[pos_MAF_I];
 	AD_Iw_MAF -= AD_Iw_buf[pos_MAF_I];
 
+#endif
+
+#if _MEDF_ENABLE_
+
+	AD_Iu_buf[pos_MEDF_I] = (int32_t)AD_Iu;
+	AD_Iv_buf[pos_MEDF_I] = (int32_t)AD_Iv;
+	AD_Iw_buf[pos_MEDF_I] = (int32_t)AD_Iw;
+
+	pos_MEDF_I += 1;
+	if(pos_MEDF_I >= N_MEDF_I)
+	{
+		pos_MEDF_I = 0;
+	}
+
+	AD_Iu_MEDF = median3(AD_Iu_buf);
+	AD_Iv_MEDF = median3(AD_Iv_buf);
+	AD_Iw_MEDF = median3(AD_Iw_buf);
+
+	V_Iu = (float)AD_Iu_MEDF / AD_Range * Vref_AD - V_Iu_offset;
+	V_Iv = (float)AD_Iv_MEDF / AD_Range * Vref_AD - V_Iv_offset;
+	V_Iw = (float)AD_Iw_MEDF / AD_Range * Vref_AD - V_Iw_offset;
 
 
-	/*
-	V_Iu = V_Iu * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iu) / AD_Range * Vref_AD - V_Iu_offset);
-	V_Iv = V_Iv * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iv) / AD_Range * Vref_AD - V_Iv_offset);
-	V_Iw = V_Iw * 0.9 + 0.1 * ((float)(ADI_Offset - (int32_t)AD_Iw) / AD_Range * Vref_AD - V_Iw_offset);
-	*/
+#endif
+
+
+
+#if !_MAF_ENABLE_ && !_MEDF_ENABLE_
+
+	V_Iu = (float)AD_Iu / AD_Range * Vref_AD - V_Iu_offset;
+	V_Iv = (float)AD_Iv / AD_Range * Vref_AD - V_Iv_offset;
+	V_Iw = (float)AD_Iw / AD_Range * Vref_AD - V_Iw_offset;
+
+#endif
 
 
 	switch(SVM_sector)
@@ -472,6 +526,32 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 	return;
 
 }
+
+
+
+extern int32_t median3(int32_t *buf)
+{
+
+	if(buf[0] < buf[1])
+	{
+		if(buf[2] < buf[0])			return buf[0];
+		else if(buf[2] < buf[1])	return buf[2];
+		else						return buf[1];
+	}
+	else
+	{
+		if(buf[2] < buf[1])			return buf[1];
+		else if(buf[2] < buf[1])	return buf[2];
+		else						return buf[0];
+	}
+
+	return 0;
+}
+
+
+
+
+
 
 /* USER CODE END 1 */
 
