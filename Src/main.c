@@ -542,10 +542,7 @@ int main(void)
 
   HAL_Delay(10);
 
-  // 3phase PWM Stopping
-  HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_3);
+  stopPWM();
 
   HAL_Delay(10);
 

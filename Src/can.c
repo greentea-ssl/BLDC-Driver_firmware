@@ -24,8 +24,11 @@
 
 #include "ASR.h"
 #include "ACR.h"
+#include "tim.h"
 
 
+
+uint8_t motorChannel = 0;
 
 
 CAN_FilterTypeDef sFilterConfig;
@@ -135,36 +138,49 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 void CAN_Init()
 {
 
+	motorChannel = getChannel();
 
-	  sFilterConfig.FilterBank = 0;
-	  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-	  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	  sFilterConfig.FilterIdHigh = 0x0000;
-	  sFilterConfig.FilterIdLow = 0x0000;
-	  sFilterConfig.FilterMaskIdHigh = 0x0000;
-	  sFilterConfig.FilterMaskIdLow = 0x0000;
-	  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-	  sFilterConfig.FilterActivation = ENABLE;
-	  sFilterConfig.SlaveStartFilterBank = 14;
 
-	  if(HAL_CAN_ConfigFilter(&hcan1,&sFilterConfig) != HAL_OK)
-	  {
-		  Error_Handler();
-	  }
+	sFilterConfig.FilterBank = 0;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x2000 | motorChannel << 10;
+	sFilterConfig.FilterIdLow = 0x0000;
+	sFilterConfig.FilterMaskIdHigh = 0xfc00;
+	sFilterConfig.FilterMaskIdLow = 0x0006;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig.FilterActivation = ENABLE;
+	sFilterConfig.SlaveStartFilterBank = 14;
 
-	  if(HAL_CAN_Start(&hcan1) != HAL_OK)
-	  {
-		  Error_Handler();
-	  }
+	if(HAL_CAN_ConfigFilter(&hcan1,&sFilterConfig) != HAL_OK)
+	{
+	  Error_Handler();
+	}
 
-	  if(HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY) != HAL_OK)
-	  {
-		  Error_Handler();
-	  }
+	if(HAL_CAN_Start(&hcan1) != HAL_OK)
+	{
+	  Error_Handler();
+	}
+
+	if(HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY) != HAL_OK)
+	{
+	  Error_Handler();
+	}
 
 
 }
 
+
+uint8_t getChannel()
+{
+	uint8_t ch = 0;
+
+	ch |= !HAL_GPIO_ReadPin(CH_b0_GPIO_Port, CH_b0_Pin) << 0;
+	ch |= !HAL_GPIO_ReadPin(CH_b1_GPIO_Port, CH_b1_Pin) << 1;
+	ch |= !HAL_GPIO_ReadPin(CH_b2_GPIO_Port, CH_b2_Pin) << 2;
+
+	return ch;
+}
 
 
 
@@ -216,7 +232,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	can1RxFlg = 1;
 
 #if _ASR_ENABLE_ && !_APR_ENABLE_
-	if(can1RxHeader.StdId == 0x004 && can1RxHeader.DLC == 0x4)
+	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x01 && can1RxHeader.DLC == 0x4)
 	{
 		controlRef.byte[0] = can1RxData[0];
 		controlRef.byte[1] = can1RxData[1];
@@ -224,6 +240,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		controlRef.byte[3] = can1RxData[3];
 
 		omega_ref = controlRef.fval;
+
+		timeoutReset();
+
 	}
 #endif
 

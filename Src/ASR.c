@@ -51,7 +51,6 @@ float _omega_ref;
 float omega_error_integ_temp1 = 0.0f;
 float omega_error_integ_temp2 = 0.0f;
 
-float p_theta_error = 0.0f;
 
 
 
@@ -114,6 +113,22 @@ inline void speedControl()
 
 
 	return;
+}
+
+
+
+inline void ASR_reset()
+{
+
+	p_theta = 0.0f;
+
+	omega_error_integ_temp1 = 0.0f;
+	omega_error_integ_temp2 = 0.0f;
+
+	omega = omega_ref = 0.0f;
+
+	ASR_steps = 0;
+
 }
 
 

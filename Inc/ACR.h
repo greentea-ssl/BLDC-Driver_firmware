@@ -21,6 +21,7 @@ extern volatile float Iq;
 
 void currentControl(void);
 
+void ACR_reset();
 
 
 

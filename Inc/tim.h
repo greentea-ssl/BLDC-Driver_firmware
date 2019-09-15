@@ -34,6 +34,11 @@ extern TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN Private defines */
 
+#define PWM_FREQ		10000
+
+#define TIMEOUT_MS		200
+
+
 extern volatile float amp_u;
 extern volatile float amp_v;
 extern volatile float amp_w;
@@ -48,9 +53,15 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 void TIM_Init();
 
+void startPWM();
+
+void stopPWM();
+
+
 void setPWM(const float *duty);
 
 
+void timeoutReset();
 
 
 /* USER CODE END Prototypes */

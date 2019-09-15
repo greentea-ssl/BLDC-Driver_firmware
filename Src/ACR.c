@@ -22,8 +22,8 @@ const float ACR_cycleTime = 100E-6;
 
 
 
-float Id_limit = 30.0f;
-float Iq_limit = 30.0f;
+float Id_limit = 15.0f;
+float Iq_limit = 15.0f;
 
 
 volatile float Id_ref = 0.0f;
@@ -42,20 +42,21 @@ volatile float Iq_error_integ = 0.0f;
 
 
 
+volatile float _Id_ref;
+volatile float _Iq_ref;
+
+
+volatile float Id_error_integ_temp1 = 0.0f;
+volatile float Id_error_integ_temp2 = 0.0f;
+volatile float Iq_error_integ_temp1 = 0.0f;
+volatile float Iq_error_integ_temp2 = 0.0f;
+
 
 
 
 inline void currentControl(void)
 {
 
-	static float _Id_ref;
-	static float _Iq_ref;
-
-
-	static float Id_error_integ_temp1 = 0.0f;
-	static float Id_error_integ_temp2 = 0.0f;
-	static float Iq_error_integ_temp1 = 0.0f;
-	static float Iq_error_integ_temp2 = 0.0f;
 
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
@@ -183,6 +184,31 @@ inline void currentControl(void)
 
 	return;
 }
+
+
+
+inline void ACR_reset()
+{
+
+	Id_error_integ_temp1 = 0.0f;
+	Id_error_integ_temp2 = 0.0f;
+	Iq_error_integ_temp1 = 0.0f;
+	Iq_error_integ_temp2 = 0.0f;
+
+
+	Id = Id_ref = 0.0f;
+	Iq = Iq_ref = 0.0f;
+
+	Vd_ref = 0.0f;
+	Vq_ref = 0.0f;
+
+}
+
+
+
+
+
+
 
 
 

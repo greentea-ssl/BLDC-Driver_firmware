@@ -23,6 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "ACR.h"
+#include "ASR.h"
 
 
 
@@ -30,6 +31,11 @@ volatile float amp_u = 0.0;
 volatile float amp_v = 0.0;
 volatile float amp_w = 0.0;
 
+
+volatile uint32_t timeoutCount = 0;
+
+// 1: timeout
+volatile uint8_t timeoutState = 0;
 
 
 /* USER CODE END 0 */
@@ -211,17 +217,41 @@ void TIM_Init()
 	  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
 
 
-
-	  // 3phase PWM Starting
-	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
-	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
-	  HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
-
-	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
-	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
-	  HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
+	  startPWM();
 
 
+}
+
+
+
+inline void startPWM()
+{
+
+
+	// 3phase PWM Starting
+	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
+
+	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
+
+}
+
+
+
+inline void stopPWM()
+{
+
+	// 3phase PWM Stopping
+	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_3);
+
+	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_3);
 
 }
 
@@ -238,6 +268,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 			currentControl();
 
+			// timeout control
+			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
+			{
+				timeoutCount += 1;
+			}
+			else
+			{
+				stopPWM();
+				timeoutCount = 0;
+				timeoutState = 1;
+			}
+
 		}
 
 
@@ -245,6 +287,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 }
 
+
+inline void timeoutReset()
+{
+	timeoutCount = 0;
+	if(timeoutState == 1)
+	{
+		timeoutState = 0;
+		ASR_reset();
+		ACR_reset();
+		startPWM();
+	}
+}
 
 
 

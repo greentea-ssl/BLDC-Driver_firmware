@@ -31,6 +31,7 @@ extern int ASR_prescalerCount;
 
 void speedControl();
 
+void ASR_reset();
 
 
 
