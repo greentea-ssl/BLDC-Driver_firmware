@@ -5,7 +5,7 @@
 #include "parameters.h"
 #include "spi.h"
 #include "tim.h"
-
+#include "adc.h"
 
 
 
@@ -20,9 +20,6 @@ const float refVector[6+1][2] = {
 	{ 1.000,  0.000},
 };
 
-
-
-volatile float Vdc = 20.0f;
 
 
 volatile float Vd_ref = 0.0f;

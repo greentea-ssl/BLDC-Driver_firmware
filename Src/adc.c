@@ -28,9 +28,9 @@ const float Vref_AD = 3.3f;
 
 const int32_t AD_Range = 4096;
 
-volatile uint32_t AD_Iu = 0;
-volatile uint32_t AD_Iv = 0;
-volatile uint32_t AD_Iw = 0;
+volatile uint16_t AD_Iu[2] = {0};
+volatile uint16_t AD_Iv[1] = {0};
+volatile uint16_t AD_Iw[1] = {0};
 
 
 int32_t ADI_Offset = 2048;
@@ -47,10 +47,14 @@ float V_Iw_offset = 1.67819822f;
 
 const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
 
+const float Gain_Vdc_sense = 12.538f;
 
 volatile float Iu = 0.0;
 volatile float Iv = 0.0;
 volatile float Iw = 0.0;
+
+
+volatile float Vdc = 20.0f;
 
 
 // Moving Average Filter
@@ -85,15 +89,15 @@ void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ScanConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T8_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -383,9 +387,9 @@ void ADC_Init(void)
 {
 
 	  // ADC Starting
-	  HAL_ADC_Start_DMA(&hadc1, &AD_Iu, 1);
-	  HAL_ADC_Start_DMA(&hadc2, &AD_Iv, 1);
-	  HAL_ADC_Start_DMA(&hadc3, &AD_Iw, 1);
+	  HAL_ADC_Start_DMA(&hadc1, AD_Iu, 2);
+	  HAL_ADC_Start_DMA(&hadc2, AD_Iv, 1);
+	  HAL_ADC_Start_DMA(&hadc3, AD_Iw, 1);
 
 }
 
@@ -432,15 +436,15 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 	AD_Iw = HAL_ADC_GetValue(&hadc3);
 	*/
 
-	HAL_ADC_Start_DMA(&hadc1, &AD_Iu, 1);
-	HAL_ADC_Start_DMA(&hadc2, &AD_Iv, 1);
-	HAL_ADC_Start_DMA(&hadc3, &AD_Iw, 1);
+	HAL_ADC_Start_DMA(&hadc1, AD_Iu, 2);
+	HAL_ADC_Start_DMA(&hadc2, AD_Iv, 1);
+	HAL_ADC_Start_DMA(&hadc3, AD_Iw, 1);
 
 #if _MAF_ENABLE_
 
-	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu;
-	AD_Iv_buf[pos_MAF_I] = (int32_t)AD_Iv;
-	AD_Iw_buf[pos_MAF_I] = (int32_t)AD_Iw;
+	AD_Iu_buf[pos_MAF_I] = (int32_t)AD_Iu[0];
+	AD_Iv_buf[pos_MAF_I] = (int32_t)AD_Iv[0];
+	AD_Iw_buf[pos_MAF_I] = (int32_t)AD_Iw[0];
 
 
 	AD_Iu_MAF += AD_Iu_buf[pos_MAF_I];
@@ -466,9 +470,9 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 
 #if _MEDF_ENABLE_
 
-	AD_Iu_buf[pos_MEDF_I] = (int32_t)AD_Iu;
-	AD_Iv_buf[pos_MEDF_I] = (int32_t)AD_Iv;
-	AD_Iw_buf[pos_MEDF_I] = (int32_t)AD_Iw;
+	AD_Iu_buf[pos_MEDF_I] = (int32_t)AD_Iu[0];
+	AD_Iv_buf[pos_MEDF_I] = (int32_t)AD_Iv[0];
+	AD_Iw_buf[pos_MEDF_I] = (int32_t)AD_Iw[0];
 
 	pos_MEDF_I += 1;
 	if(pos_MEDF_I >= N_MEDF_I)
@@ -491,12 +495,13 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 
 #if !_MAF_ENABLE_ && !_MEDF_ENABLE_
 
-	V_Iu = (float)AD_Iu / AD_Range * Vref_AD - V_Iu_offset;
-	V_Iv = (float)AD_Iv / AD_Range * Vref_AD - V_Iv_offset;
-	V_Iw = (float)AD_Iw / AD_Range * Vref_AD - V_Iw_offset;
+	V_Iu = (float)AD_Iu[0] / AD_Range * Vref_AD - V_Iu_offset;
+	V_Iv = (float)AD_Iv[0] / AD_Range * Vref_AD - V_Iv_offset;
+	V_Iw = (float)AD_Iw[0] / AD_Range * Vref_AD - V_Iw_offset;
 
 #endif
 
+	//Vdc = Vdc * 0.9 + 0.1 * (float)AD_Iu[1] / AD_Range * Vref_AD * Gain_Vdc_sense;
 
 	switch(SVM_sector)
 	{

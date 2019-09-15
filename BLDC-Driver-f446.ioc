@@ -1,18 +1,20 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_0
 ADC1.ClockPrescaler=ADC_CLOCK_SYNC_PCLK_DIV6
-ADC1.ContinuousConvMode=DISABLE
+ADC1.ContinuousConvMode=ENABLE
 ADC1.DMAContinuousRequests=ENABLE
+ADC1.DiscontinuousConvMode=DISABLE
+ADC1.EOCSelection=ADC_EOC_SEQ_CONV
 ADC1.ExternalTrigConv=ADC_EXTERNALTRIGCONV_T8_TRGO
 ADC1.ExternalTrigConvEdge=ADC_EXTERNALTRIGCONVEDGE_RISING
-ADC1.IPParameters=Rank-0\#ChannelRegularConversion,master,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,NbrOfConversionFlag,Mode,NbrOfConversion,ExternalTrigConv,ContinuousConvMode,ScanConvMode,ExternalTrigConvEdge,InjNumberOfConversion,DMAContinuousRequests,ClockPrescaler
+ADC1.IPParameters=Rank-0\#ChannelRegularConversion,master,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,NbrOfConversionFlag,Mode,NbrOfConversion,ExternalTrigConv,ContinuousConvMode,ScanConvMode,ExternalTrigConvEdge,InjNumberOfConversion,DMAContinuousRequests,ClockPrescaler,EOCSelection,DiscontinuousConvMode
 ADC1.InjNumberOfConversion=0
 ADC1.Mode=__NULL
 ADC1.NbrOfConversion=1
 ADC1.NbrOfConversionFlag=1
 ADC1.Rank-0\#ChannelRegularConversion=1
 ADC1.SamplingTime-0\#ChannelRegularConversion=ADC_SAMPLETIME_3CYCLES
-ADC1.ScanConvMode=DISABLE
+ADC1.ScanConvMode=ENABLE
 ADC1.master=1
 ADC2.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_4
 ADC2.ClockPrescaler=ADC_CLOCK_SYNC_PCLK_DIV6

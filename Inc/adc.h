@@ -36,6 +36,9 @@ extern ADC_HandleTypeDef hadc3;
 
 /* USER CODE BEGIN Private defines */
 
+extern volatile float Vdc;
+
+
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
