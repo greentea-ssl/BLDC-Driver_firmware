@@ -117,7 +117,7 @@ inline void speedControl()
 
 
 
-inline void ASR_reset()
+inline void ASR_Reset()
 {
 
 	p_theta = 0.0f;

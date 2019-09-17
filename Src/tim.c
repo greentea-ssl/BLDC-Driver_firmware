@@ -294,8 +294,8 @@ inline void timeoutReset()
 	if(timeoutState == 1)
 	{
 		timeoutState = 0;
-		ASR_reset();
-		ACR_reset();
+		ASR_Reset();
+		ACR_Reset();
 		startPWM();
 	}
 }

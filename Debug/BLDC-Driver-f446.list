@@ -15551,52 +15551,52 @@ inline void currentControl(void)
  8005fdc:	2000010c 	.word	0x2000010c
  8005fe0:	20000108 	.word	0x20000108
 
-08005fe4 <ACR_reset>:
+08005fe4 <ACR_Reset>:
 
 
 
-inline void ACR_reset()
+inline void ACR_Reset()
 {
  8005fe4:	b480      	push	{r7}
  8005fe6:	af00      	add	r7, sp, #0
 
 	Id_error_integ_temp1 = 0.0f;
- 8005fe8:	4b14      	ldr	r3, [pc, #80]	; (800603c <ACR_reset+0x58>)
+ 8005fe8:	4b14      	ldr	r3, [pc, #80]	; (800603c <ACR_Reset+0x58>)
  8005fea:	f04f 0200 	mov.w	r2, #0
  8005fee:	601a      	str	r2, [r3, #0]
 	Id_error_integ_temp2 = 0.0f;
- 8005ff0:	4b13      	ldr	r3, [pc, #76]	; (8006040 <ACR_reset+0x5c>)
+ 8005ff0:	4b13      	ldr	r3, [pc, #76]	; (8006040 <ACR_Reset+0x5c>)
  8005ff2:	f04f 0200 	mov.w	r2, #0
  8005ff6:	601a      	str	r2, [r3, #0]
 	Iq_error_integ_temp1 = 0.0f;
- 8005ff8:	4b12      	ldr	r3, [pc, #72]	; (8006044 <ACR_reset+0x60>)
+ 8005ff8:	4b12      	ldr	r3, [pc, #72]	; (8006044 <ACR_Reset+0x60>)
  8005ffa:	f04f 0200 	mov.w	r2, #0
  8005ffe:	601a      	str	r2, [r3, #0]
 	Iq_error_integ_temp2 = 0.0f;
- 8006000:	4b11      	ldr	r3, [pc, #68]	; (8006048 <ACR_reset+0x64>)
+ 8006000:	4b11      	ldr	r3, [pc, #68]	; (8006048 <ACR_Reset+0x64>)
  8006002:	f04f 0200 	mov.w	r2, #0
  8006006:	601a      	str	r2, [r3, #0]
 
 
 	Id = Id_ref = 0.0f;
  8006008:	f04f 0300 	mov.w	r3, #0
- 800600c:	4a0f      	ldr	r2, [pc, #60]	; (800604c <ACR_reset+0x68>)
+ 800600c:	4a0f      	ldr	r2, [pc, #60]	; (800604c <ACR_Reset+0x68>)
  800600e:	6013      	str	r3, [r2, #0]
- 8006010:	4a0f      	ldr	r2, [pc, #60]	; (8006050 <ACR_reset+0x6c>)
+ 8006010:	4a0f      	ldr	r2, [pc, #60]	; (8006050 <ACR_Reset+0x6c>)
  8006012:	6013      	str	r3, [r2, #0]
 	Iq = Iq_ref = 0.0f;
  8006014:	f04f 0300 	mov.w	r3, #0
- 8006018:	4a0e      	ldr	r2, [pc, #56]	; (8006054 <ACR_reset+0x70>)
+ 8006018:	4a0e      	ldr	r2, [pc, #56]	; (8006054 <ACR_Reset+0x70>)
  800601a:	6013      	str	r3, [r2, #0]
- 800601c:	4a0e      	ldr	r2, [pc, #56]	; (8006058 <ACR_reset+0x74>)
+ 800601c:	4a0e      	ldr	r2, [pc, #56]	; (8006058 <ACR_Reset+0x74>)
  800601e:	6013      	str	r3, [r2, #0]
 
 	Vd_ref = 0.0f;
- 8006020:	4b0e      	ldr	r3, [pc, #56]	; (800605c <ACR_reset+0x78>)
+ 8006020:	4b0e      	ldr	r3, [pc, #56]	; (800605c <ACR_Reset+0x78>)
  8006022:	f04f 0200 	mov.w	r2, #0
  8006026:	601a      	str	r2, [r3, #0]
 	Vq_ref = 0.0f;
- 8006028:	4b0d      	ldr	r3, [pc, #52]	; (8006060 <ACR_reset+0x7c>)
+ 8006028:	4b0d      	ldr	r3, [pc, #52]	; (8006060 <ACR_Reset+0x7c>)
  800602a:	f04f 0200 	mov.w	r2, #0
  800602e:	601a      	str	r2, [r3, #0]
 
@@ -15980,38 +15980,38 @@ inline void speedControl()
  80063a8:	200000c4 	.word	0x200000c4
  80063ac:	200000c8 	.word	0x200000c8
 
-080063b0 <ASR_reset>:
+080063b0 <ASR_Reset>:
 
 
 
-inline void ASR_reset()
+inline void ASR_Reset()
 {
  80063b0:	b480      	push	{r7}
  80063b2:	af00      	add	r7, sp, #0
 
 	p_theta = 0.0f;
- 80063b4:	4b0c      	ldr	r3, [pc, #48]	; (80063e8 <ASR_reset+0x38>)
+ 80063b4:	4b0c      	ldr	r3, [pc, #48]	; (80063e8 <ASR_Reset+0x38>)
  80063b6:	f04f 0200 	mov.w	r2, #0
  80063ba:	601a      	str	r2, [r3, #0]
 
 	omega_error_integ_temp1 = 0.0f;
- 80063bc:	4b0b      	ldr	r3, [pc, #44]	; (80063ec <ASR_reset+0x3c>)
+ 80063bc:	4b0b      	ldr	r3, [pc, #44]	; (80063ec <ASR_Reset+0x3c>)
  80063be:	f04f 0200 	mov.w	r2, #0
  80063c2:	601a      	str	r2, [r3, #0]
 	omega_error_integ_temp2 = 0.0f;
- 80063c4:	4b0a      	ldr	r3, [pc, #40]	; (80063f0 <ASR_reset+0x40>)
+ 80063c4:	4b0a      	ldr	r3, [pc, #40]	; (80063f0 <ASR_Reset+0x40>)
  80063c6:	f04f 0200 	mov.w	r2, #0
  80063ca:	601a      	str	r2, [r3, #0]
 
 	omega = omega_ref = 0.0f;
  80063cc:	f04f 0300 	mov.w	r3, #0
- 80063d0:	4a08      	ldr	r2, [pc, #32]	; (80063f4 <ASR_reset+0x44>)
+ 80063d0:	4a08      	ldr	r2, [pc, #32]	; (80063f4 <ASR_Reset+0x44>)
  80063d2:	6013      	str	r3, [r2, #0]
- 80063d4:	4a08      	ldr	r2, [pc, #32]	; (80063f8 <ASR_reset+0x48>)
+ 80063d4:	4a08      	ldr	r2, [pc, #32]	; (80063f8 <ASR_Reset+0x48>)
  80063d6:	6013      	str	r3, [r2, #0]
 
 	ASR_steps = 0;
- 80063d8:	4b08      	ldr	r3, [pc, #32]	; (80063fc <ASR_reset+0x4c>)
+ 80063d8:	4b08      	ldr	r3, [pc, #32]	; (80063fc <ASR_Reset+0x4c>)
  80063da:	2200      	movs	r2, #0
  80063dc:	601a      	str	r2, [r3, #0]
 
@@ -21764,10 +21764,10 @@ inline void timeoutReset()
  8008c1c:	4b06      	ldr	r3, [pc, #24]	; (8008c38 <timeoutReset+0x30>)
  8008c1e:	2200      	movs	r2, #0
  8008c20:	701a      	strb	r2, [r3, #0]
-		ASR_reset();
- 8008c22:	f7fd fbc5 	bl	80063b0 <ASR_reset>
-		ACR_reset();
- 8008c26:	f7fd f9dd 	bl	8005fe4 <ACR_reset>
+		ASR_Reset();
+ 8008c22:	f7fd fbc5 	bl	80063b0 <ASR_Reset>
+		ACR_Reset();
+ 8008c26:	f7fd f9dd 	bl	8005fe4 <ACR_Reset>
 		startPWM();
  8008c2a:	f7ff ff81 	bl	8008b30 <startPWM>
 	}

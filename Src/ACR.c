@@ -187,7 +187,7 @@ inline void currentControl(void)
 
 
 
-inline void ACR_reset()
+inline void ACR_Reset()
 {
 
 	Id_error_integ_temp1 = 0.0f;
