@@ -143,7 +143,7 @@ inline void currentControl(void)
 
 	if(HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin) == GPIO_PIN_RESET)
 	{
-		HAL_NVIC_SystemReset();
+		//HAL_NVIC_SystemReset();
 	}
 
 
