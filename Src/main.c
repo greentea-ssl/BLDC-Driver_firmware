@@ -336,6 +336,7 @@ int main(void)
   SPI_Init();
 
 
+  ACR_Start();
   ASR_Start();
 
 

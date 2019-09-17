@@ -13,6 +13,8 @@
 
 
 
+volatile uint8_t ACR_enable = 0;
+
 
 
 float Kp_ACR = 0.1;
@@ -54,6 +56,25 @@ volatile float Iq_error_integ_temp2 = 0.0f;
 
 
 
+void ACR_Start()
+{
+
+	ACR_enable = 1;
+	ACR_Reset();
+
+}
+
+
+void ACR_Stop()
+{
+
+	ACR_enable = 0;
+	ACR_Reset();
+
+}
+
+
+
 inline void currentControl(void)
 {
 
@@ -92,51 +113,52 @@ inline void currentControl(void)
 
 	/********** ACR (Auto Current Regulator) **********/
 
-#if _ACR_ENABLE_
+	if(ACR_enable)
+	{
 
-	if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
-	else if(Id_ref > Id_limit)	_Id_ref = Id_limit;
-	else						_Id_ref = Id_ref;
+		if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
+		else if(Id_ref > Id_limit)	_Id_ref = Id_limit;
+		else						_Id_ref = Id_ref;
 
-	if(Iq_ref < -Iq_limit)		_Iq_ref = -Iq_limit;
-	else if(Iq_ref > Iq_limit)	_Iq_ref = Iq_limit;
-	else						_Iq_ref = Iq_ref;
+		if(Iq_ref < -Iq_limit)		_Iq_ref = -Iq_limit;
+		else if(Iq_ref > Iq_limit)	_Iq_ref = Iq_limit;
+		else						_Iq_ref = Iq_ref;
 
 
 #if 0
-	if(forced_commute_state > 0)
-	{
-		Id_error = forced_I_gamma_ref - Id;
-		Iq_error = forced_I_delta_ref - Iq;
-	}
-	else
-	{
+		if(forced_commute_state > 0)
+		{
+			Id_error = forced_I_gamma_ref - Id;
+			Iq_error = forced_I_delta_ref - Iq;
+		}
+		else
+		{
 #endif
-		Id_error = _Id_ref - Id;
-		Iq_error = _Iq_ref - Iq;
+			Id_error = _Id_ref - Id;
+			Iq_error = _Iq_ref - Iq;
 #if 0
+		}
+#endif
+
+
+		// integral
+		Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
+		if(Id_error_integ_temp1 < -1000000.0) Id_error_integ_temp1 = -1000000.0;
+		else if(Id_error_integ_temp1 > 1000000.0) Id_error_integ_temp1 = 1000000.0;
+		Id_error_integ = ACR_cycleTime * 0.5f * (Id_error_integ_temp1 + Id_error_integ_temp2);
+		Id_error_integ_temp2 = Id_error_integ_temp1;
+
+		Iq_error_integ_temp1 = Iq_error + Iq_error_integ_temp2;
+		if(Iq_error_integ_temp1 < -1000000.0) Iq_error_integ_temp1 = -1000000.0;
+		else if(Iq_error_integ_temp1 > 1000000.0) Iq_error_integ_temp1 = 1000000.0;
+		Iq_error_integ = ACR_cycleTime * 0.5f * (Iq_error_integ_temp1 + Iq_error_integ_temp2);
+		Iq_error_integ_temp2 = Iq_error_integ_temp1;
+
+
+		Vd_ref = Kp_ACR * Id_error + Ki_ACR * Id_error_integ;
+		Vq_ref = Kp_ACR * Iq_error + Ki_ACR * Iq_error_integ;
+
 	}
-#endif
-
-
-	// integral
-	Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
-	if(Id_error_integ_temp1 < -1000000.0) Id_error_integ_temp1 = -1000000.0;
-	else if(Id_error_integ_temp1 > 1000000.0) Id_error_integ_temp1 = 1000000.0;
-	Id_error_integ = ACR_cycleTime * 0.5f * (Id_error_integ_temp1 + Id_error_integ_temp2);
-	Id_error_integ_temp2 = Id_error_integ_temp1;
-
-	Iq_error_integ_temp1 = Iq_error + Iq_error_integ_temp2;
-	if(Iq_error_integ_temp1 < -1000000.0) Iq_error_integ_temp1 = -1000000.0;
-	else if(Iq_error_integ_temp1 > 1000000.0) Iq_error_integ_temp1 = 1000000.0;
-	Iq_error_integ = ACR_cycleTime * 0.5f * (Iq_error_integ_temp1 + Iq_error_integ_temp2);
-	Iq_error_integ_temp2 = Iq_error_integ_temp1;
-
-
-	Vd_ref = Kp_ACR * Id_error + Ki_ACR * Id_error_integ;
-	Vq_ref = Kp_ACR * Iq_error + Ki_ACR * Iq_error_integ;
-
-#endif
 
 	/********* end of ACR **********/
 
