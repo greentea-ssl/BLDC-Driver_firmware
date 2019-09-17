@@ -10,6 +10,7 @@
 
 
 
+volatile uint8_t ASR_enable = 0;
 
 
 float Kp_ASR = 0.3;
@@ -53,6 +54,22 @@ float omega_error_integ_temp2 = 0.0f;
 
 
 
+void ASR_Start()
+{
+
+	ASR_enable = 1;
+	ASR_Reset();
+
+}
+
+void ASR_Stop()
+{
+
+	ASR_enable = 0;
+	ASR_Reset();
+
+}
+
 
 
 inline void speedControl()
@@ -78,36 +95,36 @@ inline void speedControl()
 	  omega = omega * 0.5 + 0.5 * d_theta / ASR_cycleTime;
 
 
-#if _ASR_ENABLE_
-
-
-	  if(omega_ref < -omega_limit)		_omega_ref = -omega_limit;
-	  else if(omega_ref > omega_limit)	_omega_ref = omega_limit;
-	  else								_omega_ref = omega_ref;
-
-	  omega_error = _omega_ref - omega;
-
-	  // integral
-	  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
-	  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
+	  if(ASR_enable)
 	  {
-		  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
+
+		  if(omega_ref < -omega_limit)		_omega_ref = -omega_limit;
+		  else if(omega_ref > omega_limit)	_omega_ref = omega_limit;
+		  else								_omega_ref = omega_ref;
+
+		  omega_error = _omega_ref - omega;
+
+		  // integral
+		  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
+		  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
+		  {
+			  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
+		  }
+		  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
+		  {
+			  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
+		  }
+		  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
+		  omega_error_integ_temp2 = omega_error_integ_temp1;
+
+
+		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
+
+		  Id_ref = 0.0f;
+		  Iq_ref = KT * torque_ref;
+
+
 	  }
-	  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
-	  {
-		  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
-	  }
-	  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
-	  omega_error_integ_temp2 = omega_error_integ_temp1;
-
-
-	  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
-
-	  Id_ref = 0.0f;
-	  Iq_ref = KT * torque_ref;
-
-
-#endif
 
 
 

@@ -231,7 +231,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	can1RxFlg = 1;
 
-#if _ASR_ENABLE_ && !_APR_ENABLE_
 	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x01 && can1RxHeader.DLC == 0x4)
 	{
 		controlRef.byte[0] = can1RxData[0];
@@ -244,7 +243,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		timeoutReset();
 
 	}
-#endif
 
 #if _APR_ENABLE_
 	if(can1RxHeader.StdId == 0x008 && can1RxHeader.DLC == 0x4)

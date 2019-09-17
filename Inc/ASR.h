@@ -5,10 +5,6 @@
 
 
 
-#define _ASR_ENABLE_		1
-
-
-
 extern volatile float omega_ref;
 
 
@@ -27,6 +23,10 @@ extern int ASR_prescalerCount;
 
 #define ASR_prescale	10
 
+
+void ASR_Start();
+
+void ASR_Stop();
 
 
 void speedControl();

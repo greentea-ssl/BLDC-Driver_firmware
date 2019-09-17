@@ -336,7 +336,7 @@ int main(void)
   SPI_Init();
 
 
-
+  ASR_Start();
 
 
   /* USER CODE END 2 */
