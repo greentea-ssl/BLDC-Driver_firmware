@@ -10,6 +10,8 @@
 #include "adc.h"
 #include "spi.h"
 #include "modulator.h"
+#include "parameters.h"
+#include "sin_t.h"
 
 
 
@@ -56,6 +58,12 @@ volatile float Iq_error_integ_temp2 = 0.0f;
 
 
 
+volatile float forced_theta = 0.0f;
+
+volatile float forced_theta_re = 0.0f;
+
+
+
 void ACR_Start()
 {
 
@@ -82,15 +90,11 @@ inline void currentControl(void)
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
 
-	refreshEncoder();
 
 
-#if 0
-	// calculate sin(theta_re), cos(theta_re)
-	if(forced_commute_state > 0)
+	if(forced_commute_enable)
 	{
-
-		_forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
+		float _forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
 
 		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
 		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
@@ -99,8 +103,10 @@ inline void currentControl(void)
 		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
 		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
 	}
-#endif
-
+	else
+	{
+		refreshEncoder();
+	}
 
 	get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
 
@@ -125,20 +131,8 @@ inline void currentControl(void)
 		else						_Iq_ref = Iq_ref;
 
 
-#if 0
-		if(forced_commute_state > 0)
-		{
-			Id_error = forced_I_gamma_ref - Id;
-			Iq_error = forced_I_delta_ref - Iq;
-		}
-		else
-		{
-#endif
-			Id_error = _Id_ref - Id;
-			Iq_error = _Iq_ref - Iq;
-#if 0
-		}
-#endif
+		Id_error = _Id_ref - Id;
+		Iq_error = _Iq_ref - Iq;
 
 
 		// integral
@@ -189,7 +183,10 @@ inline void currentControl(void)
 
 
 
-	requestEncoder();
+	if(!forced_commute_enable)
+	{
+		requestEncoder();
+	}
 
 
 	// Auto Speed Regulator launching

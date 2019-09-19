@@ -15,6 +15,14 @@ extern volatile float Id;
 extern volatile float Iq;
 
 
+
+extern volatile float forced_theta;
+
+extern volatile float forced_theta_re;
+
+
+
+
 void ACR_Start();
 
 void ACR_Stop();

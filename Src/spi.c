@@ -24,6 +24,9 @@
 
 #include "parameters.h"
 #include "sin_t.h"
+#include "ACR.h"
+#include "math.h"
+#include "tim.h"
 
 
 // Sensing Data
@@ -32,7 +35,7 @@ volatile uint8_t spi2rxBuf[2] = {0};
 
 float theta_offset = 0.0f;
 
-float theta_re_offset = -3.0723f;
+float theta_re_offset = 0.0f; //-3.0723f;
 
 
 // Rotor rotation angle
@@ -51,6 +54,8 @@ volatile float sin_theta_re = 0.0;
 uint16_t angle_raw = 0;
 
 
+
+volatile uint8_t forced_commute_enable = 0;
 
 
 
@@ -259,6 +264,152 @@ void SPI_Init()
 
 }
 
+
+
+void setZeroEncoder()
+{
+
+	const int32_t forced_commute_steps = 2000;
+
+
+
+	volatile uint32_t forced_commute_count = 0;
+
+	const float forced_I_gamma_ref = 8.0f;
+	const float forced_I_delta_ref = 0.0f;
+
+	volatile float sensed_theta_re_error;
+
+	volatile float sensed_theta_error;
+	volatile float sensed_theta_error_sum = 0.0f;
+	volatile float sensed_theta_error_ave = 0.0f;
+
+
+	Id_ref = forced_I_gamma_ref;
+	Iq_ref = forced_I_delta_ref;
+
+	forced_commute_enable = 1;
+
+
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+
+	requestEncoder();
+	HAL_Delay(5);
+	refreshEncoder();
+	HAL_Delay(5);
+	requestEncoder();
+	HAL_Delay(5);
+	refreshEncoder();
+	theta_re_offset = 0.0f - theta_re;
+
+	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
+	while(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
+
+
+	printf(" theta_re_offset = %d -- ", (int)(theta_re_offset * 100000));
+	printf(" theta_re_offset = %d\n", (int)(theta_re_offset * 100000));
+
+	ACR_Reset();
+
+	forced_commute_enable = 0;
+
+
+#if 0
+
+	requestEncoder();
+
+	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
+	{
+		HAL_Delay(1);
+		timeoutReset();
+		refreshEncoder();
+		sensed_theta_error = forced_theta - theta;
+		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
+		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
+		sensed_theta_error_sum += sensed_theta_error;
+		forced_theta = forced_commute_count * 2.0f * M_PI / forced_commute_steps;
+		forced_commute_count += 1;
+
+		requestEncoder();
+	}
+
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+
+	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
+	{
+		HAL_Delay(1);
+		timeoutReset();
+		refreshEncoder();
+		sensed_theta_error = forced_theta - theta;
+		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
+		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
+		sensed_theta_error_sum += sensed_theta_error;
+		forced_theta = (forced_commute_steps - forced_commute_count - 1) * 2.0f * M_PI / forced_commute_steps;
+		forced_commute_count += 1;
+
+		requestEncoder();
+	}
+
+
+	theta_offset = sensed_theta_error_sum * 0.5f / forced_commute_steps;
+
+	theta_re_offset = fmod(theta_offset * POLES / 2, 2.0f * M_PI);
+	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
+	while(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
+
+	printf("theta_offset = %d\n", (int)(theta_offset * 100000));
+
+	sensed_theta_error_sum = 0.0f;
+
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+	timeoutReset();	HAL_Delay(100);
+
+	requestEncoder();
+
+	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
+	{
+		HAL_Delay(1);
+		timeoutReset();
+		refreshEncoder();
+		sensed_theta_error = forced_theta - theta;
+		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
+		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
+		sensed_theta_error_sum += sensed_theta_error;
+		forced_theta = forced_commute_count * 2.0f * M_PI / forced_commute_steps;
+		forced_commute_count += 1;
+
+		requestEncoder();
+	}
+
+	sensed_theta_error_ave = sensed_theta_error_sum * 1.0f / forced_commute_steps;
+
+	printf("error_ave = %d\n", (int)(sensed_theta_error_ave * 100000));
+
+
+	ACR_Reset();
+
+	forced_commute_enable = 0;
+
+
+#endif
+
+
+}
+
+
+
+
 inline void requestEncoder()
 {
 
@@ -275,6 +426,7 @@ inline void requestEncoder()
 
 inline int refreshEncoder()
 {
+
 	uint16_t angle_raw = 0;
 	float _theta;
 	float _theta_re;

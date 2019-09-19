@@ -114,28 +114,6 @@ int ASR_dump_count = 0;
 
 /********** Forced commutation **********/
 
-volatile uint8_t forced_commute_state = 0;
-
-volatile float forced_theta = 0.0f;
-
-volatile float _forced_theta_re = 0.0f;
-volatile float forced_theta_re = 0.0f;
-
-#define FORCED_COMMUTE_STEPS	2000
-
-volatile uint32_t forced_commute_count = 0;
-
-const float forced_I_gamma_ref = 5.0f;
-const float forced_I_delta_ref = 0.0f;
-
-
-volatile float sensed_theta_error;
-volatile float sensed_theta_error_sum = 0.0f;
-
-
-volatile float sensedTheta_f[FORCED_COMMUTE_STEPS] = {0.0f};
-volatile float sensedTheta_b[FORCED_COMMUTE_STEPS] = {0.0f};
-
 
 
 #define _FC_DUMP_	0
@@ -337,7 +315,16 @@ int main(void)
 
 
   ACR_Start();
+
+
+  setZeroEncoder();
+
+  ACR_Start();
+
+  //while(1);
+
   ASR_Start();
+
 
 
   /* USER CODE END 2 */
@@ -356,85 +343,6 @@ int main(void)
 		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
 
 
-		  if(forced_commute_state > 0)
-		  {
-
-			  switch(forced_commute_state)
-			  {
-			  case 1:
-				  if(forced_commute_count < 500)
-					  forced_commute_count += 1;
-				  else
-				  {
-					  forced_commute_count = 0;
-					  forced_commute_state = 2;
-				  }
-				  break;
-
-			  case 2:
-				  if(forced_commute_count < FORCED_COMMUTE_STEPS)
-				  {
-#if _FC_DUMP_
-					  sensedTheta_f[forced_commute_count] = theta;
-#endif
-					  sensed_theta_error = forced_theta - theta;
-					  if(sensed_theta_error < -M_PI)		sensed_theta_error += 2.0f * M_PI;
-					  else if(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
-					  sensed_theta_error_sum += sensed_theta_error;
-					  forced_theta = forced_commute_count * 2.0f * M_PI / FORCED_COMMUTE_STEPS;
-					  forced_commute_count += 1;
-				  }
-				  else
-				  {
-					  forced_commute_count = 0;
-					  forced_commute_state = 3;
-					  break;
-				  }
-				  break;
-
-			  case 3:
-				  if(forced_commute_count < 500)
-					  forced_commute_count += 1;
-				  else
-				  {
-					  forced_commute_count = 0;
-					  forced_commute_state = 4;
-				  }
-				  break;
-
-			  case 4:
-				  if(forced_commute_count < FORCED_COMMUTE_STEPS)
-				  {
-#if _FC_DUMP_
-					  sensedTheta_b[FORCED_COMMUTE_STEPS - forced_commute_count - 1] = theta;
-#endif
-					  sensed_theta_error = forced_theta - theta;
-					  if(sensed_theta_error < -M_PI)		sensed_theta_error += 2.0f * M_PI;
-					  else if(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
-					  sensed_theta_error_sum += sensed_theta_error;
-					  forced_theta = (FORCED_COMMUTE_STEPS - forced_commute_count - 1) * 2.0f * M_PI / FORCED_COMMUTE_STEPS;
-					  forced_commute_count += 1;
-				  }
-				  else
-				  {
-					  theta_re_offset = fmod(sensed_theta_error_sum * 0.5f / FORCED_COMMUTE_STEPS * POLES / 2, 2.0f * M_PI);
-					  if(theta_re_offset < -M_PI)		theta_re_offset += 2.0f * M_PI;
-					  else if(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
-					  forced_commute_count = 0;
-					  forced_commute_state = 0;
-					  break;
-				  }
-				  break;
-
-			  default:
-
-				  break;
-			  }
-
-
-
-
-		  }
 #if _FC_DUMP_
 		  else
 		  {
@@ -602,7 +510,7 @@ int main(void)
 
 #if _ASR_DUMP_
 
-  printf("time[s], ω[rad/s], ??????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?*[rad/s], Torque*[N・m]\n");
+  printf("time[s], ω[rad/s], ???????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��??????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?*[rad/s], Torque*[N・m]\n");
 
   for(count = 0; count < ASR_DUMP_STEPS; count++)
   {

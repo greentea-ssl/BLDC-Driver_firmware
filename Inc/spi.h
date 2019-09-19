@@ -46,6 +46,9 @@ extern volatile float cos_theta_re;
 extern volatile float sin_theta_re;
 
 
+extern volatile uint8_t forced_commute_enable;
+
+
 
 /* USER CODE END Private defines */
 
