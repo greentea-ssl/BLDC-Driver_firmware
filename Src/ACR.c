@@ -103,24 +103,26 @@ inline void currentControl(void)
 		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
 		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
 	}
-	else
-	{
-		refreshEncoder();
-	}
 
-	get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
-
-
-	if(theta_re < M_PI)
-		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
-	else
-		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
 
 
 	/********** ACR (Auto Current Regulator) **********/
 
 	if(ACR_enable)
 	{
+
+		refreshEncoder();
+
+		get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
+
+
+		if(theta_re < M_PI)
+			HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
+		else
+			HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
+
+
+
 
 		if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
 		else if(Id_ref > Id_limit)	_Id_ref = Id_limit;

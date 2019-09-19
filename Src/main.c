@@ -37,6 +37,8 @@
 #include "parameters.h"
 #include "ACR.h"
 #include "ASR.h"
+#include "modulator.h"
+#include "sin_t.h"
 
 /* USER CODE END Includes */
 
@@ -221,6 +223,7 @@ int main(void)
 
 	int count = 0;
 
+	volatile float forced_theta_re = 0.0f;
 
 	/********** for ASR ***********/
 
@@ -313,19 +316,49 @@ int main(void)
 
   SPI_Init();
 
+  startPWM();
 
-  ACR_Start();
+  Vd_ref = 1.0f;
+  Vq_ref = 0;
+
+  for(count = 0; count < POLES / 2; count++)
+  {
+	  for(forced_theta_re = 0.0f; forced_theta_re < 2 * M_PI; forced_theta_re += 0.05)
+	  {
+		  HAL_Delay(1);
+		  cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		  sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
+		  setSVM_dq();
+	  }
+  }
+
+  for(count = 0; count < POLES / 2; count++)
+	{
+	  for(forced_theta_re = 2 * M_PI; forced_theta_re > 0.0f; forced_theta_re -= 0.05)
+	  {
+		  HAL_Delay(1);
+		  cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		  sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
+		  setSVM_dq();
+	  }
+	}
 
 
-  setZeroEncoder();
+  stopPWM();
 
-  ACR_Start();
+
+
+
+  //ACR_Start();
+
+
+  //setZeroEncoder();
+
+  //ACR_Start();
 
   //while(1);
 
-  ASR_Start();
-
-
+  //ASR_Start();
 
   /* USER CODE END 2 */
 

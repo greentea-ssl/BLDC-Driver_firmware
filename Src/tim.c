@@ -26,6 +26,9 @@
 #include "ASR.h"
 
 
+#define _USE_TIMEOUT_ 0
+
+
 
 volatile float amp_u = 0.0;
 volatile float amp_v = 0.0;
@@ -275,7 +278,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 			}
 			else
 			{
+#if _USE_TIMEOUT_
 				stopPWM();
+#endif
 				timeoutCount = 0;
 				timeoutState = 1;
 			}
