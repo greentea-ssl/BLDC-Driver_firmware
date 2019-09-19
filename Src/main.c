@@ -218,8 +218,6 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-	const char date[] = __DATE__ ;
-	const char time[] = __TIME__ ;
 
 
 	int count = 0;
@@ -270,7 +268,6 @@ int main(void)
 
   printf("Hello\n");
 
-  printf("compiled at %c, %c\n", date, time);
 
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
@@ -319,6 +316,10 @@ int main(void)
 
   CAN_Init();
 
+
+  HAL_Delay(100);
+
+
   TIM_Init();
 
   SPI_Init();
@@ -330,7 +331,7 @@ int main(void)
 
 
 
-  while(1);
+  //while(1);
 
   ASR_Start();
 
