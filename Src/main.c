@@ -218,9 +218,13 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+	const char date[] = __DATE__ ;
+	const char time[] = __TIME__ ;
+
 
 	int count = 0;
 
+	uint8_t p_ch, ch;
 
 	/********** for ASR ***********/
 
@@ -260,17 +264,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-  ADC_Init();
-
-  /********** CAN Setting **********/
-
-
-  CAN_Init();
 
 
   //UartPrintf(&huart2, "Hello world\n");
 
   printf("Hello\n");
+
+  printf("compiled at %c, %c\n", date, time);
 
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
@@ -289,6 +289,9 @@ int main(void)
   HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
 
 
+  p_ch = getChannel();
+
+
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
 
@@ -308,6 +311,13 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
 
 
+  ch = getChannel();
+
+
+
+  ADC_Init();
+
+  CAN_Init();
 
   TIM_Init();
 
@@ -316,12 +326,11 @@ int main(void)
 
   ACR_Start();
 
+  setZeroEncoder((p_ch != ch)? 1: 0);
 
-  setZeroEncoder();
 
-  ACR_Start();
 
-  //while(1);
+  while(1);
 
   ASR_Start();
 
