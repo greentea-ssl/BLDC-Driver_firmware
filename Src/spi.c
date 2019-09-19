@@ -27,6 +27,8 @@
 #include "ACR.h"
 #include "math.h"
 #include "tim.h"
+#include "flash.h"
+
 
 
 // Sensing Data
@@ -49,6 +51,7 @@ volatile float cos_theta_re = 1.0;
 volatile float sin_theta_re = 0.0;
 
 
+uint32_t *flash_data;
 
 
 uint16_t angle_raw = 0;
@@ -266,7 +269,7 @@ void SPI_Init()
 
 
 
-void setZeroEncoder()
+void setZeroEncoder(uint8_t exe)
 {
 
 	const int32_t forced_commute_steps = 2000;
@@ -283,6 +286,19 @@ void setZeroEncoder()
 	volatile float sensed_theta_error;
 	volatile float sensed_theta_error_sum = 0.0f;
 	volatile float sensed_theta_error_ave = 0.0f;
+
+
+	flash_data = (uint32_t*)Flash_load();
+
+	if(exe == 0)
+	{
+
+		memcpy(&theta_re_offset, flash_data, 4);
+
+		printf("flash_data:%d\n", theta_re_offset * 100000);
+		printf(" theta_re_offset = %d\n", (int)(theta_re_offset * 100000));
+		return;
+	}
 
 
 	Id_ref = forced_I_gamma_ref;
@@ -304,6 +320,7 @@ void setZeroEncoder()
 	requestEncoder();
 	HAL_Delay(5);
 	refreshEncoder();
+
 	theta_re_offset = 0.0f - theta_re;
 
 	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
@@ -311,7 +328,29 @@ void setZeroEncoder()
 
 
 	printf(" theta_re_offset = %d -- ", (int)(theta_re_offset * 100000));
+	HAL_Delay(1);
 	printf(" theta_re_offset = %d\n", (int)(theta_re_offset * 100000));
+	HAL_Delay(1);
+	printf(" theta_re_offset(4) = %d -- ", (int)(theta_re_offset * 10000));
+	HAL_Delay(1);
+	printf(" theta_re_offset(4) = %d\n", (int)(theta_re_offset * 10000));
+	HAL_Delay(1);
+
+	printf("(theta_re_offset < 1.0f) = %d\n", (int)(theta_re_offset < 1.0f));
+
+	printf("(theta_re_offset > -1.0f) = %d\n", (int)(theta_re_offset > -1.0f));
+
+
+	memcpy(flash_data, &theta_re_offset, 4);
+
+	if (!Flash_store())
+	{
+		printf("Failed to write flash\n");
+	}
+
+	printf("flash_data:%lu\n", *flash_data);
+
+
 
 	ACR_Reset();
 
