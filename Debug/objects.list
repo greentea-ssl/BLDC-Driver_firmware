@@ -28,6 +28,7 @@
 "Src/main.o"
 "Src/modulator.o"
 "Src/sin_t.o"
+"Src/sound.o"
 "Src/spi.o"
 "Src/stm32f4xx_hal_msp.o"
 "Src/stm32f4xx_it.o"
