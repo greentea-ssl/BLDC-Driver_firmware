@@ -218,6 +218,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+	float phase = 0.0f;
 
 
 	int count = 0;
@@ -314,7 +315,7 @@ int main(void)
 
   ADC_Init();
 
-  CAN_Init();
+  //CAN_Init();
 
 
   HAL_Delay(100);
@@ -351,6 +352,19 @@ int main(void)
 	  if(ASR_flg == 1)
 	  {
 		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
+
+
+		  omega_ref = 50.0 * sin(phase);
+
+		  phase += 1E-3 * 2 * M_PI * 0.2;
+
+		  if(phase > 2 * M_PI)
+		  {
+			  phase -= 2 * M_PI;
+		  }
+
+
+
 
 
 #if _FC_DUMP_

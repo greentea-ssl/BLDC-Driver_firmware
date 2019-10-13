@@ -268,6 +268,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 			currentControl();
 
+#if 0
 			// timeout control
 			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
 			{
@@ -279,6 +280,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 				timeoutCount = 0;
 				timeoutState = 1;
 			}
+#endif
 
 		}
 
