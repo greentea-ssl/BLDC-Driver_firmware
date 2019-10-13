@@ -12,7 +12,7 @@
 #include "modulator.h"
 #include "parameters.h"
 #include "sin_t.h"
-
+#include "sound.h"
 
 
 volatile uint8_t ACR_enable = 0;
@@ -61,6 +61,9 @@ volatile float Iq_error_integ_temp2 = 0.0f;
 volatile float forced_theta = 0.0f;
 
 volatile float forced_theta_re = 0.0f;
+
+
+int soundCount = 0;
 
 
 
@@ -117,9 +120,10 @@ inline void currentControl(void)
 		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
 
 
+
 	/********** ACR (Auto Current Regulator) **********/
 
-	if(ACR_enable)
+	if(ACR_enable /*&& soundCount == -1*/)
 	{
 
 		if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
@@ -153,6 +157,12 @@ inline void currentControl(void)
 		Vq_ref = Kp_ACR * Iq_error + Ki_ACR * Iq_error_integ;
 
 	}
+
+	if(soundCount < 66641)
+	{
+		Vq_ref += soSound[soundCount++] / 127.0f * 3.0;
+	}
+
 
 	/********* end of ACR **********/
 
