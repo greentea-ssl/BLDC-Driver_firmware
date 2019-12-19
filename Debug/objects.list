@@ -20,6 +20,7 @@
 "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o"
 "Src/ACR.o"
 "Src/ASR.o"
+"Src/DRV8323.o"
 "Src/adc.o"
 "Src/can.o"
 "Src/dma.o"

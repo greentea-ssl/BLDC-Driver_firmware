@@ -37,6 +37,7 @@
 #include "parameters.h"
 #include "ACR.h"
 #include "ASR.h"
+#include "DRV8323.h"
 
 /* USER CODE END Includes */
 
@@ -219,13 +220,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 
-	uint16_t spi3txData;
-	uint16_t spi3rxData;
-
-	uint8_t spi3txBuf[2];
-	uint8_t spi3rxBuf[2];
-
-
 	int count = 0;
 
 	uint8_t p_ch, ch;
@@ -267,6 +261,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  DRV_Init();
 
 
 
@@ -282,29 +277,22 @@ int main(void)
 
   printf("Hello SPI Gate Driver\n");
 
+  DRV_ReadData(&drv8323, 0x05);
 
-  HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_SET);
-
-  HAL_Delay(1);
-
-  spi3txData = 0x8000 | (0x06 << 11);
-
-  spi3txBuf[1] = spi3txData & 0xff;
-  spi3txBuf[0] = spi3txData >> 8;
-
-  HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_RESET);
-
-  HAL_SPI_TransmitReceive(&hspi3, spi3txBuf, spi3rxBuf, 2, 1);
-
-  HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_SET);
+  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
+  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
 
 
-  spi3rxData = (spi3rxBuf[0] << 8) | spi3rxBuf[1];
+  DRV_WriteData(&drv8323, 0x05, 0b01110110111);
 
-  printf("txData: 0x%04x\n", spi3txData);
-  printf("rxData: 0x%04x\n", spi3rxData);
+  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
+  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
 
 
+  DRV_ReadData(&drv8323, 0x05);
+
+  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
+  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
 
 
   while(1);
