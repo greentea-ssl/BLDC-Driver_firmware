@@ -18,13 +18,13 @@ void DRV_Init()
 }
 
 
-void DRV_WriteData(DRV_TypeDef *hdrv, uint8_t addr, uint16_t data)
+void DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB
-	hdrv->txBuf[0] = (addr << 3) | (data >> 8);
+	hdrv->txBuf[0] = (addr << 3) | (hdrv->Reg.words[addr] >> 8);
 	// LSB
-	hdrv->txBuf[1] = data & 0xff;
+	hdrv->txBuf[1] = hdrv->Reg.words[addr] & 0xff;
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_RESET);
 
@@ -36,7 +36,7 @@ void DRV_WriteData(DRV_TypeDef *hdrv, uint8_t addr, uint16_t data)
 
 
 
-void DRV_ReadData(DRV_TypeDef *hdrv, uint8_t addr)
+void DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB
@@ -50,11 +50,13 @@ void DRV_ReadData(DRV_TypeDef *hdrv, uint8_t addr)
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_SET);
 
+	hdrv->Reg.words[addr] = (hdrv->rxBuf[0] << 8) | hdrv->rxBuf[1];
+
 	HAL_Delay(1);
 
 }
 
-void DRV_ReadData_IT(DRV_TypeDef *hdrv, uint8_t addr)
+void DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB

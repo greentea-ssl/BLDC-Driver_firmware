@@ -50,7 +50,7 @@
 /* USER CODE BEGIN PD */
 
 
-
+#define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
 
 
 
@@ -277,26 +277,16 @@ int main(void)
 
   printf("Hello SPI Gate Driver\n");
 
-  DRV_ReadData(&drv8323, 0x05);
 
-  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
-  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
+  DRV_ReadData(&drv8323, ADDR_OCP_Control);
 
-
-  DRV_WriteData(&drv8323, 0x05, 0b01110110111);
-
-  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
-  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
-
-
-  DRV_ReadData(&drv8323, 0x05);
-
-  printf("txData: 0x%04x\n", (drv8323.txBuf[0] << 8) | drv8323.txBuf[1]);
-  printf("rxData: 0x%04x\n", (drv8323.rxBuf[0] << 8) | drv8323.rxBuf[1]);
-
-
-  while(1);
-
+  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+  PRINT_HEX(drv8323.Reg.DriverControl.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+  PRINT_HEX(drv8323.Reg.OCP_Control.word);
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
 
 
   // Current Sensing Auto Offset Calibration
