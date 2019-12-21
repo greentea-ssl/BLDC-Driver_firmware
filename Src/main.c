@@ -280,6 +280,20 @@ int main(void)
 
   DRV_ReadData(&drv8323, ADDR_OCP_Control);
 
+  drv8323.Reg.OCP_Control.DEAD_TIME = 0b11;
+  drv8323.Reg.OCP_Control.OCP_MODE = 0b00;
+  drv8323.Reg.OCP_Control.VDS_LVL = 0b0100;
+
+  DRV_WriteData(&drv8323, ADDR_OCP_Control);
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+  drv8323.Reg.CSA_Control.SEN_LVL = 0b00;
+
+  DRV_WriteData(&drv8323, ADDR_CSA_Control);
+
+
   PRINT_HEX(drv8323.Reg.FaultStatus1.word);
   PRINT_HEX(drv8323.Reg.FaultStatus2.word);
   PRINT_HEX(drv8323.Reg.DriverControl.word);
@@ -296,6 +310,10 @@ int main(void)
 
 
   /******** DEBUG ********/
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
 
   HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 
@@ -324,7 +342,7 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
 
 
-  ch = getChannel();
+  ch = 0x00; //getChannel();
 
 
 
@@ -340,10 +358,9 @@ int main(void)
 
   SPI_Init();
 
-
   ACR_Start();
 
-  setZeroEncoder((p_ch != ch)? 1: 0);
+  setZeroEncoder(0);
 
 
 
@@ -351,6 +368,13 @@ int main(void)
 
   ASR_Start();
 
+
+  DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+
+
+  DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
 
 
   /* USER CODE END 2 */
@@ -363,10 +387,29 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  static int readFlag = 0;
 
 	  if(ASR_flg == 1)
 	  {
 		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
+
+
+		  if(HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin) == GPIO_PIN_RESET)
+		  {
+			  break;
+		  }
+
+		  if(readFlag != 1)
+		  {
+			  DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+			  readFlag = 1;
+		  }
+		  else
+		  {
+			  DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+			  readFlag = 0;
+		  }
+
 
 
 #if _FC_DUMP_
@@ -557,7 +600,7 @@ int main(void)
 #endif
 
 
-
+  while(1);
 
   /* USER CODE END 3 */
 }

@@ -26,8 +26,8 @@ const float ACR_cycleTime = 100E-6;
 
 
 
-float Id_limit = 15.0f;
-float Iq_limit = 15.0f;
+float Id_limit = 10.0f;
+float Iq_limit = 10.0f;
 
 
 volatile float Id_ref = 0.0f;
@@ -158,11 +158,12 @@ inline void currentControl(void)
 
 	}
 
+	/*
 	if(soundCount < 66641)
 	{
 		Vq_ref += soSound[soundCount++] / 127.0f * 3.0;
 	}
-
+*/
 
 	/********* end of ACR **********/
 

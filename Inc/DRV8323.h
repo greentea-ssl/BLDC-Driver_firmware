@@ -80,7 +80,7 @@ typedef union{
 		unsigned VDS_LVL		:4;
 		unsigned OCP_DEG		:2;
 		unsigned OCP_MODE		:2;
-		unsigned OCP_TIME		:2;
+		unsigned DEAD_TIME		:2;
 		unsigned TRETRY			:1;
 	};
 	uint16_t word;

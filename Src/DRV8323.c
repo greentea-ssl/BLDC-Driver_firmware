@@ -52,8 +52,6 @@ void DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr)
 
 	hdrv->Reg.words[addr] = (hdrv->rxBuf[0] << 8) | hdrv->rxBuf[1];
 
-	HAL_Delay(1);
-
 }
 
 void DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr)

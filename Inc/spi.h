@@ -59,6 +59,8 @@ void MX_SPI3_Init(void);
 
 void SPI_Init();
 
+void setZeroEncoder(uint8_t exe);
+
 void requestEncoder();
 
 int refreshEncoder();

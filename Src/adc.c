@@ -45,7 +45,7 @@ float V_Iv_offset = 1.67578125f;
 float V_Iw_offset = 1.67819822f;
 
 
-const float Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
+const float Gain_currentSense = -5.0f; // 1 / ( R * OPAmpGain) [A / V]
 
 const float Gain_Vdc_sense = 12.538f;
 
