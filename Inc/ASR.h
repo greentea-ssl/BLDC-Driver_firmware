@@ -15,6 +15,7 @@ extern volatile float omega_error_integ;
 extern volatile float torque_ref;
 
 
+extern volatile float coggingIq;
 
 
 extern int ASR_flg;

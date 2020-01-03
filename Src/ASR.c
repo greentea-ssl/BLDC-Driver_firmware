@@ -31,6 +31,7 @@ volatile float omega_error_integ = 0.0f;
 
 volatile float torque_ref = 0.0;
 
+volatile float coggingIq = 0.0f;
 
 
 int ASR_steps = 0;
@@ -121,7 +122,7 @@ inline void speedControl()
 		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
 
 		  Id_ref = 0.0f;
-		  Iq_ref = KT * torque_ref;
+		  Iq_ref = KT * torque_ref + coggingIq;
 
 
 	  }

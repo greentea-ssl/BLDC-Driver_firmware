@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -56,7 +56,7 @@ void MX_TIM8_Init(void)
   htim8.Init.Period = 8000;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
   {
     Error_Handler();
@@ -215,6 +215,10 @@ void TIM_Init()
 	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_BREAK);*/
 	  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
 	  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
+
+
+	  HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
+	  //HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
 
 
 	  startPWM();

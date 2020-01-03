@@ -158,10 +158,12 @@ inline void currentControl(void)
 
 	}
 
+	/*
 	if(soundCount < 66641)
 	{
 		Vq_ref += soSound[soundCount++] / 127.0f * 3.0;
 	}
+	*/
 
 
 	/********* end of ACR **********/

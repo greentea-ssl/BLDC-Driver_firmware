@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -28,7 +28,7 @@ const float Vref_AD = 3.3f;
 
 const int32_t AD_Range = 4096;
 
-volatile uint16_t AD_Iu[2] = {0};
+volatile uint16_t AD_Iu[1] = {0};
 volatile uint16_t AD_Iv[1] = {0};
 volatile uint16_t AD_Iw[1] = {0};
 
@@ -89,15 +89,15 @@ void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_FALLING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T8_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -106,7 +106,7 @@ void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -126,7 +126,7 @@ void MX_ADC2_Init(void)
   hadc2.Init.ScanConvMode = DISABLE;
   hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_FALLING;
   hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T8_TRGO;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.NbrOfConversion = 1;
@@ -140,7 +140,7 @@ void MX_ADC2_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -160,7 +160,7 @@ void MX_ADC3_Init(void)
   hadc3.Init.ScanConvMode = DISABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
-  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_FALLING;
   hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T8_TRGO;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc3.Init.NbrOfConversion = 1;
@@ -174,7 +174,7 @@ void MX_ADC3_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -386,12 +386,23 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 void ADC_Init(void)
 {
 
-	  // ADC Starting
-	  HAL_ADC_Start_DMA(&hadc1, AD_Iu, 2);
-	  HAL_ADC_Start_DMA(&hadc2, AD_Iv, 1);
-	  HAL_ADC_Start_DMA(&hadc3, AD_Iw, 1);
+	// ADC Starting
+
+
+	HAL_ADC_Start_DMA(&hadc1, AD_Iu, 1);
+	HAL_ADC_Start_DMA(&hadc2, AD_Iv, 1);
+	HAL_ADC_Start_DMA(&hadc3, AD_Iw, 1);
+
+
+
+/*
+	HAL_ADC_Start_IT(&hadc1);
+	HAL_ADC_Start_IT(&hadc2);
+	HAL_ADC_Start_IT(&hadc3);
+*/
 
 }
+
 
 
 void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, float sin_theta_re)
@@ -430,15 +441,17 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 
 
 	// Read ADC
-	/*
-	AD_Iu = HAL_ADC_GetValue(&hadc1);
-	AD_Iv = HAL_ADC_GetValue(&hadc2);
-	AD_Iw = HAL_ADC_GetValue(&hadc3);
-	*/
+/*
+	AD_Iu[0] = HAL_ADC_GetValue(&hadc1);
+	AD_Iv[0] = HAL_ADC_GetValue(&hadc2);
+	AD_Iw[0] = HAL_ADC_GetValue(&hadc3);
+*/
 
-	HAL_ADC_Start_DMA(&hadc1, AD_Iu, 2);
-	HAL_ADC_Start_DMA(&hadc2, AD_Iv, 1);
-	HAL_ADC_Start_DMA(&hadc3, AD_Iw, 1);
+
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_Iu, 1);
+	HAL_ADC_Start_DMA(&hadc2, (uint32_t*)AD_Iv, 1);
+	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)AD_Iw, 1);
+
 
 #if _MAF_ENABLE_
 
@@ -473,6 +486,7 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 	AD_Iu_buf[pos_MEDF_I] = (int32_t)AD_Iu[0];
 	AD_Iv_buf[pos_MEDF_I] = (int32_t)AD_Iv[0];
 	AD_Iw_buf[pos_MEDF_I] = (int32_t)AD_Iw[0];
+
 
 	pos_MEDF_I += 1;
 	if(pos_MEDF_I >= N_MEDF_I)
@@ -524,8 +538,10 @@ void get_current_dq(float *Id, float *Iq, int SVM_sector, float cos_theta_re, fl
 		break;
 	}
 
+
 	*Id = 0.8165f * (Iu * cos_theta_re + Iv * (-0.5f * cos_theta_re + 0.855f * sin_theta_re) + Iw * (-0.5f * cos_theta_re - 0.855f * sin_theta_re));
 	*Iq = 0.8165f * (-Iu * sin_theta_re + Iv * (0.5f * sin_theta_re + 0.855f * cos_theta_re) + Iw * (0.5f * sin_theta_re - 0.855f * cos_theta_re));
+
 
 
 	return;
@@ -552,8 +568,6 @@ extern int32_t median3(int32_t *buf)
 
 	return 0;
 }
-
-
 
 
 
