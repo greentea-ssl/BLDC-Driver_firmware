@@ -34,10 +34,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
+#include <pwm.h>
 #include "parameters.h"
 #include "ACR.h"
 #include "ASR.h"
-#include "modulator.h"
 
 /* USER CODE END Includes */
 

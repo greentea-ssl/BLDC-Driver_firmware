@@ -9,7 +9,7 @@
 
 #include "adc.h"
 #include "spi.h"
-#include "modulator.h"
+#include "pwm.h"
 #include "parameters.h"
 #include "sin_t.h"
 #include "sound.h"

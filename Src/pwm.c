@@ -1,7 +1,6 @@
 
 
-#include "modulator.h"
-
+#include <pwm.h>
 #include "parameters.h"
 #include "spi.h"
 #include "tim.h"

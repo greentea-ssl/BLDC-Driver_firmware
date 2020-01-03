@@ -1,6 +1,6 @@
 
-#ifndef _MODULATOR_H_
-#define _MODULATOR_H_
+#ifndef _PWM_H_
+#define _PWM_H_
 
 
 
@@ -22,5 +22,5 @@ void setSVM_dq();
 
 
 
-#endif
+#endif /* _PWM_H_ */
 
