@@ -8,6 +8,9 @@
 #include "spi.h"
 #include "ACR.h"
 
+#include "sin_t.h"
+
+#include "encoder.h"
 
 
 volatile uint8_t ASR_enable = 0;
@@ -76,19 +79,17 @@ void ASR_Stop()
 inline void speedControl()
 {
 
-
-
 	  if(ASR_steps <= 0)
 	  {
 		  d_theta = 0.0f;
 	  }
 	  else
 	  {
-		  d_theta = theta - p_theta;
+		  d_theta = mainEncoder.theta - p_theta;
 	  }
 	  ASR_steps += 1;
 
-	  p_theta = theta;
+	  p_theta = mainEncoder.theta;
 
 	  if(d_theta < - M_PI)		d_theta += 2 * M_PI;
 	  else if(d_theta > M_PI)	d_theta -= 2 * M_PI;
@@ -121,8 +122,8 @@ inline void speedControl()
 
 		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
 
-		  Id_ref = 0.0f;
-		  Iq_ref = KT * torque_ref + coggingIq;
+		  mainACR.Id_ref = 0.0f;
+		  mainACR.Iq_ref = KT * torque_ref + 0.75f * sin_table2[(int)((fmod(mainEncoder.theta * POLES + 4.14159f, 2.0f * M_PI) * 0.3183f + 0.5f) * 5000.0f)];
 
 
 	  }

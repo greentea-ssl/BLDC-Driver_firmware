@@ -5,8 +5,12 @@
 #include "ACR.h"
 #include "main.h"
 
+#include "string.h"
+
 #include "ASR.h"
 
+
+#include "tim.h"
 #include "adc.h"
 #include "spi.h"
 #include "pwm.h"
@@ -14,10 +18,16 @@
 #include "sin_t.h"
 #include "sound.h"
 
+#include "encoder.h"
+#include "CurrentSensor.h"
+
+
+
 
 volatile uint8_t ACR_enable = 0;
 
 
+/*
 
 float Kp_ACR = 0.1;
 float Ki_ACR = 400.0;
@@ -62,59 +72,125 @@ volatile float forced_theta = 0.0f;
 
 volatile float forced_theta_re = 0.0f;
 
+*/
 
 int soundCount = 0;
 
 
+float msec = 0.0f;
 
-void ACR_Start()
+
+ACR_TypeDef mainACR;
+
+
+
+void ACR_Init()
 {
 
-	ACR_enable = 1;
-	ACR_Reset();
+	memset(&mainACR, 0x00, sizeof(mainACR));
+
+	mainACR.Init.Kp = 0.1f;
+	mainACR.Init.Ki = 400.0f;
+
+	mainACR.Init.Id_limit = 15.0f;
+	mainACR.Init.Iq_limit = 15.0f;
+
+	mainACR.Init.Id_error_integ_limit = 1.0f;
+	mainACR.Init.Iq_error_integ_limit = 1.0f;
+
+	mainACR.Init.cycleTime = 100E-6;
+
+	mainACR.Init.hEncoder = &mainEncoder;
+
+	mainACR.Init.hCS = &mainCS;
+	mainACR.Init.htim = &htim8;
 
 }
 
 
-void ACR_Stop()
+
+void ACR_Start(ACR_TypeDef *hACR)
 {
 
-	ACR_enable = 0;
-	ACR_Reset();
+	hACR->enable = 1;
+	ACR_Reset(hACR);
+
+}
+
+
+void ACR_Stop(ACR_TypeDef *hACR)
+{
+
+	hACR->enable = 0;
+	ACR_Reset(hACR);
 
 }
 
 
 
-inline void currentControl(void)
+inline void ACR_Refresh(ACR_TypeDef *hACR)
 {
 
 
+	static float _Id_ref;
+	static float _Iq_ref;
+
+	static ACR_InitTypeDef *hACR_Init;
+
+	hACR_Init = &hACR->Init;
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
 
+	/*
+	hACR->Id_ref = 0.0f;
+	hACR->Iq_ref = 0.5f + 0.75f * sin_table2[(int)((fmod(mainEncoder.theta * POLES + 4.14159f, 2.0f * M_PI) * 0.3183f + 0.5f) * 5000.0f)];
+	*/
+
+	Encoder_Refresh(hACR_Init->hEncoder);
 
 
-	if(forced_commute_enable)
+	CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+
+	CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+
+
+	/*
+	 * 強制転流
+	 */
+	if(hACR->forced_commute_enable)
 	{
+		/*
 		float _forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
 
 		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
 		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
 		else									forced_theta_re = _forced_theta_re;
 
-		cos_theta_re = sin_table2[(int)((forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
-		sin_theta_re = sin_table2[(int)(forced_theta_re * 1591.54943f)];
+		*/
+
+		hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
+
+		CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
+
 	}
 	else
 	{
-		refreshEncoder();
+
+		CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+
+		// 旧実装
+		// refreshEncoder();
 	}
 
-	get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
 
 
-	if(theta_re < M_PI)
+	// 旧実装
+	//get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
+
+
+	if(hACR_Init->hEncoder->theta_re < M_PI)
 		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 	else
 		HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
@@ -123,22 +199,49 @@ inline void currentControl(void)
 
 	/********** ACR (Auto Current Regulator) **********/
 
-	if(ACR_enable /*&& soundCount == -1*/)
+	if(hACR->enable /*&& soundCount == -1*/)
 	{
 
-		if(Id_ref < -Id_limit)		_Id_ref = -Id_limit;
-		else if(Id_ref > Id_limit)	_Id_ref = Id_limit;
-		else						_Id_ref = Id_ref;
+		if(hACR->Id_ref < -hACR_Init->Id_limit)			_Id_ref = -hACR_Init->Id_limit;
+		else if(hACR->Id_ref > hACR_Init->Id_limit)		_Id_ref = hACR_Init->Id_limit;
+		else											_Id_ref = hACR->Id_ref;
 
-		if(Iq_ref < -Iq_limit)		_Iq_ref = -Iq_limit;
-		else if(Iq_ref > Iq_limit)	_Iq_ref = Iq_limit;
-		else						_Iq_ref = Iq_ref;
-
-
-		Id_error = _Id_ref - Id;
-		Iq_error = _Iq_ref - Iq;
+		if(hACR->Iq_ref < -hACR_Init->Iq_limit)			_Iq_ref = -hACR_Init->Iq_limit;
+		else if(hACR->Iq_ref > hACR_Init->Iq_limit)		_Iq_ref = hACR_Init->Iq_limit;
+		else											_Iq_ref = hACR->Iq_ref;
 
 
+		hACR->Id_error = _Id_ref - hACR->Id;
+		hACR->Iq_error = _Iq_ref - hACR->Iq;
+
+
+		hACR->Id_error_integ += hACR_Init->cycleTime * 0.5f * (hACR->Id_error + hACR->p_Id_error);
+		hACR->Iq_error_integ += hACR_Init->cycleTime * 0.5f * (hACR->Iq_error + hACR->p_Iq_error);
+
+
+		if(hACR->Id_error_integ > hACR_Init->Id_error_integ_limit)
+		{
+			hACR->Id_error_integ = hACR_Init->Id_error_integ_limit;
+		}
+		else if(hACR->Id_error_integ < -1.0 * hACR_Init->Id_error_integ_limit)
+		{
+			hACR->Id_error_integ = -1.0 * hACR_Init->Id_error_integ_limit;
+		}
+
+		if(hACR->Iq_error_integ > hACR_Init->Iq_error_integ_limit)
+		{
+			hACR->Iq_error_integ = hACR_Init->Iq_error_integ_limit;
+		}
+		else if(hACR->Iq_error_integ < -1.0 * hACR_Init->Iq_error_integ_limit)
+		{
+			hACR->Iq_error_integ = -1.0 * hACR_Init->Iq_error_integ_limit;
+		}
+
+
+		hACR->p_Id_error = hACR->Id_error;
+		hACR->p_Iq_error = hACR->Iq_error;
+
+		/*
 		// integral
 		Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
 		if(Id_error_integ_temp1 < -1000000.0) Id_error_integ_temp1 = -1000000.0;
@@ -151,17 +254,17 @@ inline void currentControl(void)
 		else if(Iq_error_integ_temp1 > 1000000.0) Iq_error_integ_temp1 = 1000000.0;
 		Iq_error_integ = ACR_cycleTime * 0.5f * (Iq_error_integ_temp1 + Iq_error_integ_temp2);
 		Iq_error_integ_temp2 = Iq_error_integ_temp1;
+		*/
 
-
-		Vd_ref = Kp_ACR * Id_error + Ki_ACR * Id_error_integ;
-		Vq_ref = Kp_ACR * Iq_error + Ki_ACR * Iq_error_integ;
+		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
+		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;
 
 	}
 
 	/*
 	if(soundCount < 66641)
 	{
-		Vq_ref += soSound[soundCount++] / 127.0f * 3.0;
+		hACR.Vq_ref += soSound[soundCount++] / 127.0f * 3.0;
 	}
 	*/
 
@@ -175,7 +278,16 @@ inline void currentControl(void)
 	}
 
 
-	setSVM_dq();
+	if(hACR->forced_commute_enable)
+	{
+		setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
+	}
+	else
+	{
+		setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+	}
+
+
 
 
 #if _ACR_DUMP_
@@ -194,11 +306,7 @@ inline void currentControl(void)
 #endif
 
 
-
-	if(!forced_commute_enable)
-	{
-		requestEncoder();
-	}
+	Encoder_Request(hACR_Init->hEncoder);
 
 
 	// Auto Speed Regulator launching
@@ -209,6 +317,7 @@ inline void currentControl(void)
 		ASR_prescalerCount = 0;
 	}
 
+	msec += 0.1f;
 
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_RESET);
@@ -218,20 +327,17 @@ inline void currentControl(void)
 
 
 
-inline void ACR_Reset()
+inline void ACR_Reset(ACR_TypeDef *hACR)
 {
 
-	Id_error_integ_temp1 = 0.0f;
-	Id_error_integ_temp2 = 0.0f;
-	Iq_error_integ_temp1 = 0.0f;
-	Iq_error_integ_temp2 = 0.0f;
+	hACR->Id_error_integ = 0.0f;
+	hACR->Iq_error_integ = 0.0f;
 
+	hACR->Id = hACR->Id_ref = 0.0f;
+	hACR->Iq = hACR->Iq_ref = 0.0f;
 
-	Id = Id_ref = 0.0f;
-	Iq = Iq_ref = 0.0f;
-
-	Vd_ref = 0.0f;
-	Vq_ref = 0.0f;
+	hACR->Vd_ref = 0.0f;
+	hACR->Vq_ref = 0.0f;
 
 }
 

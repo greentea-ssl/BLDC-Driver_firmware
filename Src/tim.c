@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "pwm.h"
+
 #include "ACR.h"
 #include "ASR.h"
 
@@ -98,7 +100,7 @@ void MX_TIM8_Init(void)
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 40;
+  sBreakDeadTimeConfig.DeadTime = 0;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
@@ -221,43 +223,12 @@ void TIM_Init()
 	  //HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
 
 
-	  startPWM();
+	  startPWM(&htim8);
 
 
 }
 
 
-
-inline void startPWM()
-{
-
-
-	// 3phase PWM Starting
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
-
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
-
-}
-
-
-
-inline void stopPWM()
-{
-
-	// 3phase PWM Stopping
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_3);
-
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_3);
-
-}
 
 
 
@@ -270,7 +241,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 		if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
 		{
 
-			currentControl();
+			ACR_Refresh(&mainACR);
 
 			// timeout control
 			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
@@ -279,7 +250,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 			}
 			else
 			{
-				stopPWM();
+				stopPWM(&htim8);
 				timeoutCount = 0;
 				timeoutState = 1;
 			}
@@ -299,8 +270,8 @@ inline void timeoutReset()
 	{
 		timeoutState = 0;
 		ASR_Reset();
-		ACR_Reset();
-		startPWM();
+		ACR_Reset(&mainACR);
+		startPWM(&htim8);
 	}
 }
 

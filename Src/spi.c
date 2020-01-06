@@ -28,6 +28,7 @@
 #include "math.h"
 #include "tim.h"
 #include "flash.h"
+#include "encoder.h"
 
 
 
@@ -275,7 +276,6 @@ void setZeroEncoder(uint8_t exe)
 	const int32_t forced_commute_steps = 2000;
 
 
-
 	volatile uint32_t forced_commute_count = 0;
 
 	const float forced_I_gamma_ref = 8.0f;
@@ -301,11 +301,12 @@ void setZeroEncoder(uint8_t exe)
 	}
 
 
-	Id_ref = forced_I_gamma_ref;
-	Iq_ref = forced_I_delta_ref;
+	mainACR.Id_ref = forced_I_gamma_ref;
+	mainACR.Iq_ref = forced_I_delta_ref;
 
-	forced_commute_enable = 1;
+	mainACR.forced_commute_enable = 1;
 
+	mainEncoder.Init.theta_re_offset = 0.0f;
 
 	timeoutReset();	HAL_Delay(100);
 	timeoutReset();	HAL_Delay(100);
@@ -313,6 +314,7 @@ void setZeroEncoder(uint8_t exe)
 	timeoutReset();	HAL_Delay(100);
 	timeoutReset();	HAL_Delay(100);
 
+	/*
 	requestEncoder();
 	HAL_Delay(5);
 	refreshEncoder();
@@ -320,28 +322,31 @@ void setZeroEncoder(uint8_t exe)
 	requestEncoder();
 	HAL_Delay(5);
 	refreshEncoder();
+	*/
 
-	theta_re_offset = 0.0f - theta_re;
+	HAL_Delay(15);
 
-	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
-	while(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
+	mainEncoder.Init.theta_re_offset = 0.0f - mainEncoder.theta_re;
+
+	while(mainEncoder.Init.theta_re_offset < -M_PI)	mainEncoder.Init.theta_re_offset += 2.0f * M_PI;
+	while(mainEncoder.Init.theta_re_offset > M_PI)	mainEncoder.Init.theta_re_offset -= 2.0f * M_PI;
 
 
-	printf(" theta_re_offset = %d -- ", (int)(theta_re_offset * 100000));
+	printf(" theta_re_offset = %d -- ", (int)(mainEncoder.Init.theta_re_offset * 100000));
 	HAL_Delay(1);
-	printf(" theta_re_offset = %d\n", (int)(theta_re_offset * 100000));
+	printf(" theta_re_offset = %d\n", (int)(mainEncoder.Init.theta_re_offset * 100000));
 	HAL_Delay(1);
-	printf(" theta_re_offset(4) = %d -- ", (int)(theta_re_offset * 10000));
+	printf(" theta_re_offset(4) = %d -- ", (int)(mainEncoder.Init.theta_re_offset * 10000));
 	HAL_Delay(1);
-	printf(" theta_re_offset(4) = %d\n", (int)(theta_re_offset * 10000));
+	printf(" theta_re_offset(4) = %d\n", (int)(mainEncoder.Init.theta_re_offset * 10000));
 	HAL_Delay(1);
 
-	printf("(theta_re_offset < 1.0f) = %d\n", (int)(theta_re_offset < 1.0f));
+	printf("(theta_re_offset < 1.0f) = %d\n", (int)(mainEncoder.Init.theta_re_offset < 1.0f));
 
-	printf("(theta_re_offset > -1.0f) = %d\n", (int)(theta_re_offset > -1.0f));
+	printf("(theta_re_offset > -1.0f) = %d\n", (int)(mainEncoder.Init.theta_re_offset > -1.0f));
 
 
-	memcpy(flash_data, &theta_re_offset, 4);
+	memcpy(flash_data, &mainEncoder.Init.theta_re_offset, 4);
 
 	if (!Flash_store())
 	{
@@ -352,9 +357,9 @@ void setZeroEncoder(uint8_t exe)
 
 
 
-	ACR_Reset();
+	ACR_Reset(&mainACR);
 
-	forced_commute_enable = 0;
+	mainACR.forced_commute_enable = 0;
 
 
 #if 0

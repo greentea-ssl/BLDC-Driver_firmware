@@ -23,11 +23,15 @@
 /* USER CODE BEGIN 0 */
 
 
-
+/*
 const float Vref_AD = 3.3f;
 
 const int32_t AD_Range = 4096;
+*/
 
+
+
+/*
 volatile uint16_t AD_Iu[1] = {0};
 volatile uint16_t AD_Iv[1] = {0};
 volatile uint16_t AD_Iw[1] = {0};
@@ -54,7 +58,6 @@ volatile float Iv = 0.0;
 volatile float Iw = 0.0;
 
 
-volatile float Vdc = 20.0f;
 
 
 // Moving Average Filter
@@ -68,7 +71,7 @@ volatile float Vdc = 20.0f;
 
 #define N_MEDF_I		3
 
-
+*/
 
 /* USER CODE END 0 */
 
@@ -382,6 +385,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 /* USER CODE BEGIN 1 */
 
+#if 0 /* CurrentSensor.c.h への移行により削除予�? */
 
 void ADC_Init(void)
 {
@@ -569,7 +573,7 @@ extern int32_t median3(int32_t *buf)
 	return 0;
 }
 
-
+#endif /* CurrentSensor.c.h への移行により削除予�? */
 
 
 /* USER CODE END 1 */

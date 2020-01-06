@@ -53,10 +53,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 void TIM_Init();
 
-void startPWM();
-
-void stopPWM();
-
 
 void setPWM(const float *duty);
 
