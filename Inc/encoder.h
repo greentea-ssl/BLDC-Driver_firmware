@@ -59,6 +59,9 @@ extern Encoder_TypeDef mainEncoder;
 void Encoder_Init();
 
 
+void setZeroEncoder(uint8_t exe);
+
+
 void Encoder_Request(Encoder_TypeDef *hEncoder);
 
 int Encoder_Refresh(Encoder_TypeDef *hEncoder);

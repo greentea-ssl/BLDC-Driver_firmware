@@ -14,8 +14,7 @@ const int32_t AD_Range = 4096;
 CurrentSensor_TypeDef mainCS;
 
 
-inline int32_t median3(int32_t *buf);
-
+int32_t median3(int32_t *buf);
 
 
 void CurrentSensor_Init()

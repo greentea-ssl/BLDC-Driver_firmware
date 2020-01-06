@@ -321,8 +321,6 @@ int main(void)
   CAN_Init();
 
 
-//  SPI_Init();
-
   Encoder_Init();
 
 
@@ -338,8 +336,6 @@ int main(void)
 
   TIM_Init();
 
-//  ADC_Init();
-
 
   HAL_Delay(10);
 
@@ -348,7 +344,7 @@ int main(void)
   ACR_Start(&mainACR);
 
 
-  //setZeroEncoder((p_ch != ch)? 1: 0);
+  setZeroEncoder(0);//(p_ch != ch)? 1: 0);
 
 
 

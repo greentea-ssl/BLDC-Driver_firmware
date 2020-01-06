@@ -35,19 +35,6 @@ extern SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN Private defines */
 
-// Rotor mechanical position
-extern volatile float theta;
-
-// Rotor electrical position
-extern volatile float theta_re;
-
-
-extern volatile float cos_theta_re;
-extern volatile float sin_theta_re;
-
-
-extern volatile uint8_t forced_commute_enable;
-
 
 
 /* USER CODE END Private defines */
@@ -56,12 +43,6 @@ void MX_SPI2_Init(void);
 void MX_SPI3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
-void SPI_Init();
-
-void requestEncoder();
-
-int refreshEncoder();
 
 
 /* USER CODE END Prototypes */
