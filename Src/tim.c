@@ -235,6 +235,8 @@ void TIM_Init()
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {
 
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
+
 	if(htim->Instance == TIM8)
 	{
 
@@ -242,6 +244,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 		{
 
 			ACR_Refresh(&mainACR);
+
+			ASR_prescaler(&mainASR);
+
 
 			// timeout control
 			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
@@ -260,6 +265,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	}
 
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
+
 }
 
 
@@ -269,7 +276,7 @@ inline void timeoutReset()
 	if(timeoutState == 1)
 	{
 		timeoutState = 0;
-		ASR_Reset();
+		ASR_Reset(&mainASR);
 		ACR_Reset(&mainACR);
 		startPWM(&htim8);
 	}

@@ -3,15 +3,15 @@
 #include "ASR.h"
 
 #include <math.h>
+#include <string.h>
+
 #include "parameters.h"
 
-#include "spi.h"
 #include "ACR.h"
-
-#include "sin_t.h"
 
 #include "encoder.h"
 
+/*
 
 volatile uint8_t ASR_enable = 0;
 
@@ -57,77 +57,124 @@ float omega_error_integ_temp1 = 0.0f;
 float omega_error_integ_temp2 = 0.0f;
 
 
+*/
 
-void ASR_Start()
+
+ASR_TypeDef mainASR;
+
+
+void ASR_Init()
 {
+	memset(&mainASR, 0x00, sizeof(mainASR));
 
-	ASR_enable = 1;
-	ASR_Reset();
+	mainASR.Init.Kp = 0.3f;
+	mainASR.Init.Ki = 20.0f;
+	mainASR.Init.omega_limit = 400.0f;
+	mainASR.Init.omega_error_integ_limit = 10000.0f;
+	mainASR.Init.cycleTime = 1E-3;
+	mainASR.Init.prescaler = 10;
+
+	mainASR.Init.hEncoder = &mainEncoder;
+	mainASR.Init.hACR = &mainACR;
+
+	mainASR.firstLaunch = 1;
+
+	mainASR.omega = 0.0f;
 
 }
 
-void ASR_Stop()
+
+void ASR_Start(ASR_TypeDef *hASR)
 {
 
-	ASR_enable = 0;
-	ASR_Reset();
+	hASR->enable = 1;
+	ASR_Reset(hASR);
+
+}
+
+void ASR_Stop(ASR_TypeDef *hASR)
+{
+
+	hASR->enable = 0;
+	ASR_Reset(hASR);
 
 }
 
 
-
-inline void speedControl()
+inline void ASR_prescaler(ASR_TypeDef *hASR)
 {
 
-	  if(ASR_steps <= 0)
-	  {
-		  d_theta = 0.0f;
-	  }
-	  else
-	  {
-		  d_theta = mainEncoder.theta - p_theta;
-	  }
-	  ASR_steps += 1;
+	if(hASR->prescalerCount >= hASR->Init.prescaler)
+	{
+		hASR->launchFlg = 1;
+		hASR->prescalerCount = 0;
+	}
+	else
+	{
+		hASR->prescalerCount += 1;
+	}
 
-	  p_theta = mainEncoder.theta;
-
-	  if(d_theta < - M_PI)		d_theta += 2 * M_PI;
-	  else if(d_theta > M_PI)	d_theta -= 2 * M_PI;
-
-	  omega = omega * 0.5 + 0.5 * d_theta / ASR_cycleTime;
+}
 
 
-	  if(ASR_enable)
-	  {
+inline void ASR_Refresh(ASR_TypeDef *hASR)
+{
 
-		  if(omega_ref < -omega_limit)		_omega_ref = -omega_limit;
-		  else if(omega_ref > omega_limit)	_omega_ref = omega_limit;
-		  else								_omega_ref = omega_ref;
+	static float d_theta;
+	static float _omega_ref;
+	static float torque_ref;
 
-		  omega_error = _omega_ref - omega;
+	static ASR_InitTypeDef *hASR_Init;
 
-		  // integral
-		  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
-		  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
-		  }
-		  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
-		  }
-		  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
-		  omega_error_integ_temp2 = omega_error_integ_temp1;
+	hASR_Init = &hASR->Init;
+
+	// プリスケーラリセット時のみ実行
+	if(hASR->launchFlg == 0)
+	{
+		return;
+	}
+	hASR->launchFlg = 0;
 
 
-		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
+	if(hASR->firstLaunch != 0)
+	{
+		d_theta = 0.0f;
+		hASR->firstLaunch = 0;
+	}
+	else
+	{
+		d_theta = hASR_Init->hEncoder->theta - hASR->p_theta;
+	}
 
-		  mainACR.Id_ref = 0.0f;
-		  mainACR.Iq_ref = KT * torque_ref;
+	hASR->p_theta = hASR_Init->hEncoder->theta;
 
-	  }
+	if(d_theta < - M_PI)		d_theta += 2 * M_PI;
+	else if(d_theta > M_PI)		d_theta -= 2 * M_PI;
+
+	hASR->omega = hASR->omega * 0.5f + 0.5f * d_theta / hASR_Init->cycleTime;
 
 
+	if(hASR->enable == 0)
+	{
+		return;
+	}
+
+	if(hASR->omega_ref < -hASR_Init->omega_limit)		_omega_ref = -hASR_Init->omega_limit;
+	else if(hASR->omega_ref > hASR_Init->omega_limit)	_omega_ref = hASR_Init->omega_limit;
+	else												_omega_ref = hASR->omega_ref;
+
+	hASR->omega_error = _omega_ref - hASR->omega;
+
+	// integral
+
+	hASR->omega_error_integ += hASR_Init->cycleTime * 0.5 * (hASR->omega_error + hASR->p_omega_error);
+
+	hASR->p_omega_error = hASR->omega_error;
+
+	torque_ref = hASR_Init->Kp * hASR->omega_error + hASR_Init->Ki * hASR->omega_error_integ;
+
+	hASR_Init->hACR->Id_ref = 0.0f;
+	hASR_Init->hACR->Iq_ref = hASR->Iq_ref = KT * torque_ref;
 
 
 	return;
@@ -135,17 +182,19 @@ inline void speedControl()
 
 
 
-inline void ASR_Reset()
+inline void ASR_Reset(ASR_TypeDef *hASR)
 {
 
-	p_theta = 0.0f;
+	hASR->p_theta = 0.0f;
 
-	omega_error_integ_temp1 = 0.0f;
-	omega_error_integ_temp2 = 0.0f;
+	hASR->firstLaunch = 1;
 
-	omega = omega_ref = 0.0f;
+	hASR->omega_error_integ = 0.0f;
 
-	ASR_steps = 0;
+	hASR->omega = 0.0f;
+
+	hASR->omega_ref = 0.0f;
+
 
 }
 

@@ -333,6 +333,8 @@ int main(void)
 
   ACR_Init();
 
+  ASR_Init();
+
 
   TIM_Init();
 
@@ -350,7 +352,7 @@ int main(void)
 
   //while(1);
 
-  ASR_Start();
+  ASR_Start(&mainASR);
 
 
 
@@ -365,9 +367,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 
+	  ASR_Refresh(&mainASR);
+
+#if 0
 	  if(ASR_flg == 1)
 	  {
-		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
 
 
 #if _FC_DUMP_
@@ -462,7 +466,7 @@ int main(void)
 
 	  }
 
-
+#endif
 
 
   }

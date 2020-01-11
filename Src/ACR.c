@@ -265,14 +265,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	Encoder_Request(hACR_Init->hEncoder);
 
 
-	// Auto Speed Regulator launching
-	ASR_prescalerCount += 1;
-	if(ASR_prescalerCount >= ASR_prescale)
-	{
-		ASR_flg = 1;
-		ASR_prescalerCount = 0;
-	}
-
 	msec += 0.1f;
 
 

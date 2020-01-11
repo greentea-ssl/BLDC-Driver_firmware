@@ -238,7 +238,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		controlRef.byte[2] = can1RxData[2];
 		controlRef.byte[3] = can1RxData[3];
 
-		omega_ref = controlRef.fval;
+		mainASR.omega_ref = controlRef.fval;
 
 		timeoutReset();
 
