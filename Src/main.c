@@ -111,12 +111,6 @@ int ASR_dump_count = 0;
 
 
 
-
-/********** for Magnetic Rotary Encoder **********/
-
-
-
-
 /********** Forced commutation **********/
 
 
@@ -125,23 +119,16 @@ int ASR_dump_count = 0;
 
 
 
-/********** for ADC **********/
 
 
+/********** Timeout Control **********/
 
 
-/********** for PWM Output **********/
+volatile uint32_t timeoutCount = 0;
 
+// 1: timeout
+volatile uint8_t timeoutState = 0;
 
-
-
-/********** for ACR (Auto Current Regulator) **********/
-
-
-
-
-
-/********** for ASR (Auto Speed Regulator) **********/
 
 
 
@@ -160,11 +147,6 @@ volatile float theta_ref = 0.0f;
 volatile float theta_error = 0.0f;
 
 volatile float theta_error_diff = 0.0f;
-
-
-
-
-/********** CAN **********/
 
 
 
@@ -330,13 +312,11 @@ int main(void)
 
   CurrentSensor_Start(&mainCS);
 
+  PWM_Init();
 
   ACR_Init();
 
   ASR_Init();
-
-
-  TIM_Init();
 
 
   HAL_Delay(10);
@@ -615,6 +595,59 @@ void SystemClock_Config(void)
 
 
 
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
+{
+
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
+
+	if(htim->Instance == TIM8 && !__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+	{
+
+		Encoder_Refresh(&mainEncoder);
+
+		CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+		ACR_Refresh(&mainACR);
+
+		ASR_prescaler(&mainASR);
+
+		Encoder_Request(&mainEncoder);
+
+
+		// timeout control
+		if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
+		{
+			timeoutCount += 1;
+		}
+		else
+		{
+			stopPWM(&htim8);
+			timeoutCount = 0;
+			timeoutState = 1;
+		}
+
+
+
+	}
+
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
+
+}
+
+
+
+inline void timeoutReset()
+{
+	timeoutCount = 0;
+	if(timeoutState == 1)
+	{
+		timeoutState = 0;
+		ASR_Reset(&mainASR);
+		ACR_Reset(&mainACR);
+		startPWM(&htim8);
+	}
+}
 
 
 

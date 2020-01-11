@@ -14,6 +14,7 @@ typedef struct
 
 	float theta_re_offset;
 
+	float cycleTime;
 
 	SPI_HandleTypeDef* hspi;
 
@@ -35,6 +36,20 @@ typedef struct
 	// Rotor mechanical position
 	float theta;
 
+	int32_t turnCount;
+
+	float theta_multiturn;
+
+	float p_theta;
+
+	// Rotor Speed
+	float omega;
+
+
+	float firstLaunch;
+
+	float cycleTime;
+
 	// Rotor electrical position
 	float theta_re;
 
@@ -45,8 +60,8 @@ typedef struct
 	uint8_t forced_commute_enable;
 
 	// Sensing Data
-	volatile uint8_t spi2txBuf[2];
-	volatile uint8_t spi2rxBuf[2];
+	uint8_t spi2txBuf[2];
+	uint8_t spi2rxBuf[2];
 
 }Encoder_TypeDef;
 
@@ -65,8 +80,6 @@ void setZeroEncoder(uint8_t exe);
 void Encoder_Request(Encoder_TypeDef *hEncoder);
 
 int Encoder_Refresh(Encoder_TypeDef *hEncoder);
-
-
 
 
 

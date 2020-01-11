@@ -34,14 +34,6 @@ extern TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN Private defines */
 
-#define PWM_FREQ		10000
-
-#define TIMEOUT_MS		200
-
-
-extern volatile float amp_u;
-extern volatile float amp_v;
-extern volatile float amp_w;
 
 /* USER CODE END Private defines */
 

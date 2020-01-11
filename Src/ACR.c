@@ -94,16 +94,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 
 	HAL_GPIO_WritePin(DB0_GPIO_Port, DB0_Pin, GPIO_PIN_SET);
 
-	/*
-	hACR->Id_ref = 0.0f;
-	hACR->Iq_ref = 0.5f + 0.75f * sin_table2[(int)((fmod(mainEncoder.theta * POLES + 4.14159f, 2.0f * M_PI) * 0.3183f + 0.5f) * 5000.0f)];
-	*/
-
-	Encoder_Refresh(hACR_Init->hEncoder);
-
-
-	CurrentSensor_Refresh(&mainCS, sector_SVM);
-
 
 	CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
 
@@ -113,14 +103,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	 */
 	if(hACR->forced_commute_enable)
 	{
-		/*
-		float _forced_theta_re = fmodf(forced_theta * POLE_PAIRS, 2.0f * M_PI);
-
-		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
-		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
-		else									forced_theta_re = _forced_theta_re;
-
-		*/
 
 		hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
 		hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
@@ -133,14 +115,8 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 
 		CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
 
-		// 旧実装
-		// refreshEncoder();
 	}
 
-
-
-	// 旧実装
-	//get_current_dq(&Id, &Iq, sector_SVM, cos_theta_re, sin_theta_re);
 
 
 	if(hACR_Init->hEncoder->theta_re < M_PI)
@@ -197,21 +173,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 		hACR->p_Id_error = hACR->Id_error;
 		hACR->p_Iq_error = hACR->Iq_error;
 
-		/*
-		// integral
-		Id_error_integ_temp1 = Id_error + Id_error_integ_temp2;
-		if(Id_error_integ_temp1 < -1000000.0) Id_error_integ_temp1 = -1000000.0;
-		else if(Id_error_integ_temp1 > 1000000.0) Id_error_integ_temp1 = 1000000.0;
-		Id_error_integ = ACR_cycleTime * 0.5f * (Id_error_integ_temp1 + Id_error_integ_temp2);
-		Id_error_integ_temp2 = Id_error_integ_temp1;
-
-		Iq_error_integ_temp1 = Iq_error + Iq_error_integ_temp2;
-		if(Iq_error_integ_temp1 < -1000000.0) Iq_error_integ_temp1 = -1000000.0;
-		else if(Iq_error_integ_temp1 > 1000000.0) Iq_error_integ_temp1 = 1000000.0;
-		Iq_error_integ = ACR_cycleTime * 0.5f * (Iq_error_integ_temp1 + Iq_error_integ_temp2);
-		Iq_error_integ_temp2 = Iq_error_integ_temp1;
-		*/
-
 		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
 		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;
 
@@ -225,7 +186,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	*/
 
 
-	/********* end of ACR **********/
 
 
 	if(HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin) == GPIO_PIN_RESET)
@@ -262,7 +222,6 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 #endif
 
 
-	Encoder_Request(hACR_Init->hEncoder);
 
 
 	msec += 0.1f;

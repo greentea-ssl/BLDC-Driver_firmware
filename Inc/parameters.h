@@ -46,12 +46,29 @@
 #define ENCODER_RESOL 16384
 
 
+// 速度検出用LPFのカットオフ周波数 [rad/s]
+#define SPEED_LPF_CUTOFF	(2.0f * M_PI * 100)
 
-// For PWM
+// LPFのサンプリング周波数 [Hz]
+#define SPEED_LPF_FS		10000.0f
+
+// LPFフィルタ係数
+#define SPEED_LPF_COEFF		(SPEED_LPF_FS/(SPEED_LPF_CUTOFF + SPEED_LPF_FS))
+
+
+/******************* For PWM *******************/
 
 // PWM resolution
 #define PWM_RESOL	8000.0f
 
+
+
+/******************* Timeout ***********************/
+
+
+#define TIMEOUT_BASE_FREQ		10000
+
+#define TIMEOUT_MS				200
 
 
 

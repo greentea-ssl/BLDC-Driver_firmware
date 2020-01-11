@@ -17,7 +17,7 @@ extern volatile float Vq_ref;
 extern volatile int sector_SVM;
 
 
-
+void PWM_Init();
 
 
 void startPWM(TIM_HandleTypeDef *htim);

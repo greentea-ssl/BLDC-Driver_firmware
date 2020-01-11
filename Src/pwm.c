@@ -11,6 +11,12 @@
 volatile float Vdc = 20.0f;
 
 
+volatile float amp_u = 0.0;
+volatile float amp_v = 0.0;
+volatile float amp_w = 0.0;
+
+
+
 // reference vectors for SVM
 const float refVector[6+1][2] = {
 	{ 1.000,  0.000},
@@ -31,6 +37,20 @@ volatile float Vq_ref = 0.0f;
 volatile int sector_SVM = 0;
 
 
+void PWM_Init()
+{
+
+	__HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
+	__HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
+
+
+	HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
+	//HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
+
+
+	startPWM(&htim8);
+
+}
 
 
 inline void startPWM(TIM_HandleTypeDef *htim)

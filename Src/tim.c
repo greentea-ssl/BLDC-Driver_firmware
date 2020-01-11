@@ -22,24 +22,6 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "pwm.h"
-
-#include "ACR.h"
-#include "ASR.h"
-
-
-
-volatile float amp_u = 0.0;
-volatile float amp_v = 0.0;
-volatile float amp_w = 0.0;
-
-
-volatile uint32_t timeoutCount = 0;
-
-// 1: timeout
-volatile uint8_t timeoutState = 0;
-
-
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim8;
@@ -200,91 +182,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 } 
 
 /* USER CODE BEGIN 1 */
-
-
-
-void TIM_Init()
-{
-
-
-	  // Setting Timer Interrupts
-	  /*
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC1);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC2);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC3);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC4);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_COM);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_BREAK);*/
-	  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
-	  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
-
-
-	  HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
-	  //HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
-
-
-	  startPWM(&htim8);
-
-
-}
-
-
-
-
-
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
-{
-
-	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
-
-	if(htim->Instance == TIM8)
-	{
-
-		if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
-		{
-
-			ACR_Refresh(&mainACR);
-
-			ASR_prescaler(&mainASR);
-
-
-			// timeout control
-			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
-			{
-				timeoutCount += 1;
-			}
-			else
-			{
-				stopPWM(&htim8);
-				timeoutCount = 0;
-				timeoutState = 1;
-			}
-
-		}
-
-
-	}
-
-	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
-
-}
-
-
-inline void timeoutReset()
-{
-	timeoutCount = 0;
-	if(timeoutState == 1)
-	{
-		timeoutState = 0;
-		ASR_Reset(&mainASR);
-		ACR_Reset(&mainACR);
-		startPWM(&htim8);
-	}
-}
-
-
-
-
 
 /* USER CODE END 1 */
 
