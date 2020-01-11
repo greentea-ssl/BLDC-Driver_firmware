@@ -365,9 +365,6 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 
-	  //mainACR.Vq_ref = 0.5;
-
-
 	  if(ASR_flg == 1)
 	  {
 		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);

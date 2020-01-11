@@ -173,7 +173,7 @@ void setZeroEncoder(uint8_t exe)
 
 	theta_offset = sensed_theta_error_sum * 0.5f / forced_commute_steps;
 
-	theta_re_offset = fmod(theta_offset * POLES / 2, 2.0f * M_PI);
+	theta_re_offset = fmod(theta_offset * POLE_PAIRS, 2.0f * M_PI);
 	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
 	while(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
 
@@ -256,7 +256,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	else if(_theta >= 2 * M_PI)	hEncoder->theta = _theta - 2 * M_PI;
 	else						hEncoder->theta = _theta;
 
-	_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLES / 2, 2.0f * M_PI) + hEncoder->Init.theta_re_offset;
+	_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLE_PAIRS, 2.0f * M_PI) + hEncoder->Init.theta_re_offset;
 
 	if(_theta_re < 0.0f)			hEncoder->theta_re = _theta_re + 2 * M_PI;
 	else if(_theta_re >= 2 * M_PI)	hEncoder->theta_re = _theta_re - 2 * M_PI;

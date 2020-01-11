@@ -27,53 +27,6 @@
 volatile uint8_t ACR_enable = 0;
 
 
-/*
-
-float Kp_ACR = 0.1;
-float Ki_ACR = 400.0;
-
-const float ACR_cycleTime = 100E-6;
-
-
-
-float Id_limit = 15.0f;
-float Iq_limit = 15.0f;
-
-
-volatile float Id_ref = 0.0f;
-volatile float Iq_ref = 0.0f;
-
-
-volatile float Id = 0.0;
-volatile float Iq = 0.0;
-
-
-volatile float Id_error = 0.0f;
-volatile float Iq_error = 0.0f;
-
-volatile float Id_error_integ = 0.0f;
-volatile float Iq_error_integ = 0.0f;
-
-
-
-volatile float _Id_ref;
-volatile float _Iq_ref;
-
-
-volatile float Id_error_integ_temp1 = 0.0f;
-volatile float Id_error_integ_temp2 = 0.0f;
-volatile float Iq_error_integ_temp1 = 0.0f;
-volatile float Iq_error_integ_temp2 = 0.0f;
-
-
-
-
-volatile float forced_theta = 0.0f;
-
-volatile float forced_theta_re = 0.0f;
-
-*/
-
 int soundCount = 0;
 
 
@@ -161,7 +114,7 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	if(hACR->forced_commute_enable)
 	{
 		/*
-		float _forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
+		float _forced_theta_re = fmodf(forced_theta * POLE_PAIRS, 2.0f * M_PI);
 
 		if(_forced_theta_re < 0.0f)				forced_theta_re = _forced_theta_re + 2 * M_PI;
 		else if(_forced_theta_re >= 2 * M_PI)	forced_theta_re = _forced_theta_re - 2 * M_PI;
@@ -202,13 +155,16 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	if(hACR->enable /*&& soundCount == -1*/)
 	{
 
-		if(hACR->Id_ref < -hACR_Init->Id_limit)			_Id_ref = -hACR_Init->Id_limit;
-		else if(hACR->Id_ref > hACR_Init->Id_limit)		_Id_ref = hACR_Init->Id_limit;
-		else											_Id_ref = hACR->Id_ref;
+		_Id_ref = hACR->Id_ref;
+		//_Iq_ref = hACR->Iq_ref + 0.75f * sin_table2[(int)((fmod(mainEncoder.theta * POLES + 4.14159f, 2.0f * M_PI) * 0.3183f + 0.5f) * 5000.0f)];
+		_Iq_ref = hACR->Iq_ref;
 
-		if(hACR->Iq_ref < -hACR_Init->Iq_limit)			_Iq_ref = -hACR_Init->Iq_limit;
-		else if(hACR->Iq_ref > hACR_Init->Iq_limit)		_Iq_ref = hACR_Init->Iq_limit;
-		else											_Iq_ref = hACR->Iq_ref;
+
+		if(_Id_ref < -hACR_Init->Id_limit)			_Id_ref = -hACR_Init->Id_limit;
+		else if(_Id_ref > hACR_Init->Id_limit)		_Id_ref = hACR_Init->Id_limit;
+
+		if(_Iq_ref < -hACR_Init->Iq_limit)			_Iq_ref = -hACR_Init->Iq_limit;
+		else if(_Iq_ref > hACR_Init->Iq_limit)		_Iq_ref = hACR_Init->Iq_limit;
 
 
 		hACR->Id_error = _Id_ref - hACR->Id;

@@ -123,8 +123,7 @@ inline void speedControl()
 		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
 
 		  mainACR.Id_ref = 0.0f;
-		  mainACR.Iq_ref = KT * torque_ref + 0.75f * sin_table2[(int)((fmod(mainEncoder.theta * POLES + 4.14159f, 2.0f * M_PI) * 0.3183f + 0.5f) * 5000.0f)];
-
+		  mainACR.Iq_ref = KT * torque_ref;
 
 	  }
 
