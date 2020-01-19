@@ -38,7 +38,7 @@
 #include "parameters.h"
 #include "ACR.h"
 #include "ASR.h"
-
+#include "APR.h"
 #include "encoder.h"
 #include "CurrentSensor.h"
 
@@ -59,7 +59,7 @@
 
 
 
-#define _APR_ENABLE_		0
+#define _APR_ENABLE_		1
 
 
 
@@ -318,6 +318,8 @@ int main(void)
 
   ASR_Init();
 
+  APR_Init();
+
 
   HAL_Delay(10);
 
@@ -330,11 +332,9 @@ int main(void)
 
 
 
-  //while(1);
-
   ASR_Start(&mainASR);
 
-
+  //APR_Start(&mainAPR);
 
   /* USER CODE END 2 */
 
@@ -346,6 +346,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  APR_Refresh(&mainAPR);
 
 	  ASR_Refresh(&mainASR);
 
@@ -611,6 +612,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 		ACR_Refresh(&mainACR);
 
 		ASR_prescaler(&mainASR);
+
+		APR_prescaler(&mainAPR);
 
 		Encoder_Request(&mainEncoder);
 

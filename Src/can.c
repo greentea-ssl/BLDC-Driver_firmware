@@ -22,8 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "ASR.h"
 #include "ACR.h"
+#include "ASR.h"
+#include "APR.h"
 #include "tim.h"
 
 
@@ -244,17 +245,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	}
 
-#if _APR_ENABLE_
-	if(can1RxHeader.StdId == 0x008 && can1RxHeader.DLC == 0x4)
+
+	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x02 && can1RxHeader.DLC == 0x4)
 	{
 		controlRef.byte[0] = can1RxData[0];
 		controlRef.byte[1] = can1RxData[1];
 		controlRef.byte[2] = can1RxData[2];
 		controlRef.byte[3] = can1RxData[3];
 
-		theta_ref = controlRef.fval;
+		mainAPR.theta_ref = controlRef.fval;
+
+		timeoutReset();
 	}
-#endif
 
 
 	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);

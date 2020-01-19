@@ -47,7 +47,7 @@
 
 
 // 速度検出用LPFのカットオフ周波数 [rad/s]
-#define SPEED_LPF_CUTOFF	(2.0f * M_PI * 100)
+#define SPEED_LPF_CUTOFF	(2.0f * M_PI * 500)
 
 // LPFのサンプリング周波数 [Hz]
 #define SPEED_LPF_FS		10000.0f

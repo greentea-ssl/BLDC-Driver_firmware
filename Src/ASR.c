@@ -121,8 +121,6 @@ inline void ASR_Refresh(ASR_TypeDef *hASR)
 inline void ASR_Reset(ASR_TypeDef *hASR)
 {
 
-	hASR->p_theta = 0.0f;
-
 	hASR->firstLaunch = 1;
 
 	hASR->omega_error_integ = 0.0f;

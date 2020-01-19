@@ -176,6 +176,17 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
 		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;
 
+
+		if(hACR->forced_commute_enable)
+		{
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
+		}
+		else
+		{
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+		}
+
+
 	}
 
 	/*
@@ -194,14 +205,7 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	}
 
 
-	if(hACR->forced_commute_enable)
-	{
-		setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
-	}
-	else
-	{
-		setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
-	}
+
 
 
 

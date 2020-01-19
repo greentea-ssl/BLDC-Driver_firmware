@@ -3,30 +3,6 @@
 #ifndef _ASR_H_
 #define _ASR_H_
 
-/*
-
-extern volatile float omega_ref;
-
-
-extern volatile float omega_errorf;
-
-extern volatile float omega_error_integ;
-
-extern volatile float torque_ref;
-
-
-extern volatile float coggingIq;
-
-
-extern int ASR_flg;
-extern int ASR_prescalerCount;
-
-
-
-#define ASR_prescale	10
-
-*/
-
 
 #include "encoder.h"
 #include "ACR.h"
@@ -75,8 +51,6 @@ typedef struct
 	uint32_t prescalerCount;
 
 	uint8_t firstLaunch;
-
-	float p_theta;
 
 	uint8_t launchFlg;
 
