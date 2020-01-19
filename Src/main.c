@@ -41,6 +41,7 @@
 #include "APR.h"
 #include "encoder.h"
 #include "CurrentSensor.h"
+#include "drv8323.h"
 
 
 /* USER CODE END Includes */
@@ -267,16 +268,17 @@ int main(void)
 
   DRV_ReadData(&drv8323, ADDR_OCP_Control);
 
-  drv8323.Reg.OCP_Control.DEAD_TIME = 0b11;
-  drv8323.Reg.OCP_Control.OCP_MODE = 0b00;
-  drv8323.Reg.OCP_Control.VDS_LVL = 0b0100;
+  drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
+  drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrentcausesa latchedfault
+  drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
+  drv8323.Reg.OCP_Control.VDS_LVL = 0b0100; // VDS = 0.31V -> ID = 31A
 
   DRV_WriteData(&drv8323, ADDR_OCP_Control);
 
 
   DRV_ReadData(&drv8323, ADDR_CSA_Control);
 
-  drv8323.Reg.CSA_Control.SEN_LVL = 0b00;
+  drv8323.Reg.CSA_Control.SEN_LVL = 0b01; // Vsense = 0.5V -> 50A
 
   DRV_WriteData(&drv8323, ADDR_CSA_Control);
 
@@ -329,7 +331,7 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
 
 
-  ch = 0x00; //getChannel();
+  ch = getChannel();
 
 
 
@@ -364,7 +366,7 @@ int main(void)
   DRV_ReadData(&drv8323, ADDR_FaultStatus1);
   PRINT_HEX(drv8323.Reg.FaultStatus1.word);
 
-  setZeroEncoder(0);//(p_ch != ch)? 1: 0);
+  setZeroEncoder((p_ch != ch)? 1: 0);
 
 
 
