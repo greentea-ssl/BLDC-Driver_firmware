@@ -54,6 +54,7 @@
 /* USER CODE BEGIN PD */
 
 
+#define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
 
 
 
@@ -206,7 +207,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 
-
 	int count = 0;
 
 	uint8_t p_ch, ch;
@@ -248,6 +248,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  DRV_Init();
 
 
 
@@ -256,8 +257,37 @@ int main(void)
   printf("Hello\n");
 
 
+
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
+
+
+  printf("Hello SPI Gate Driver\n");
+
+
+  DRV_ReadData(&drv8323, ADDR_OCP_Control);
+
+  drv8323.Reg.OCP_Control.DEAD_TIME = 0b11;
+  drv8323.Reg.OCP_Control.OCP_MODE = 0b00;
+  drv8323.Reg.OCP_Control.VDS_LVL = 0b0100;
+
+  DRV_WriteData(&drv8323, ADDR_OCP_Control);
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+  drv8323.Reg.CSA_Control.SEN_LVL = 0b00;
+
+  DRV_WriteData(&drv8323, ADDR_CSA_Control);
+
+
+  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+  PRINT_HEX(drv8323.Reg.DriverControl.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+  PRINT_HEX(drv8323.Reg.OCP_Control.word);
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
 
 
   // Current Sensing Auto Offset Calibration
@@ -267,6 +297,10 @@ int main(void)
 
 
   /******** DEBUG ********/
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
 
   HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 
@@ -295,7 +329,7 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
 
 
-  ch = getChannel();
+  ch = 0x00; //getChannel();
 
 
 
@@ -327,6 +361,8 @@ int main(void)
 
   ACR_Start(&mainACR);
 
+  DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
 
   setZeroEncoder(0);//(p_ch != ch)? 1: 0);
 
@@ -353,6 +389,24 @@ int main(void)
 #if 0
 	  if(ASR_flg == 1)
 	  {
+
+
+		  if(HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin) == GPIO_PIN_RESET)
+		  {
+			  break;
+		  }
+
+		  if(readFlag != 1)
+		  {
+			  DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+			  readFlag = 1;
+		  }
+		  else
+		  {
+			  DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+			  readFlag = 0;
+		  }
+
 
 
 #if _FC_DUMP_
@@ -543,7 +597,7 @@ int main(void)
 #endif
 
 
-
+  while(1);
 
   /* USER CODE END 3 */
 }

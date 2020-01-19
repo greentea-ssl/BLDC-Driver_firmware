@@ -116,6 +116,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define SPI3_NSS_Pin GPIO_PIN_15
+#define SPI3_NSS_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define DB2_Pin GPIO_PIN_4
