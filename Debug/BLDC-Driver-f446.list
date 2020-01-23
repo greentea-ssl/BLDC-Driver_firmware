@@ -15524,7 +15524,7 @@ inline void currentControl(void)
 		float _forced_theta_re = fmodf(forced_theta * POLES / 2, 2.0f * M_PI);
  800dcda:	4bb9      	ldr	r3, [pc, #740]	; (800dfc0 <currentControl+0x300>)
  800dcdc:	edd3 7a00 	vldr	s15, [r3]
- 800dce0:	eeb3 7a06 	vmov.f32	s14, #54	; 0x41b00000  22.0
+ 800dce0:	eeb3 7a08 	vmov.f32	s14, #56	; 0x41c00000  24.0
  800dce4:	ee67 7a87 	vmul.f32	s15, s15, s14
  800dce8:	eeb0 7a00 	vmov.f32	s14, #0	; 0x40000000  2.0
  800dcec:	eec7 6a87 	vdiv.f32	s13, s15, s14
@@ -16437,8 +16437,8 @@ inline void speedControl()
  800e4f4:	401921fb 	.word	0x401921fb
  800e4f8:	54442d18 	.word	0x54442d18
  800e4fc:	400921fb 	.word	0x400921fb
- 800e500:	8b6ec798 	.word	0x8b6ec798
- 800e504:	3fd22b62 	.word	0x3fd22b62
+ 800e500:	7b830193 	.word	0x7b830193
+ 800e504:	3fd6eb16 	.word	0x3fd6eb16
  800e508:	20000110 	.word	0x20000110
  800e50c:	20004234 	.word	0x20004234
  800e510:	200041d8 	.word	0x200041d8
@@ -20986,7 +20986,7 @@ inline int refreshEncoder()
  8010748:	46800000 	.word	0x46800000
  801074c:	200041d0 	.word	0x200041d0
  8010750:	200041d8 	.word	0x200041d8
- 8010754:	40360000 	.word	0x40360000
+ 8010754:	40380000 	.word	0x40380000
  8010758:	40c90fdb 	.word	0x40c90fdb
  801075c:	200041d4 	.word	0x200041d4
  8010760:	200041dc 	.word	0x200041dc

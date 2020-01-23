@@ -15,10 +15,10 @@ extern float theta_re_offset;
 // For Motor
 
 // Magnet Poles
-#define POLES	22
+#define POLES	24
 
 
-#define 	KV	370.0
+#define 	KV	320.0
 
 #define 	KE	(60.0f / (KV * 2 * M_PI))
 
