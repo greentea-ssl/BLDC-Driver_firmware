@@ -25,6 +25,7 @@
 "Src/DRV8323.o"
 "Src/adc.o"
 "Src/can.o"
+"Src/debugDump.o"
 "Src/dma.o"
 "Src/encoder.o"
 "Src/flash.o"

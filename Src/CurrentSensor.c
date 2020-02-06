@@ -4,6 +4,8 @@
 
 #include "adc.h"
 #include "string.h"
+#include "stdlib.h"
+
 
 
 const float Vref_AD = 3.3f;
@@ -16,6 +18,8 @@ CurrentSensor_TypeDef mainCS;
 
 int32_t median3(int32_t *buf);
 
+int32_t median5(int32_t *buf);
+
 
 void CurrentSensor_Init()
 {
@@ -24,9 +28,9 @@ void CurrentSensor_Init()
 
 	mainCS.Init.CS_Type = CS_Type_3shunt;
 	mainCS.Init.Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.V_Iu_offset = 1.67497551f;
-	mainCS.Init.V_Iv_offset = 1.67578125f;
-	mainCS.Init.V_Iw_offset = 1.67819822f;
+	mainCS.Init.V_Iu_offset = 1.710;
+	mainCS.Init.V_Iv_offset = 1.683;
+	mainCS.Init.V_Iw_offset = 1.705;
 	mainCS.Init.hadc_Iu = &hadc1;
 	mainCS.Init.hadc_Iv = &hadc2;
 	mainCS.Init.hadc_Iw = &hadc3;
@@ -87,14 +91,24 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 
 		// メディアンフィルタ用バッファ書き込み位置更新
 		hCS->pos_MEDF_I += 1;
-		if(hCS->pos_MEDF_I >= 3)
+		if(hCS->pos_MEDF_I >= MEDIAN_ORDER)
 		{
 			hCS->pos_MEDF_I = 0;
 		}
 
+#if MEDIAN_ORDER == 3
 		AD_Iu_MEDF = median3(hCS->AD_Iu_buf);
 		AD_Iv_MEDF = median3(hCS->AD_Iv_buf);
 		AD_Iw_MEDF = median3(hCS->AD_Iw_buf);
+#elif MEDIAN_ORDER == 5
+		AD_Iu_MEDF = median5(hCS->AD_Iu_buf);
+		AD_Iv_MEDF = median5(hCS->AD_Iv_buf);
+		AD_Iw_MEDF = median5(hCS->AD_Iw_buf);
+#else
+		AD_Iu_MEDF = hCS->AD_Iu[0];
+		AD_Iv_MEDF = hCS->AD_Iv[0];
+		AD_Iw_MEDF = hCS->AD_Iw[0];
+#endif
 
 		// 端子電圧更新
 		hCS->V_Iu = (float)AD_Iu_MEDF / AD_Range * Vref_AD - hCS_Init->V_Iu_offset;
@@ -180,7 +194,41 @@ inline int32_t median3(int32_t *buf)
 }
 
 
+inline int32_t median5(int32_t *buf)
+{
+	static uint32_t winCount[5] = {0};
 
+	winCount[0] = 0;
+	winCount[1] = 0;
+	winCount[2] = 0;
+	winCount[3] = 0;
+	winCount[4] = 0;
+
+	if (buf[0] > buf[1]) winCount[0]++; else winCount[1]++;
+	if (buf[0] > buf[2]) winCount[0]++; else winCount[2]++;
+	if (buf[0] > buf[3]) winCount[0]++; else winCount[3]++;
+	if (buf[0] > buf[4]) winCount[0]++; else winCount[4]++;
+
+	if (winCount[0] == 2) return buf[0];
+
+	if (buf[1] > buf[2]) winCount[1]++; else winCount[2]++;
+	if (buf[1] > buf[3]) winCount[1]++; else winCount[3]++;
+	if (buf[1] > buf[4]) winCount[1]++; else winCount[4]++;
+
+	if (winCount[1] == 2) return buf[1];
+
+	if (buf[2] > buf[3]) winCount[2]++; else winCount[3]++;
+	if (buf[2] > buf[4]) winCount[2]++; else winCount[4]++;
+
+	if (winCount[2] == 2) return buf[2];
+
+	if (buf[3] > buf[4]) winCount[3]++; else winCount[4]++;
+
+	if (winCount[3] == 2) return buf[3];
+
+	return buf[4];
+
+}
 
 
 

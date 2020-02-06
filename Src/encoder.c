@@ -75,8 +75,11 @@ void setZeroEncoder(uint8_t exe)
 
 		memcpy(&mainEncoder.Init.theta_re_offset, flash_data, 4);
 
+#if DEBUG_PRINT_ENABLE
 		printf("flash_data:%d\n", mainEncoder.Init.theta_re_offset * 100000);
 		printf(" theta_re_offset = %d\n", (int)(mainEncoder.Init.theta_re_offset * 100000));
+#endif
+
 		return;
 	}
 
@@ -102,6 +105,7 @@ void setZeroEncoder(uint8_t exe)
 	while(mainEncoder.Init.theta_re_offset < -M_PI)	mainEncoder.Init.theta_re_offset += 2.0f * M_PI;
 	while(mainEncoder.Init.theta_re_offset > M_PI)	mainEncoder.Init.theta_re_offset -= 2.0f * M_PI;
 
+#if DEBUG_PRINT_ENABLE
 
 	printf(" theta_re_offset = %d -- ", (int)(mainEncoder.Init.theta_re_offset * 100000));
 	HAL_Delay(1);
@@ -116,15 +120,21 @@ void setZeroEncoder(uint8_t exe)
 
 	printf("(theta_re_offset > -1.0f) = %d\n", (int)(mainEncoder.Init.theta_re_offset > -1.0f));
 
+#endif
 
 	memcpy(flash_data, &mainEncoder.Init.theta_re_offset, 4);
 
 	if (!Flash_store())
 	{
+#if DEBUG_PRINT_ENABLE
 		printf("Failed to write flash\n");
+#endif
 	}
 
+
+#if DEBUG_PRINT_ENABLE
 	printf("flash_data:%lu\n", *flash_data);
+#endif
 
 
 	mainACR.forced_commute_enable = 0;

@@ -43,7 +43,7 @@ void ACR_Init()
 	memset(&mainACR, 0x00, sizeof(mainACR));
 
 	mainACR.Init.Kp = 0.1f;
-	mainACR.Init.Ki = 400.0f;
+	mainACR.Init.Ki = 100.0f;
 
 	mainACR.Init.Id_limit = 15.0f;
 	mainACR.Init.Iq_limit = 15.0f;
@@ -172,6 +172,9 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 
 		hACR->p_Id_error = hACR->Id_error;
 		hACR->p_Iq_error = hACR->Iq_error;
+
+		// hACR->Vd_ref = - hACR_Init->Kp * hACR->Id + hACR_Init->Ki * hACR->Id_error_integ;
+		// hACR->Vq_ref = - hACR_Init->Kp * hACR->Iq + hACR_Init->Ki * hACR->Iq_error_integ;
 
 		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
 		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;

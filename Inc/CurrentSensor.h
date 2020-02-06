@@ -7,6 +7,10 @@
 #include "adc.h"
 
 
+#define MEDIAN_ORDER	5
+
+
+
 typedef enum
 {
 	CS_Type_3shunt,
@@ -51,9 +55,9 @@ typedef struct
 
 	int32_t pos_MEDF_I;
 
-	int32_t AD_Iu_buf[3];
-	int32_t AD_Iv_buf[3];
-	int32_t AD_Iw_buf[3];
+	int32_t AD_Iu_buf[MEDIAN_ORDER];
+	int32_t AD_Iv_buf[MEDIAN_ORDER];
+	int32_t AD_Iw_buf[MEDIAN_ORDER];
 
 	float V_Iu, V_Iv, V_Iw;
 
