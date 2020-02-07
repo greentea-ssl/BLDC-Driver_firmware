@@ -142,6 +142,9 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 		if(_Iq_ref < -hACR_Init->Iq_limit)			_Iq_ref = -hACR_Init->Iq_limit;
 		else if(_Iq_ref > hACR_Init->Iq_limit)		_Iq_ref = hACR_Init->Iq_limit;
 
+		hACR->Id_limitError = hACR->Id_ref - _Id_ref;
+		hACR->Iq_limitError = hACR->Iq_ref - _Iq_ref;
+
 
 		hACR->Id_error = _Id_ref - hACR->Id;
 		hACR->Iq_error = _Iq_ref - hACR->Iq;

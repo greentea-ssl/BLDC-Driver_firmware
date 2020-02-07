@@ -39,6 +39,8 @@ typedef struct
 
 	uint8_t enable;
 
+	float Id_limitError, Iq_limitError;
+
 	float Id_ref, Iq_ref;
 
 	float Id, Iq;

@@ -12,6 +12,10 @@
 #include "encoder.h"
 
 
+// リミット偏差フィードバックによるアンチワインドアップ
+#define USE_ANTI_WINDUP 1
+
+
 ASR_TypeDef mainASR;
 
 
@@ -73,6 +77,7 @@ inline void ASR_Refresh(ASR_TypeDef *hASR)
 	static float d_theta;
 	static float _omega_ref;
 	static float torque_ref;
+	static float integInput;
 
 	static ASR_InitTypeDef *hASR_Init;
 
@@ -102,10 +107,20 @@ inline void ASR_Refresh(ASR_TypeDef *hASR)
 	// 速度偏差
 	hASR->omega_error = _omega_ref - hASR->omega;
 
+#if USE_ANTI_WINDUP
+	// リミット偏差フィードバックによる
+
+	integInput = hASR->omega_error - hASR_Init->hACR->Iq_limitError / (KT * hASR_Init->Kp);
+
+	hASR->omega_error_integ += hASR_Init->cycleTime * 0.5 * (integInput + hASR->p_omega_error);
+
+	hASR->p_omega_error = integInput;
+#else
 	// integral
 	hASR->omega_error_integ += hASR_Init->cycleTime * 0.5 * (hASR->omega_error + hASR->p_omega_error);
-
 	hASR->p_omega_error = hASR->omega_error;
+#endif
+
 
 	torque_ref = hASR_Init->Kp * hASR->omega_error + hASR_Init->Ki * hASR->omega_error_integ;
 
