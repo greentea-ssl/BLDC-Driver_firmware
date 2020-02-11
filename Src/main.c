@@ -116,13 +116,6 @@ int ASR_dump_count = 0;
 
 
 
-/********** Forced commutation **********/
-
-
-
-#define _FC_DUMP_	0
-
-
 
 
 
@@ -133,25 +126,6 @@ volatile uint32_t timeoutCount = 0;
 
 // 1: timeout
 volatile uint8_t timeoutState = 0;
-
-
-
-
-
-/********** APR **********/
-
-float Kp_APR = 50.0f;
-float Kd_APR = 0.02f;
-
-
-const float APR_cycleTime = 1E-3;
-
-volatile float theta_ref = 0.0f;
-
-
-volatile float theta_error = 0.0f;
-
-volatile float theta_error_diff = 0.0f;
 
 
 
@@ -293,7 +267,8 @@ int main(void)
 
   DRV_ReadData(&drv8323, ADDR_CSA_Control);
 
-  drv8323.Reg.CSA_Control.SEN_LVL = 0b11; // Vsense = 0.5V -> 50A
+  drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 0.5V -> 50A
+  drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
 
   DRV_WriteData(&drv8323, ADDR_CSA_Control);
 

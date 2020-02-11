@@ -41,7 +41,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 
 
-#define DEBUG_PRINT_ENABLE 0
+#define DEBUG_PRINT_ENABLE 1
 
 
 /* USER CODE END ET */

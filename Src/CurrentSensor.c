@@ -24,13 +24,15 @@ int32_t median5(int32_t *buf);
 void CurrentSensor_Init()
 {
 
-	memcpy(&mainCS, 0x00, sizeof(mainCS));
+	memset(&mainCS, 0x00, sizeof(mainCS));
 
 	mainCS.Init.CS_Type = CS_Type_3shunt;
-	mainCS.Init.Gain_currentSense = -10.0f; // 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.V_Iu_offset = 1.710;
-	mainCS.Init.V_Iv_offset = 1.683;
-	mainCS.Init.V_Iw_offset = 1.705;
+	mainCS.Init.Iu_Gain = -9.0f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iv_Gain = -5.3f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iw_Gain = -5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.V_Iu_offset = 1.65;
+	mainCS.Init.V_Iv_offset = 1.65;
+	mainCS.Init.V_Iw_offset = 1.65;
 	mainCS.Init.hadc_Iu = &hadc1;
 	mainCS.Init.hadc_Iv = &hadc2;
 	mainCS.Init.hadc_Iw = &hadc3;
@@ -116,23 +118,29 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 		hCS->V_Iw = (float)AD_Iw_MEDF / AD_Range * Vref_AD - hCS_Init->V_Iw_offset;
 
 
+		/*
+		hCS->Iu = hCS->V_Iu * hCS->Init.Iu_Gain;
+		hCS->Iv = hCS->V_Iv * hCS->Init.Iv_Gain;
+		hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
+		*/
+
 		switch(SVM_sector)
 		{
 		case 0: case 5:
-			hCS->Iv = hCS->V_Iv * hCS->Init.Gain_currentSense;
-			hCS->Iw = hCS->V_Iw * hCS->Init.Gain_currentSense;
+			hCS->Iv = hCS->V_Iv * hCS->Init.Iv_Gain;
+			hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
 			hCS->Iu = - hCS->Iv - hCS->Iw;
 			break;
 
 		case 1: case 2:
-			hCS->Iw = hCS->V_Iw * hCS->Init.Gain_currentSense;
-			hCS->Iu = hCS->V_Iu * hCS->Init.Gain_currentSense;
+			hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
+			hCS->Iu = hCS->V_Iu * hCS->Init.Iu_Gain;
 			hCS->Iv = - hCS->Iw - hCS->Iu;
 			break;
 
 		case 3: case 4:
-			hCS->Iu = hCS->V_Iu * hCS->Init.Gain_currentSense;
-			hCS->Iv = hCS->V_Iv * hCS->Init.Gain_currentSense;
+			hCS->Iu = hCS->V_Iu * hCS->Init.Iu_Gain;
+			hCS->Iv = hCS->V_Iv * hCS->Init.Iv_Gain;
 			hCS->Iw = - hCS->Iu - hCS->Iv;
 			break;
 		}

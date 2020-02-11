@@ -31,7 +31,9 @@ typedef struct
 	ADC_HandleTypeDef *hadc_Iw;
 	ADC_HandleTypeDef *hadc_Idc;
 
-	float Gain_currentSense;
+	float Iu_Gain;
+	float Iv_Gain;
+	float Iw_Gain;
 
 	float V_Iu_offset;
 	float V_Iv_offset;
