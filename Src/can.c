@@ -145,7 +145,7 @@ void CAN_Init()
 	sFilterConfig.FilterBank = 0;
 	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	sFilterConfig.FilterIdHigh = 0x2000 | motorChannel << 10;
+	sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
 	sFilterConfig.FilterIdLow = 0x0000;
 	sFilterConfig.FilterMaskIdHigh = 0xfc00;
 	sFilterConfig.FilterMaskIdLow = 0x0006;
