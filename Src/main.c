@@ -64,10 +64,6 @@
 
 
 
-#define _APR_ENABLE_		1
-
-
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -115,6 +111,11 @@ int ASR_dump_count = 0;
 #endif
 
 
+/********** for making speed reference **********/
+
+volatile uint8_t timing_10ms_flg = 0;
+
+volatile uint8_t timing_10ms_count = 0;
 
 
 
@@ -376,25 +377,33 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  APR_Refresh(&mainAPR);
-
-	  ASR_Refresh(&mainASR);
 
 
-		  omega_ref = 50.0 * sin(phase);
+	  if(timing_10ms_flg == 1)
+	  {
 
-		  phase += 1E-3 * 2 * M_PI * 0.2;
+		  mainASR.omega_ref = 50.0 * sin(phase);
+
+		  phase += 10E-3 * 2 * M_PI * 0.2;
 
 		  if(phase > 2 * M_PI)
 		  {
 			  phase -= 2 * M_PI;
 		  }
+
+		  timing_10ms_flg = 0;
+
+	  }
+
+	  APR_Refresh(&mainAPR);
+
+	  ASR_Refresh(&mainASR);
+
+
+
+
+
 #if DUMP_ENABLE
-
-
-
-
-
 
 	  if(DumpCount >= DUMP_STEPS)
 	  {
@@ -522,11 +531,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		Encoder_Request(&mainEncoder);
 
+		timing_10ms_count ++;
+
+		if(timing_10ms_count >= 100)
+		{
+			timing_10ms_count = 0;
+			timing_10ms_flg = 1;
+		}
 
 		// timeout control
 		if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
 		{
-			timeoutCount += 1;
+			//timeoutCount += 1;
 		}
 		else
 		{
