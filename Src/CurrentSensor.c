@@ -27,9 +27,9 @@ void CurrentSensor_Init()
 	memset(&mainCS, 0x00, sizeof(mainCS));
 
 	mainCS.Init.CS_Type = CS_Type_3shunt;
-	mainCS.Init.Iu_Gain = -9.0f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Iv_Gain = -5.3f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Iw_Gain = -5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iu_Gain = -10.0f;//9.0f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iv_Gain = -10.0f;//5.3f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
 	mainCS.Init.V_Iu_offset = 1.65;
 	mainCS.Init.V_Iv_offset = 1.65;
 	mainCS.Init.V_Iw_offset = 1.65;

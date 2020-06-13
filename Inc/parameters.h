@@ -8,7 +8,8 @@
 // Motor Select
 
 //#define _MOTOR_QUANUM_MT4108_KV370_
-#define _MOTOR_SUNNYSKY_V4006_KV320_
+//#define _MOTOR_SUNNYSKY_V4006_KV320_
+#define _MOTOR_SUNNYSKY_V2806_KV400_
 
 
 
@@ -22,6 +23,9 @@
 #ifdef _MOTOR_SUNNYSKY_V4006_KV320_
 #define POLE_PAIRS	12
 #endif
+#ifdef _MOTOR_SUNNYSKY_V2806_KV400_
+#define POLE_PAIRS	7
+#endif
 
 // Kv constant [rpm/V]
 #ifdef _MOTOR_QUANUM_MT4108_KV370_
@@ -29,6 +33,9 @@
 #endif
 #ifdef _MOTOR_SUNNYSKY_V4006_KV320_
 #define 	KV	320.0
+#endif
+#ifdef _MOTOR_SUNNYSKY_V2806_KV400_
+#define 	KV	400.0
 #endif
 
 // Electromotive force constant [V/(rad/s)]

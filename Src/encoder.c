@@ -58,7 +58,7 @@ void setZeroEncoder(uint8_t exe)
 
 	volatile uint32_t forced_commute_count = 0;
 
-	const float forced_I_gamma_ref = 8.0f;
+	const float forced_I_gamma_ref = 5.0f;
 	const float forced_I_delta_ref = 0.0f;
 
 	volatile float sensed_theta_re_error;

@@ -32,6 +32,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 BLDC-Driver-f446.list \
 
+OBJCOPY_BIN += \
+BLDC-Driver-f446.bin \
+
 
 # All Target
 all: BLDC-Driver-f446.elf secondary-outputs
@@ -52,12 +55,17 @@ BLDC-Driver-f446.list: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+BLDC-Driver-f446.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "BLDC-Driver-f446.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) *
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
 .PHONY: all clean dependents
 .SECONDARY:
