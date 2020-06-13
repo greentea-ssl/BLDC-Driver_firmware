@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -22,8 +22,9 @@
 
 /* USER CODE BEGIN 0 */
 
-#include "ASR.h"
 #include "ACR.h"
+#include "ASR.h"
+#include "APR.h"
 #include "tim.h"
 
 
@@ -144,7 +145,7 @@ void CAN_Init()
 	sFilterConfig.FilterBank = 0;
 	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	sFilterConfig.FilterIdHigh = 0x2000 | motorChannel << 10;
+	sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
 	sFilterConfig.FilterIdLow = 0x0000;
 	sFilterConfig.FilterMaskIdHigh = 0xfc00;
 	sFilterConfig.FilterMaskIdLow = 0x0006;
@@ -238,23 +239,24 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		controlRef.byte[2] = can1RxData[2];
 		controlRef.byte[3] = can1RxData[3];
 
-		omega_ref = controlRef.fval;
+		mainASR.omega_ref = controlRef.fval;
 
 		timeoutReset();
 
 	}
 
-#if _APR_ENABLE_
-	if(can1RxHeader.StdId == 0x008 && can1RxHeader.DLC == 0x4)
+
+	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x02 && can1RxHeader.DLC == 0x4)
 	{
 		controlRef.byte[0] = can1RxData[0];
 		controlRef.byte[1] = can1RxData[1];
 		controlRef.byte[2] = can1RxData[2];
 		controlRef.byte[3] = can1RxData[3];
 
-		theta_ref = controlRef.fval;
+		mainAPR.theta_ref = controlRef.fval;
+
+		timeoutReset();
 	}
-#endif
 
 
 	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);

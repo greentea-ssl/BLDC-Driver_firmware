@@ -32,13 +32,16 @@ default.size.stdout \
 OBJDUMP_LIST += \
 BLDC-Driver-f446.list \
 
+OBJCOPY_BIN += \
+BLDC-Driver-f446.bin \
+
 
 # All Target
 all: BLDC-Driver-f446.elf secondary-outputs
 
 # Tool invocations
 BLDC-Driver-f446.elf: $(OBJS) $(USER_OBJS) C:\Users\Akito\OneDrive\ -\ stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld
-	arm-none-eabi-gcc -o "BLDC-Driver-f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Akito\OneDrive - stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BLDC-Driver-f446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "BLDC-Driver-f446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Akito\OneDrive - stn.nagaokaut.ac.jp\SSL\cubeIDEprojects\BLDC-Driver\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BLDC-Driver-f446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -52,12 +55,17 @@ BLDC-Driver-f446.list: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+BLDC-Driver-f446.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "BLDC-Driver-f446.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) *
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
 .PHONY: all clean dependents
 .SECONDARY:

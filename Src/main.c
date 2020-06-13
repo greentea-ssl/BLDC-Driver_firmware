@@ -34,9 +34,18 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
+#include "pwm.h"
 #include "parameters.h"
 #include "ACR.h"
 #include "ASR.h"
+#include "APR.h"
+#include "encoder.h"
+#include "CurrentSensor.h"
+#include "drv8323.h"
+
+#include "debugDump.h"
+
+
 
 /* USER CODE END Includes */
 
@@ -49,12 +58,13 @@
 /* USER CODE BEGIN PD */
 
 
+#define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
 
 
 
 
 
-#define _APR_ENABLE_		0
+#define _APR_ENABLE_		1
 
 
 
@@ -107,59 +117,15 @@ int ASR_dump_count = 0;
 
 
 
-/********** for Magnetic Rotary Encoder **********/
 
 
+/********** Timeout Control **********/
 
 
-/********** Forced commutation **********/
+volatile uint32_t timeoutCount = 0;
 
-
-
-#define _FC_DUMP_	0
-
-
-
-/********** for ADC **********/
-
-
-
-
-/********** for PWM Output **********/
-
-
-
-
-/********** for ACR (Auto Current Regulator) **********/
-
-
-
-
-
-/********** for ASR (Auto Speed Regulator) **********/
-
-
-
-
-/********** APR **********/
-
-float Kp_APR = 50.0f;
-float Kd_APR = 0.02f;
-
-
-const float APR_cycleTime = 1E-3;
-
-volatile float theta_ref = 0.0f;
-
-
-volatile float theta_error = 0.0f;
-
-volatile float theta_error_diff = 0.0f;
-
-
-
-
-/********** CAN **********/
+// 1: timeout
+volatile uint8_t timeoutState = 0;
 
 
 
@@ -176,7 +142,7 @@ inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...);
 int32_t printFloat(float val);
 
 
-#if 0
+#if 1
 
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
@@ -191,7 +157,7 @@ void __io_putchar(uint8_t ch)
 #endif
 
 
-
+#if 0
 int _write(int file, char *ptr, int len)
 {
   int DataIdx;
@@ -201,7 +167,11 @@ int _write(int file, char *ptr, int len)
   }
   return len;
 }
+#endif
 
+#if 1
+extern void initialise_monitor_handles(void);
+#endif
 
 /* USER CODE END PFP */
 
@@ -219,7 +189,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 	float phase = 0.0f;
-
 
 	int count = 0;
 
@@ -263,16 +232,59 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
+  //initialise_monitor_handles();
+
+
+  DRV_Init();
+
 
 
   //UartPrintf(&huart2, "Hello world\n");
 
+
+#if DEBUG_PRINT_ENABLE
+
   printf("Hello\n");
+
+#endif
 
 
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
 
+
+  //printf("Hello SPI Gate Driver\n");
+
+
+  DRV_ReadData(&drv8323, ADDR_OCP_Control);
+
+  drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
+  drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrentcausesa latchedfault
+  drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
+  drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
+
+  DRV_WriteData(&drv8323, ADDR_OCP_Control);
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+  drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 0.5V -> 50A
+  drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
+
+  DRV_WriteData(&drv8323, ADDR_CSA_Control);
+
+
+#if DEBUG_PRINT_ENABLE
+
+  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+  PRINT_HEX(drv8323.Reg.DriverControl.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+  PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+  PRINT_HEX(drv8323.Reg.OCP_Control.word);
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+#endif
 
   // Current Sensing Auto Offset Calibration
   HAL_GPIO_WritePin(OP_CAL_GPIO_Port, OP_CAL_Pin, GPIO_PIN_SET);
@@ -281,6 +293,14 @@ int main(void)
 
 
   /******** DEBUG ********/
+
+
+  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+
+#if DEBUG_PRINT_ENABLE
+  PRINT_HEX(drv8323.Reg.CSA_Control.word);
+#endif
 
   HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 
@@ -313,30 +333,38 @@ int main(void)
 
 
 
-  ADC_Init();
 
   //CAN_Init();
 
 
+  Encoder_Init();
+
+
   HAL_Delay(100);
 
+  CurrentSensor_Init();
 
-  TIM_Init();
-
-  SPI_Init();
+  CurrentSensor_Start(&mainCS);
 
 
-  ACR_Start();
+  ACR_Init();
+
+  ASR_Init();
+
+  APR_Init();
+
+  PWM_Init();
+
+  HAL_Delay(1);
+
+  ACR_Start(&mainACR);
 
   setZeroEncoder((p_ch != ch)? 1: 0);
 
 
+  ASR_Start(&mainASR);
 
-  //while(1);
-
-  ASR_Start();
-
-
+  //APR_Start(&mainAPR);
 
   /* USER CODE END 2 */
 
@@ -348,10 +376,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	  APR_Refresh(&mainAPR);
 
-	  if(ASR_flg == 1)
-	  {
-		  HAL_GPIO_TogglePin(DB2_GPIO_Port, DB2_Pin);
+	  ASR_Refresh(&mainASR);
 
 
 		  omega_ref = 50.0 * sin(phase);
@@ -362,111 +389,26 @@ int main(void)
 		  {
 			  phase -= 2 * M_PI;
 		  }
+#if DUMP_ENABLE
 
 
 
 
 
-#if _FC_DUMP_
-		  else
-		  {
-			  break;
-		  }
 
-#endif
-
-
-
-#if _ACR_DUMP_
-
-#if 0
-
-		  if(Iq_ref <= 0.0f)
-			  Iq_ref = 5.0f;
-		  else
-			  Iq_ref = -5.0f;
-
-#endif
-
-		  if(ACR_dump_count >= ACR_DUMP_STEPS)
-			  break;
-
-
-#endif
-
-
-
-#if _ASR_DUMP_
-
-		  if(ASR_dump_count % 1000 < 500)
-		  {
-			  omega_ref = 50.0f;
-		  }
-		  else
-		  {
-			  omega_ref = -50.0f;
-		  }
-
-		  if(ASR_dump_count >= ASR_DUMP_STEPS)
-			  break;
-
-#endif
-
-
-
-
-		  /********** APR (Auto Position Regulator) **********/
-
-#if _APR_ENABLE_
-
-		  theta_error = theta_ref - theta;
-
-		  if(theta_error < - M_PI)		theta_error += 2 * M_PI;
-		  else if(theta_error > M_PI)	theta_error -= 2 * M_PI;
-
-		  theta_error_diff = (theta_error - p_theta_error) / APR_cycleTime;
-
-		  p_theta_error = theta_error;
-
-		  omega_ref = Kp_APR * theta_error + Kd_APR * theta_error_diff;
-
-#endif
-
-		  /********** ASR (Auto Speed Regulator) **********/
-
-
-		  speedControl();
-
-
-#if _ASR_DUMP_
-
-		  if(ASR_dump_count < ASR_DUMP_STEPS)
-		  {
-			  omega_dump[ASR_dump_count] = omega;
-			  omega_ref_dump[ASR_dump_count] = omega_ref;
-			  torque_ref_dump[ASR_dump_count] = torque_ref;
-			  ASR_dump_count += 1;
-		  }
-
-#endif
-
-
-
-		  /********** end of ASR **********/
-
-
-		  ASR_flg = 0;
-
+	  if(DumpCount >= DUMP_STEPS)
+	  {
+		  break;
 	  }
 
-
+#endif
 
 
   }
 
 
-  Id_ref = 0.0f;
-  Iq_ref = 0.0f;
+  mainACR.Id_ref = 0.0f;
+  mainACR.Iq_ref = 0.0f;
 
   HAL_Delay(10);
 
@@ -475,87 +417,38 @@ int main(void)
 
   HAL_Delay(10);
 
-  stopPWM();
+  stopPWM(&htim8);
 
   HAL_Delay(10);
 
-#if _FC_DUMP_
 
-  printFloat(theta_re_offset);
-  printf("\n");
+  Dump_Print();
 
-  printf("forcedTheta[rad], measuredTheta[rad]\n");
+  /*
+	printf("t, Id, Iq, Id_ref, Iq_ref, Vd_ref, Vq_ref, theta_re, omega\n");
 
-  for(count = 0; count < FORCED_COMMUTE_STEPS; count++)
-  {
-	  printFloat(count * 2.0f * M_PI / FORCED_COMMUTE_STEPS);
-	  printf(", ");
-	  printFloat(sensedTheta_f[count]);
-	  printf(", ");
-	  printFloat(sensedTheta_b[count]);
-	  printf("\n");
-  }
+	for(count = 0; count < DUMP_STEPS; count++)
+	{
 
+		printf("%.4e, ", count * DUMP_CYCLETIME);
 
-#endif
+		printf("%.4f, ", record[count].Id);
+		printf("%.4f, ", record[count].Iq);
+		printf("%.4f, ", record[count].Id_ref);
+		printf("%.4f, ", record[count].Iq_ref);
+		printf("%.4f, ", record[count].Vd_ref);
+		printf("%.4f, ", record[count].Vq_ref);
+		printf("%.4f, ", record[count].theta_re);
+		printf("%.4f, ", record[count].omega);
 
+		printf("\n");
 
-
-#if _ACR_DUMP_
-
-  printf("time[s], Id[A], Iq[A], Id*[A], Iq*[A], Vd*[V], Vq*[V]\n");
-
-  for(count = 0; count < ACR_DUMP_STEPS; count++)
-  {
-
-	  printFloat(count * ACR_cycleTime);
-	  printf(", ");
-
-	  printFloat(Id_dump[count]);
-	  printf(", ");
-	  printFloat(Iq_dump[count]);
-	  printf(", ");
-
-	  printFloat(Id_ref_dump[count]);
-	  printf(", ");
-	  printFloat(Iq_ref_dump[count]);
-	  printf(", ");
-
-	  printFloat(Vd_ref_dump[count]);
-	  printf(", ");
-	  printFloat(Vq_ref_dump[count]);
-	  printf("\n");
-
-	  HAL_Delay(1);
-
-  }
-
-#endif
-
-#if _ASR_DUMP_
-
-  printf("time[s], ω[rad/s], ???????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��??????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?????��?��??��?��???��?��??��?��????��?��??��?��???��?��??��?��?*[rad/s], Torque*[N・m]\n");
-
-  for(count = 0; count < ASR_DUMP_STEPS; count++)
-  {
-	  printFloat(count * ASR_cycleTime);
-	  printf(", ");
-
-	  printFloat(omega_dump[count]);
-	  printf(", ");
-
-	  printFloat(omega_ref_dump[count]);
-	  printf(", ");
-
-	  printFloat(torque_ref_dump[count]);
-	  printf("\n");
-
-  }
-
-#endif
+	}
+*/
 
 
 
+  while(1);
 
   /* USER CODE END 3 */
 }
@@ -608,6 +501,66 @@ void SystemClock_Config(void)
 
 
 
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
+{
+
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
+
+	if(htim->Instance == TIM8 && !__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+	{
+
+		Encoder_Refresh(&mainEncoder);
+
+		CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+		ACR_Refresh(&mainACR);
+
+		ASR_prescaler(&mainASR);
+
+		APR_prescaler(&mainAPR);
+
+		Encoder_Request(&mainEncoder);
+
+
+		// timeout control
+		if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
+		{
+			timeoutCount += 1;
+		}
+		else
+		{
+			stopPWM(&htim8);
+			timeoutCount = 0;
+			timeoutState = 1;
+		}
+
+#if DUMP_ENABLE
+
+		Dump_Refresh();
+
+#endif
+
+
+	}
+
+	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
+
+}
+
+
+
+inline void timeoutReset()
+{
+	timeoutCount = 0;
+	if(timeoutState == 1)
+	{
+		timeoutState = 0;
+		ASR_Reset(&mainASR);
+		ACR_Reset(&mainACR);
+		startPWM(&htim8);
+	}
+}
 
 
 

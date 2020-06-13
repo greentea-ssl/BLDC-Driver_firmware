@@ -4,35 +4,76 @@
 #define _ASR_H_
 
 
-
-extern volatile float omega_ref;
-
-
-extern volatile float omega_errorf;
-
-extern volatile float omega_error_integ;
-
-extern volatile float torque_ref;
+#include "encoder.h"
+#include "ACR.h"
 
 
+typedef struct
+{
+
+	float Kp;
+	float Ki;
+
+	float cycleTime;
+
+	float omega_limit;
+
+	float omega_error_integ_limit;
+
+	Encoder_TypeDef *hEncoder;
+
+	ACR_TypeDef *hACR;
+
+	uint32_t prescaler;
+
+}ASR_InitTypeDef;
 
 
-extern int ASR_flg;
-extern int ASR_prescalerCount;
+typedef struct
+{
+
+	ASR_InitTypeDef Init;
+
+	uint8_t enable;
+
+	float omega_ref;
+
+	float omega;
+
+	float omega_error;
+
+	float p_omega_error;
+
+	float omega_error_integ;
+
+	float Iq_ref;
+
+	uint32_t prescalerCount;
+
+	uint8_t firstLaunch;
+
+	uint8_t launchFlg;
+
+}ASR_TypeDef;
 
 
-#define ASR_prescale	10
+
+extern ASR_TypeDef mainASR;
 
 
-void ASR_Start();
-
-void ASR_Stop();
+void ASR_Init();
 
 
-void speedControl();
+void ASR_Start(ASR_TypeDef *hASR);
 
-void ASR_Reset();
+void ASR_Stop(ASR_TypeDef *hASR);
+
+void ASR_prescaler(ASR_TypeDef *hASR);
+
+void ASR_Refresh(ASR_TypeDef *hASR);
+
+void ASR_Reset(ASR_TypeDef *hASR);
 
 
 
-#endif
+#endif /* _ASR_H_ */

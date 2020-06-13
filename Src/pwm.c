@@ -1,11 +1,19 @@
 
 
-#include "modulator.h"
-
+#include <pwm.h>
 #include "parameters.h"
 #include "spi.h"
 #include "tim.h"
-#include "adc.h"
+//#include "adc.h"
+
+
+
+volatile float Vdc = 20.0f;
+
+
+volatile float amp_u = 0.0;
+volatile float amp_v = 0.0;
+volatile float amp_w = 0.0;
 
 
 
@@ -29,8 +37,55 @@ volatile float Vq_ref = 0.0f;
 volatile int sector_SVM = 0;
 
 
+void PWM_Init()
+{
 
-inline void setSVM_dq()
+	__HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
+	__HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
+
+
+	HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
+	//HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
+
+
+	startPWM(&htim8);
+
+}
+
+
+inline void startPWM(TIM_HandleTypeDef *htim)
+{
+
+
+	// 3phase PWM Starting
+	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_3);
+
+	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_3);
+
+}
+
+
+
+inline void stopPWM(TIM_HandleTypeDef *htim)
+{
+
+	// 3phase PWM Stopping
+	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_3);
+
+	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_1);
+	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_2);
+	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_3);
+
+}
+
+
+inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float cos_theta_re, float sin_theta_re)
 {
 
 	static float cross0 = 0.0;
@@ -39,8 +94,6 @@ inline void setSVM_dq()
 	static float x1, y1, x2, y2;
 	static float x, y;
 	static float vect1, vect2;
-
-
 
 
 	x = Vd_ref * cos_theta_re - Vq_ref * sin_theta_re;
@@ -85,9 +138,9 @@ inline void setSVM_dq()
 	if(duty[1] < -1.0f) duty[1] = -1.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
 	if(duty[2] < -1.0f) duty[2] = -1.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
 
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, PWM_RESOL * (1.0f - (amp_u = duty[0])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, PWM_RESOL * (1.0f - (amp_v = duty[1])));
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, PWM_RESOL * (1.0f - (amp_w = duty[2])));
+	__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, htim->Init.Period * (1.0f - (amp_u = duty[0])));
+	__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, htim->Init.Period * (1.0f - (amp_v = duty[1])));
+	__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, htim->Init.Period * (1.0f - (amp_w = duty[2])));
 
 
 	return;

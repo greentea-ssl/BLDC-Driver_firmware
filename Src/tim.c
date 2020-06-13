@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -21,22 +21,6 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-
-#include "ACR.h"
-#include "ASR.h"
-
-
-
-volatile float amp_u = 0.0;
-volatile float amp_v = 0.0;
-volatile float amp_w = 0.0;
-
-
-volatile uint32_t timeoutCount = 0;
-
-// 1: timeout
-volatile uint8_t timeoutState = 0;
-
 
 /* USER CODE END 0 */
 
@@ -56,7 +40,7 @@ void MX_TIM8_Init(void)
   htim8.Init.Period = 8000;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
   {
     Error_Handler();
@@ -98,7 +82,7 @@ void MX_TIM8_Init(void)
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 40;
+  sBreakDeadTimeConfig.DeadTime = 0;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
@@ -198,123 +182,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 } 
 
 /* USER CODE BEGIN 1 */
-
-
-
-void TIM_Init()
-{
-
-
-	  // Setting Timer Interrupts
-	  /*
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC1);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC2);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC3);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_CC4);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_COM);
-	  __HAL_TIM_DISABLE_IT(&htim8, TIM_IT_BREAK);*/
-	  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
-	  __HAL_TIM_ENABLE_IT(&htim8, TIM_IT_UPDATE);
-
-
-	  startPWM();
-
-
-}
-
-
-
-inline void startPWM()
-{
-
-
-	// 3phase PWM Starting
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Start_IT(&htim8, TIM_CHANNEL_3);
-
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIMEx_PWMN_Start_IT(&htim8, TIM_CHANNEL_3);
-
-}
-
-
-
-inline void stopPWM()
-{
-
-	// 3phase PWM Stopping
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Stop_IT(&htim8, TIM_CHANNEL_3);
-
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_1);
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_2);
-	HAL_TIMEx_PWMN_Stop_IT(&htim8, TIM_CHANNEL_3);
-
-}
-
-
-
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
-{
-
-	if(htim->Instance == TIM8)
-	{
-
-		if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
-		{
-
-			currentControl();
-
-#if 0
-			// timeout control
-			if(timeoutCount < TIMEOUT_MS * PWM_FREQ / 1000)
-			{
-				timeoutCount += 1;
-			}
-			else
-			{
-				stopPWM();
-				timeoutCount = 0;
-				timeoutState = 1;
-			}
-#endif
-
-		}
-
-
-	}
-
-}
-
-
-inline void timeoutReset()
-{
-	timeoutCount = 0;
-	if(timeoutState == 1)
-	{
-		timeoutState = 0;
-		ASR_Reset();
-		ACR_Reset();
-		startPWM();
-	}
-}
-
-
-
-inline void setPWM(const float *duty){
-
-	if(duty[0] <= 1.0 && duty[0] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 4200 * (1.0 - (amp_u = duty[0])));
-	if(duty[1] <= 1.0 && duty[1] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 4200 * (1.0 - (amp_v = duty[1])));
-	if(duty[2] <= 1.0 && duty[2] >= 0.0)__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 4200 * (1.0 - (amp_w = duty[2])));
-
-	return 0;
-}
-
-
-
 
 /* USER CODE END 1 */
 

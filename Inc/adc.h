@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -36,8 +36,6 @@ extern ADC_HandleTypeDef hadc3;
 
 /* USER CODE BEGIN Private defines */
 
-extern volatile float Vdc;
-
 
 /* USER CODE END Private defines */
 
@@ -47,11 +45,6 @@ void MX_ADC3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
-inline void ADC_Init(void);
-
-inline void get_current_dq(float *, float *, int, float, float);
-
-int32_t median3(int32_t *buf);
 
 /* USER CODE END Prototypes */
 

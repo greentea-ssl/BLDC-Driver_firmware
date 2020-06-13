@@ -41,29 +41,8 @@ extern "C" {
 /* USER CODE BEGIN ET */
 
 
-// ACR variables dump enable
+#define DEBUG_PRINT_ENABLE 1
 
-#define _ACR_DUMP_			0
-
-#define _ASR_DUMP_			0
-
-
-#if _ACR_DUMP_
-
-#define ACR_DUMP_STEPS		500
-
-
-extern float Id_dump[ACR_DUMP_STEPS];
-extern float Iq_dump[ACR_DUMP_STEPS];
-extern float Id_ref_dump[ACR_DUMP_STEPS];
-extern float Iq_ref_dump[ACR_DUMP_STEPS];
-extern float Vd_ref_dump[ACR_DUMP_STEPS];
-extern float Vq_ref_dump[ACR_DUMP_STEPS];
-
-
-extern int ACR_dump_count;
-
-#endif
 
 /* USER CODE END ET */
 
@@ -116,6 +95,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define SPI3_NSS_Pin GPIO_PIN_15
+#define SPI3_NSS_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define DB2_Pin GPIO_PIN_4

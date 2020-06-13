@@ -3,130 +3,129 @@
 #include "ASR.h"
 
 #include <math.h>
+#include <string.h>
+
 #include "parameters.h"
 
-#include "spi.h"
 #include "ACR.h"
 
+#include "encoder.h"
 
 
-volatile uint8_t ASR_enable = 0;
+// リミット偏差フィードバックによるアンチワインドアップ
+#define USE_ANTI_WINDUP 1
 
 
-float Kp_ASR = 0.3;
-float Ki_ASR = 20.0;
+ASR_TypeDef mainASR;
 
 
-
-const float ASR_cycleTime = 1E-3;
-
-float omega_limit = 1000000.0;
-
-volatile float omega_ref = 0.0f;
-
-
-volatile float omega_error = 0.0f;
-
-volatile float omega_error_integ = 0.0f;
-
-volatile float torque_ref = 0.0;
-
-
-
-int ASR_steps = 0;
-
-
-int ASR_flg = 0;
-int ASR_prescalerCount = 0;
-
-volatile float omega = 0.0f;
-
-
-volatile float p_theta = 0.0f;
-
-
-float d_theta;
-
-float _omega_ref;
-
-float omega_error_integ_temp1 = 0.0f;
-float omega_error_integ_temp2 = 0.0f;
-
-
-
-void ASR_Start()
+void ASR_Init()
 {
+	memset(&mainASR, 0x00, sizeof(mainASR));
 
-	ASR_enable = 1;
-	ASR_Reset();
+	mainASR.Init.Kp = 0.5f;
+	mainASR.Init.Ki = 15.0f;
+	mainASR.Init.omega_limit = 400.0f;
+	mainASR.Init.omega_error_integ_limit = 1000.0f;
+	mainASR.Init.cycleTime = 1E-3;
+	mainASR.Init.prescaler = 10;
 
-}
+	mainASR.Init.hEncoder = &mainEncoder;
+	mainASR.Init.hACR = &mainACR;
 
-void ASR_Stop()
-{
+	mainASR.firstLaunch = 1;
 
-	ASR_enable = 0;
-	ASR_Reset();
+	mainASR.omega = 0.0f;
 
 }
 
 
-
-inline void speedControl()
+void ASR_Start(ASR_TypeDef *hASR)
 {
 
+	hASR->enable = 1;
+	ASR_Reset(hASR);
+
+}
+
+void ASR_Stop(ASR_TypeDef *hASR)
+{
+
+	hASR->enable = 0;
+	ASR_Reset(hASR);
+
+}
 
 
-	  if(ASR_steps <= 0)
-	  {
-		  d_theta = 0.0f;
-	  }
-	  else
-	  {
-		  d_theta = theta - p_theta;
-	  }
-	  ASR_steps += 1;
+inline void ASR_prescaler(ASR_TypeDef *hASR)
+{
 
-	  p_theta = theta;
+	hASR->prescalerCount += 1;
 
-	  if(d_theta < - M_PI)		d_theta += 2 * M_PI;
-	  else if(d_theta > M_PI)	d_theta -= 2 * M_PI;
+	if(hASR->prescalerCount >= hASR->Init.prescaler)
+	{
+		hASR->launchFlg = 1;
+		hASR->prescalerCount = 0;
+	}
 
-	  omega = omega * 0.5 + 0.5 * d_theta / ASR_cycleTime;
+}
 
 
-	  if(ASR_enable)
-	  {
+inline void ASR_Refresh(ASR_TypeDef *hASR)
+{
 
-		  if(omega_ref < -omega_limit)		_omega_ref = -omega_limit;
-		  else if(omega_ref > omega_limit)	_omega_ref = omega_limit;
-		  else								_omega_ref = omega_ref;
+	static float d_theta;
+	static float _omega_ref;
+	static float torque_ref;
+	static float integInput;
 
-		  omega_error = _omega_ref - omega;
+	static ASR_InitTypeDef *hASR_Init;
 
-		  // integral
-		  omega_error_integ_temp1 = omega_error + omega_error_integ_temp2;
-		  if(omega_error_integ_temp1 < -6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = -6.0 / ASR_cycleTime;
-		  }
-		  else if(omega_error_integ_temp1 > 6.0 / ASR_cycleTime)
-		  {
-			  omega_error_integ_temp1 = 6.0 / ASR_cycleTime;
-		  }
-		  omega_error_integ = ASR_cycleTime * 0.5f * (omega_error_integ_temp1 + omega_error_integ_temp2);
-		  omega_error_integ_temp2 = omega_error_integ_temp1;
+	// 有効時のみ実行
+	if(hASR->enable == 0)
+	{
+		return;
+	}
 
-
-		  torque_ref = Kp_ASR * omega_error + Ki_ASR * omega_error_integ;
-
-		  Id_ref = 0.0f;
-		  Iq_ref = KT * torque_ref;
+	// プリスケーラリセット時のみ実行
+	if(hASR->launchFlg == 0)
+	{
+		return;
+	}
+	hASR->launchFlg = 0;
 
 
-	  }
+	hASR_Init = &hASR->Init;
+
+	hASR->omega = hASR_Init->hEncoder->omega;
+
+	// 速度制限
+	if(hASR->omega_ref < -hASR_Init->omega_limit)		_omega_ref = -hASR_Init->omega_limit;
+	else if(hASR->omega_ref > hASR_Init->omega_limit)	_omega_ref = hASR_Init->omega_limit;
+	else												_omega_ref = hASR->omega_ref;
+
+	// 速度偏差
+	hASR->omega_error = _omega_ref - hASR->omega;
+
+#if USE_ANTI_WINDUP
+	// リミット偏差フィードバックによる
+
+	integInput = hASR->omega_error - hASR_Init->hACR->Iq_limitError / (KT * hASR_Init->Kp);
+
+	hASR->omega_error_integ += hASR_Init->cycleTime * 0.5 * (integInput + hASR->p_omega_error);
+
+	hASR->p_omega_error = integInput;
+#else
+	// integral
+	hASR->omega_error_integ += hASR_Init->cycleTime * 0.5 * (hASR->omega_error + hASR->p_omega_error);
+	hASR->p_omega_error = hASR->omega_error;
+#endif
 
 
+	torque_ref = hASR_Init->Kp * hASR->omega_error + hASR_Init->Ki * hASR->omega_error_integ;
+
+	hASR_Init->hACR->Id_ref = 0.0f;
+	hASR_Init->hACR->Iq_ref = hASR->Iq_ref = KT * torque_ref;
 
 
 	return;
@@ -134,17 +133,17 @@ inline void speedControl()
 
 
 
-inline void ASR_Reset()
+inline void ASR_Reset(ASR_TypeDef *hASR)
 {
 
-	p_theta = 0.0f;
+	hASR->firstLaunch = 1;
 
-	omega_error_integ_temp1 = 0.0f;
-	omega_error_integ_temp2 = 0.0f;
+	hASR->omega_error_integ = 0.0f;
 
-	omega = omega_ref = 0.0f;
+	hASR->omega = 0.0f;
 
-	ASR_steps = 0;
+	hASR->omega_ref = 0.0f;
+
 
 }
 
