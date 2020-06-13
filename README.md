@@ -1,4 +1,3 @@
-
 # BLDC-Driver
 ## 概要
 - ブラシレスDCモータ(BLDC)のドライバ、コントローラです。
@@ -7,6 +6,16 @@
 - ロータの位置、速度は磁気エンコーダ([AS5048A](https://ams.com/ja/as5048a))で検出します。
 - モータの線電流は3シャント方式により検出します。
   * [参考資料](http://www.tij.co.jp/jp/lit/ug/tiducy7/tiducy7.pdf)
+
+## 使用モータの指定
+Inc/parameters.h 内の10行目付近で使用モータの型番を選んでコメントアウトを解除してください。
+
+（例: SUNNYSKY V2806-KV400を使う場合）
+```c
+//#define _MOTOR_QUANUM_MT4108_KV370_
+//#define _MOTOR_SUNNYSKY_V4006_KV320_
+#define _MOTOR_SUNNYSKY_V2806_KV400_
+```
 
 ## エンコーダのキャリブレーション
 磁気エンコーダの原点(α軸方向)を取得してMD内のflashに書き込みます。
