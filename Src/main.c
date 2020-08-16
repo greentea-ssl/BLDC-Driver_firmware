@@ -130,6 +130,18 @@ volatile uint8_t timeoutState = 0;
 
 
 
+/********** LED Control **********/
+
+volatile uint32_t LED_blink_count = 0;
+volatile uint32_t LED_blink_state = 0;
+volatile uint32_t LED_blink_t_us = 0;
+volatile uint32_t LED_blink_times = 0;
+volatile uint32_t LED_blink_Ton_us = 100000;
+volatile uint32_t LED_blink_Toff_us = 400000;
+volatile uint32_t LED_blink_T_wait_us = 2000000;
+volatile uint32_t LED_blink_Ts_us = 100;
+
+
 
 /* USER CODE END PV */
 
@@ -137,6 +149,7 @@ volatile uint8_t timeoutState = 0;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+void LED_blink();
 
 inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...);
 
@@ -331,8 +344,7 @@ int main(void)
 
   ch = getChannel();
 
-
-
+  LED_blink_times = ch;
 
   CAN_Init();
 
@@ -539,6 +551,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
 
+	LED_blink();
+
 }
 
 
@@ -555,7 +569,66 @@ inline void timeoutReset()
 	}
 }
 
+/*
+volatile uint32_t LED_blink_count = 0;
+volatile uint32_t LED_blink_state = 0;
+volatile uint32_t LED_blink_t_us = 0;
+volatile uint32_t LED_blink_times = 1;
+volatile uint32_t LED_blink_Ton_us = 100000;
+volatile uint32_t LED_blink_Toff_us = 100000;
+volatile uint32_t LED_blink_T_wait_us = 1000000;
+volatile uint32_t LED_blink_Ts_us = 100;
+ */
+inline void LED_blink()
+{
 
+	switch(LED_blink_state)
+	{
+	case 0: // OFF WAIT
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		if(LED_blink_t_us >= LED_blink_T_wait_us)
+		{
+			if(LED_blink_times > 0)
+			{
+				LED_blink_state = 1;
+				LED_blink_count = 0;
+			}
+
+			LED_blink_t_us = 0;
+		}
+		break;
+
+	case 1: // ON
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		if(LED_blink_t_us >= LED_blink_Ton_us)
+		{
+			LED_blink_count += 1;
+			LED_blink_state = 2;
+			LED_blink_t_us = 0;
+		}
+		break;
+
+	case 2: // OFF
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		if(LED_blink_t_us >= LED_blink_Toff_us)
+		{
+			if(LED_blink_count < LED_blink_times)
+				LED_blink_state = 1;
+			else
+				LED_blink_state = 0;
+
+			LED_blink_t_us = 0;
+		}
+		break;
+
+	default:
+
+		break;
+	}
+
+	LED_blink_t_us += LED_blink_Ts_us;
+
+}
 
 
 inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...){
