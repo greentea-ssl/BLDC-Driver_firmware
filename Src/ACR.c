@@ -45,8 +45,8 @@ void ACR_Init()
 	mainACR.Init.Kp = 0.1f;
 	mainACR.Init.Ki = 100.0f;
 
-	mainACR.Init.Id_limit = 5.0f;
-	mainACR.Init.Iq_limit = 5.0f;
+	mainACR.Init.Id_limit = 15.0f;
+	mainACR.Init.Iq_limit = 15.0f;
 
 	mainACR.Init.Id_error_integ_limit = 1.0f;
 	mainACR.Init.Iq_error_integ_limit = 1.0f;

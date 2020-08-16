@@ -122,6 +122,7 @@ int ASR_dump_count = 0;
 /********** Timeout Control **********/
 
 
+volatile uint8_t timeoutEnable = 1;
 volatile uint32_t timeoutCount = 0;
 
 // 1: timeout
@@ -358,10 +359,13 @@ int main(void)
 
   ACR_Start(&mainACR);
 
+  timeoutEnable = 0;
+
   setZeroEncoder((p_ch != ch)? 1: 0);
 
-
   ASR_Start(&mainASR);
+
+  timeoutEnable = 1;
 
   //APR_Start(&mainAPR);
 
@@ -509,16 +513,19 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 		Encoder_Request(&mainEncoder);
 
 
-		// timeout control
-		if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
+		if(timeoutEnable == 1)
 		{
-			timeoutCount += 1;
-		}
-		else
-		{
-			stopPWM(&htim8);
-			timeoutCount = 0;
-			timeoutState = 1;
+			// timeout control
+			if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
+			{
+				timeoutCount += 1;
+			}
+			else
+			{
+				stopPWM(&htim8);
+				timeoutCount = 0;
+				timeoutState = 1;
+			}
 		}
 
 #if DUMP_ENABLE
