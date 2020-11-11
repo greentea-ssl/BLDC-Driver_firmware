@@ -42,8 +42,11 @@ void ACR_Init()
 
 	memset(&mainACR, 0x00, sizeof(mainACR));
 
+	ACR_CalcGain(&mainACR, MOTOR_R, MOTOR_Lq, 2000);
+	/*
 	mainACR.Init.Kp = 0.1f;
 	mainACR.Init.Ki = 100.0f;
+	*/
 
 	mainACR.Init.Id_limit = 15.0f;
 	mainACR.Init.Iq_limit = 15.0f;
@@ -60,6 +63,15 @@ void ACR_Init()
 
 }
 
+
+
+void ACR_CalcGain(ACR_TypeDef *hACR, float R, float L, float omega_c)
+{
+
+	hACR->Init.Kp = omega_c * L;
+	hACR->Init.Ki = omega_c * R;
+
+}
 
 
 void ACR_Start(ACR_TypeDef *hACR)

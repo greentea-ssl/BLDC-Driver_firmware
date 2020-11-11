@@ -73,6 +73,8 @@ extern ACR_TypeDef mainACR;
 void ACR_Init();
 
 
+void ACR_CalcGain(ACR_TypeDef *hACR, float R, float L, float omega_c);
+
 void ACR_Start(ACR_TypeDef *hACR);
 
 void ACR_Stop(ACR_TypeDef *hACR);

@@ -7,8 +7,8 @@
 
 // Motor Select
 
-//#define _MOTOR_QUANUM_MT4108_KV370_
-#define _MOTOR_SUNNYSKY_V4006_KV320_
+#define _MOTOR_QUANUM_MT4108_KV370_
+//#define _MOTOR_SUNNYSKY_V4006_KV320_
 //#define _MOTOR_SUNNYSKY_V2806_KV400_
 
 
@@ -43,6 +43,24 @@
 
 // Torque Constant [N*m/A]
 #define 	KT	(POLE_PAIRS * KE)
+
+
+// Motor parameters
+#ifdef _MOTOR_QUANUM_MT4108_KV370_
+#define MOTOR_R    (0.13)
+#define MOTOR_Ld   (24.0E-6)
+#define MOTOR_Lq   (42.5E-6)
+#endif
+#ifdef _MOTOR_SUNNYSKY_V4006_KV320_
+#define MOTOR_R    (0.5)
+#define MOTOR_Ld   (1E-3)
+#define MOTOR_Lq   (1E-3)
+#endif
+#ifdef _MOTOR_SUNNYSKY_V2806_KV400_
+#define MOTOR_R    (0.5)
+#define MOTOR_Ld   (1E-3)
+#define MOTOR_Lq   (1E-3)
+#endif
 
 
 
