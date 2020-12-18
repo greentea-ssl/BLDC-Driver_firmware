@@ -1,0 +1,3 @@
+[submodule "waveSamplerLib"]
+	path = waveSamplerLib
+	url = https://github.com/greentea-ssl/waveSamplerLib.git

@@ -44,6 +44,7 @@
 // Torque Constant [N*m/A]
 #define 	KT	(POLE_PAIRS * KE)
 
+#define MOTOR_psi	KE
 
 // Motor parameters
 #ifdef _MOTOR_QUANUM_MT4108_KV370_

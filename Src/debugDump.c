@@ -21,14 +21,14 @@
 
 
 
-
+#if DUMP_ENABLE
 
 DumpRecord_TypeDef record[DUMP_STEPS];
 
 uint32_t DumpCount = 0;
 
 
-
+#endif
 
 
 inline void Dump_Refresh()

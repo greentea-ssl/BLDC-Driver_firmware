@@ -30,8 +30,11 @@ typedef struct
 }DumpRecord_TypeDef;
 
 
+#if DUMP_ENABLE
+
 extern DumpRecord_TypeDef record[DUMP_STEPS];
 
+#endif
 
 extern uint32_t DumpCount;
 

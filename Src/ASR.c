@@ -23,8 +23,8 @@ void ASR_Init()
 {
 	memset(&mainASR, 0x00, sizeof(mainASR));
 
-	mainASR.Init.Kp = 0.5f;
-	mainASR.Init.Ki = 15.0f;
+	mainASR.Init.Kp = 0.4;//0.5f;
+	mainASR.Init.Ki = 40;//15.0f;
 	mainASR.Init.omega_limit = 400.0f;
 	mainASR.Init.omega_error_integ_limit = 1000.0f;
 	mainASR.Init.cycleTime = 1E-3;

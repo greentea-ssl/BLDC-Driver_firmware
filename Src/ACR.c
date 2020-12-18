@@ -42,11 +42,11 @@ void ACR_Init()
 
 	memset(&mainACR, 0x00, sizeof(mainACR));
 
-	ACR_CalcGain(&mainACR, MOTOR_R, MOTOR_Lq, 2000);
-	/*
+	//ACR_CalcGain(&mainACR, MOTOR_R, MOTOR_Lq, 2000);
+
 	mainACR.Init.Kp = 0.1f;
 	mainACR.Init.Ki = 100.0f;
-	*/
+
 
 	mainACR.Init.Id_limit = 15.0f;
 	mainACR.Init.Iq_limit = 15.0f;
@@ -191,8 +191,8 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 		// hACR->Vd_ref = - hACR_Init->Kp * hACR->Id + hACR_Init->Ki * hACR->Id_error_integ;
 		// hACR->Vq_ref = - hACR_Init->Kp * hACR->Iq + hACR_Init->Ki * hACR->Iq_error_integ;
 
-		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
-		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;
+		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;// + hACR_Init->hEncoder->omega * POLE_PAIRS * -MOTOR_Lq * hACR->Iq;
+		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;// + hACR_Init->hEncoder->omega * POLE_PAIRS * (MOTOR_psi + MOTOR_Ld * hACR->Id);
 
 
 		if(hACR->forced_commute_enable)

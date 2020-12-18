@@ -20,4 +20,5 @@ SUBDIRS := \
 Drivers/STM32F4xx_HAL_Driver/Src \
 Src \
 Startup \
+waveSamplerLib \
 

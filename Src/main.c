@@ -45,6 +45,8 @@
 
 #include "debugDump.h"
 
+#include "../waveSamplerLib/waveSampler.h"
+
 
 
 /* USER CODE END Includes */
@@ -116,7 +118,9 @@ int ASR_dump_count = 0;
 
 
 
+/********** WaveSampler **********/
 
+WaveSampler_TypeDef hWave;
 
 
 /********** Timeout Control **********/
@@ -165,7 +169,7 @@ int32_t printFloat(float val);
 #endif /* __GNUC__ */
 void __io_putchar(uint8_t ch)
 {
-	HAL_UART_Transmit(&huart2, &ch, 1, 1);
+	//HAL_UART_Transmit(&huart2, &ch, 1, 1);
 }
 
 #endif
@@ -255,6 +259,22 @@ int main(void)
   //UartPrintf(&huart2, "Hello world\n");
 
 
+  WaveSampler_Init(&hWave, &huart2);
+
+  /*
+  hWave.variableAddr[0] = &mainCS.Iu;
+  hWave.variableAddr[1] = &mainCS.Iv;
+  hWave.variableAddr[2] = &mainCS.Iw;
+  hWave.variableAddr[3] = &mainEncoder.theta_re;
+  */
+  hWave.variableAddr[0] = &mainASR.omega_ref;
+  hWave.variableAddr[1] = &mainASR.omega;
+  hWave.variableAddr[2] = &mainACR.Iq_ref;
+  hWave.variableAddr[3] = &mainACR.Iq;
+
+
+
+
 #if DEBUG_PRINT_ENABLE
 
   printf("Hello\n");
@@ -275,6 +295,7 @@ int main(void)
   drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrentcausesa latchedfault
   drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
   drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
+  //drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 0.75V -> ID = 75A
 
   DRV_WriteData(&drv8323, ADDR_OCP_Control);
 
@@ -524,6 +545,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		Encoder_Request(&mainEncoder);
 
+		WaveSampler_Sampling(&hWave);
 
 		if(timeoutEnable == 1)
 		{
@@ -629,6 +651,23 @@ inline void LED_blink()
 	LED_blink_t_us += LED_blink_Ts_us;
 
 }
+
+
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
+{
+
+	WaveSampler_TxCplt(&hWave, huart);
+
+}
+
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
+{
+
+	WaveSampler_RxCplt(&hWave, huart);
+
+}
+
 
 
 inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...){
