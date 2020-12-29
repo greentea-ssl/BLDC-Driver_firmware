@@ -261,17 +261,17 @@ int main(void)
 
   WaveSampler_Init(&hWave, &huart2);
 
-  /*
+
   hWave.variableAddr[0] = &mainCS.Iu;
   hWave.variableAddr[1] = &mainCS.Iv;
   hWave.variableAddr[2] = &mainCS.Iw;
   hWave.variableAddr[3] = &mainEncoder.theta_re;
-  */
+  /*
   hWave.variableAddr[0] = &mainASR.omega_ref;
   hWave.variableAddr[1] = &mainASR.omega;
   hWave.variableAddr[2] = &mainACR.Iq_ref;
   hWave.variableAddr[3] = &mainACR.Iq;
-
+	*/
 
 
 
@@ -387,6 +387,23 @@ int main(void)
   APR_Init();
 
   PWM_Init();
+
+
+  // Offset calibration
+#if 1
+  float sum_uvw[3] = {0, 0, 0};
+  for(count = 0; count < 1000; count++)
+  {
+	  HAL_Delay(1);
+	  sum_uvw[0] += mainCS.V_Iu;
+	  sum_uvw[1] += mainCS.V_Iv;
+	  sum_uvw[2] += mainCS.V_Iw;
+  }
+  mainCS.Init.V_Iu_offset += sum_uvw[0] / 1000.0;
+  mainCS.Init.V_Iv_offset += sum_uvw[1] / 1000.0;
+  mainCS.Init.V_Iw_offset += sum_uvw[2] / 1000.0;
+#endif
+
 
   HAL_Delay(1);
 
