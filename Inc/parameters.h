@@ -38,13 +38,13 @@
 #define 	KV	400.0
 #endif
 
-// Electromotive force constant [V/(rad/s)]
+// Electromotive force constant [V/(mech.rad/s)]
 #define 	KE	(60.0f / (KV * 2 * M_PI))
 
 // Torque Constant [N*m/A]
-#define 	KT	(POLE_PAIRS * KE)
+#define 	KT	KE
 
-#define MOTOR_psi	KE
+#define MOTOR_psi	(KE / POLE_PAIRS)
 
 // Motor parameters
 #ifdef _MOTOR_QUANUM_MT4108_KV370_
@@ -79,7 +79,7 @@
 #define SPEED_LPF_FS		10000.0f
 
 // LPFフィルタ係数
-#define SPEED_LPF_COEFF		(SPEED_LPF_FS/(SPEED_LPF_CUTOFF + SPEED_LPF_FS))
+#define SPEED_LPF_COEFF		0//(SPEED_LPF_FS/(SPEED_LPF_CUTOFF + SPEED_LPF_FS))
 
 
 /******************* For PWM *******************/
