@@ -448,9 +448,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  APR_Refresh(&mainAPR);
+	  //APR_Refresh(&mainAPR);
 
-	  ASR_Refresh(&mainASR);
+	  //ASR_Refresh(&mainASR);
 
 
 #if DUMP_ENABLE
@@ -573,12 +573,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		CurrentSensor_Refresh(&mainCS, sector_SVM);
 
-
-		if(mainASR.enable == 1)
-		{
-			mainACR.Id_ref = 0.0;
-			mainACR.Iq_ref = (mainASR.omega_ref - mainEncoder.omega) * 0.02;
-		}
+		mainASR.launchFlg = 1;
+		ASR_Refresh(&mainASR);
 
 		ACR_Refresh(&mainACR);
 
