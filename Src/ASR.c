@@ -25,7 +25,7 @@ void ASR_Init()
 
 	mainASR.Init.Kp = 4;//0.5f;
 	mainASR.Init.Ki = 100;//15.0f;
-	mainASR.Init.omega_limit = 500.0f;
+	mainASR.Init.omega_limit = VDC / KE * 0.7f;
 	mainASR.Init.omega_error_integ_limit = 1000.0f;
 	mainASR.Init.cycleTime = 100E-6;
 	mainASR.Init.prescaler = 1;

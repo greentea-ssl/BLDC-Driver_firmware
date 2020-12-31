@@ -84,7 +84,7 @@
 
 /******************* For PWM *******************/
 
-#define VDC			(20.f0)
+#define VDC			(20.0f)
 
 // PWM resolution
 #define PWM_RESOL	8000.0f
