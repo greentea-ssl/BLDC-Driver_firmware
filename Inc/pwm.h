@@ -7,14 +7,16 @@
 
 
 
-extern volatile float Vdc;
-
-
 extern volatile float Vd_ref;
 extern volatile float Vq_ref;
 
 
 extern volatile int sector_SVM;
+
+
+extern volatile float amp_u;
+extern volatile float amp_v;
+extern volatile float amp_w;
 
 
 void PWM_Init();

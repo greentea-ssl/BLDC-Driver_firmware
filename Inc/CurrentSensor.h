@@ -7,7 +7,7 @@
 #include "adc.h"
 
 
-#define MEDIAN_ORDER	5
+#define MEDIAN_ORDER	1
 
 
 

@@ -261,18 +261,37 @@ int main(void)
 
   WaveSampler_Init(&hWave, &huart2);
 
-  /*
+/*
   hWave.variableAddr[0] = &mainCS.Iu;
   hWave.variableAddr[1] = &mainCS.Iv;
   hWave.variableAddr[2] = &mainCS.Iw;
   hWave.variableAddr[3] = &mainEncoder.theta_re;
   */
+  /*
   hWave.variableAddr[0] = &mainASR.omega_ref;
   hWave.variableAddr[1] = &mainASR.omega;
   hWave.variableAddr[2] = &mainACR.Iq_ref;
   hWave.variableAddr[3] = &mainACR.Iq;
+	*/
+  /*
+  hWave.variableAddr[0] = &mainEncoder.theta;
+  hWave.variableAddr[1] = &mainEncoder.theta_re;
+  hWave.variableAddr[2] = &mainEncoder.omega;
+  hWave.variableAddr[3] = &mainASR.omega_ref;
+  hWave.variableAddr[4] = &mainCS.Iu;
+  hWave.variableAddr[5] = &mainCS.Iv;
+  hWave.variableAddr[6] = &mainCS.Iw;
+  hWave.variableAddr[7] = &amp_u;
+  */
 
-
+  hWave.variableAddr[0] = &mainEncoder.theta;
+  hWave.variableAddr[1] = &mainEncoder.omega;
+  hWave.variableAddr[2] = &mainACR.Id_ref;
+  hWave.variableAddr[3] = &mainACR.Iq_ref;
+  hWave.variableAddr[4] = &mainACR.Id;
+  hWave.variableAddr[5] = &mainACR.Iq;
+  hWave.variableAddr[6] = &amp_u;
+  hWave.variableAddr[7] = &amp_v;
 
 
 #if DEBUG_PRINT_ENABLE
@@ -388,6 +407,23 @@ int main(void)
 
   PWM_Init();
 
+
+  // Offset calibration
+#if 1
+  float sum_uvw[3] = {0, 0, 0};
+  for(count = 0; count < 1000; count++)
+  {
+	  HAL_Delay(1);
+	  sum_uvw[0] += mainCS.V_Iu;
+	  sum_uvw[1] += mainCS.V_Iv;
+	  sum_uvw[2] += mainCS.V_Iw;
+  }
+  mainCS.Init.V_Iu_offset += sum_uvw[0] / 1000.0;
+  mainCS.Init.V_Iv_offset += sum_uvw[1] / 1000.0;
+  mainCS.Init.V_Iw_offset += sum_uvw[2] / 1000.0;
+#endif
+
+
   HAL_Delay(1);
 
   ACR_Start(&mainACR);
@@ -412,9 +448,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  APR_Refresh(&mainAPR);
+	  //APR_Refresh(&mainAPR);
 
-	  ASR_Refresh(&mainASR);
+	  //ASR_Refresh(&mainASR);
 
 
 #if DUMP_ENABLE
@@ -537,11 +573,14 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		CurrentSensor_Refresh(&mainCS, sector_SVM);
 
+		mainASR.launchFlg = 1;
+		ASR_Refresh(&mainASR);
+
 		ACR_Refresh(&mainACR);
 
-		ASR_prescaler(&mainASR);
+		//ASR_prescaler(&mainASR);
 
-		APR_prescaler(&mainAPR);
+		//APR_prescaler(&mainAPR);
 
 		Encoder_Request(&mainEncoder);
 
