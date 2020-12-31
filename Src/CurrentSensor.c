@@ -124,6 +124,7 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 		hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
 		*/
 
+		/*
 		switch(SVM_sector)
 		{
 		case 0: case 5:
@@ -144,6 +145,12 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 			hCS->Iw = - hCS->Iu - hCS->Iv;
 			break;
 		}
+		*/
+
+		hCS->Iu = hCS->V_Iu * hCS->Init.Iu_Gain;
+		hCS->Iv = hCS->V_Iv * hCS->Init.Iv_Gain;
+		hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
+
 
 		break; /* CS_Type_3shunt */
 
