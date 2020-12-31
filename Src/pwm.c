@@ -8,9 +8,6 @@
 
 
 
-volatile float Vdc = 20.0f;
-
-
 volatile float amp_u = 0.0;
 volatile float amp_v = 0.0;
 volatile float amp_w = 0.0;
@@ -120,8 +117,8 @@ inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float
 	x2 = refVector[sector_SVM + 1][0];
 	y2 = refVector[sector_SVM + 1][1];
 
-	vect1 = (y2 * x - x2 * y) / ((x1 * y2 - y1 * x2) * Vdc);
-	vect2 = (-y1 * x + x1 * y) / ((x1 * y2 - y1 * x2) * Vdc);
+	vect1 = (y2 * x - x2 * y) / ((x1 * y2 - y1 * x2) * VDC);
+	vect2 = (-y1 * x + x1 * y) / ((x1 * y2 - y1 * x2) * VDC);
 
 	switch(sector_SVM)
 	{

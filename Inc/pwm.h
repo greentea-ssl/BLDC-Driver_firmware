@@ -7,9 +7,6 @@
 
 
 
-extern volatile float Vdc;
-
-
 extern volatile float Vd_ref;
 extern volatile float Vq_ref;
 
