@@ -261,18 +261,37 @@ int main(void)
 
   WaveSampler_Init(&hWave, &huart2);
 
-
+/*
   hWave.variableAddr[0] = &mainCS.Iu;
   hWave.variableAddr[1] = &mainCS.Iv;
   hWave.variableAddr[2] = &mainCS.Iw;
   hWave.variableAddr[3] = &mainEncoder.theta_re;
+  */
   /*
   hWave.variableAddr[0] = &mainASR.omega_ref;
   hWave.variableAddr[1] = &mainASR.omega;
   hWave.variableAddr[2] = &mainACR.Iq_ref;
   hWave.variableAddr[3] = &mainACR.Iq;
 	*/
+  /*
+  hWave.variableAddr[0] = &mainEncoder.theta;
+  hWave.variableAddr[1] = &mainEncoder.theta_re;
+  hWave.variableAddr[2] = &mainEncoder.omega;
+  hWave.variableAddr[3] = &mainASR.omega_ref;
+  hWave.variableAddr[4] = &mainCS.Iu;
+  hWave.variableAddr[5] = &mainCS.Iv;
+  hWave.variableAddr[6] = &mainCS.Iw;
+  hWave.variableAddr[7] = &amp_u;
+  */
 
+  hWave.variableAddr[0] = &mainEncoder.theta;
+  hWave.variableAddr[1] = &mainEncoder.omega;
+  hWave.variableAddr[2] = &mainACR.Id_ref;
+  hWave.variableAddr[3] = &mainACR.Iq_ref;
+  hWave.variableAddr[4] = &mainACR.Id;
+  hWave.variableAddr[5] = &mainACR.Iq;
+  hWave.variableAddr[6] = &amp_u;
+  hWave.variableAddr[7] = &amp_v;
 
 
 #if DEBUG_PRINT_ENABLE
