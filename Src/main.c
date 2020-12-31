@@ -573,11 +573,18 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		CurrentSensor_Refresh(&mainCS, sector_SVM);
 
+
+		if(mainASR.enable == 1)
+		{
+			mainACR.Id_ref = 0.0;
+			mainACR.Iq_ref = (mainASR.omega_ref - mainEncoder.omega) * 0.02;
+		}
+
 		ACR_Refresh(&mainACR);
 
-		ASR_prescaler(&mainASR);
+		//ASR_prescaler(&mainASR);
 
-		APR_prescaler(&mainAPR);
+		//APR_prescaler(&mainAPR);
 
 		Encoder_Request(&mainEncoder);
 
