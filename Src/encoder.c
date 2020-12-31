@@ -254,7 +254,9 @@ inline void Encoder_Request(Encoder_TypeDef *hEncoder)
 inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 {
 
-	static uint16_t angle_raw = 0;
+	static uint16_t rawData;
+	static uint16_t angle_raw;
+	static uint8_t parity, i;
 	static float _theta;
 	static float _theta_re;
 	static float d_theta;
@@ -262,7 +264,16 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	// Reading RX Data from SPI Encoder
 	HAL_GPIO_WritePin(hEncoder->Init.SPI_NSS_Port, hEncoder->Init.SPI_NSS_Pin, GPIO_PIN_SET);
 
-	angle_raw = (hEncoder->spi2rxBuf[1] & 0x3f) << 8 | hEncoder->spi2rxBuf[0];
+	rawData = (hEncoder->spi2rxBuf[1] << 8) | hEncoder->spi2rxBuf[0];
+
+	parity = 0;
+	for(i = 0; i < 16; i++)
+	{
+		parity += (rawData >> i) & 0x01;
+	}
+	if((parity & 0x01) != 0) return -1;
+
+	angle_raw = rawData & 0x3FFF;
 
 	_theta = (float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI + hEncoder->Init.theta_offset;
 
