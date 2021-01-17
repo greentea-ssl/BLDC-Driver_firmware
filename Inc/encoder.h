@@ -4,7 +4,7 @@
 #define _ENCODER_H_
 
 
-#include "spi.h"
+#include "main.h"
 
 
 

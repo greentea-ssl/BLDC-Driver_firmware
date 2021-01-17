@@ -2,7 +2,8 @@
 #ifndef _DRV8323_H_
 #define _DRV8323_H_
 
-#include "spi.h"
+
+#include "main.h"
 
 
 

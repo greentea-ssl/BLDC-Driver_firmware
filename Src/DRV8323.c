@@ -2,6 +2,10 @@
 #include "DRV8323.h"
 
 
+extern SPI_HandleTypeDef hspi3;
+
+
+
 DRV_TypeDef drv8323;
 
 

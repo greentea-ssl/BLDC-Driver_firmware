@@ -7,8 +7,8 @@
 
 // Motor Select
 
-#define _MOTOR_QUANUM_MT4108_KV370_
-//#define _MOTOR_SUNNYSKY_V4006_KV320_
+//#define _MOTOR_QUANUM_MT4108_KV370_
+#define _MOTOR_SUNNYSKY_V4006_KV320_
 //#define _MOTOR_SUNNYSKY_V2806_KV400_
 
 
@@ -53,9 +53,9 @@
 #define MOTOR_Lq   (42.5E-6)
 #endif
 #ifdef _MOTOR_SUNNYSKY_V4006_KV320_
-#define MOTOR_R    (0.5)
-#define MOTOR_Ld   (1E-3)
-#define MOTOR_Lq   (1E-3)
+#define MOTOR_R    (0.27)
+#define MOTOR_Ld   (49E-6)
+#define MOTOR_Lq   (62E-6)
 #endif
 #ifdef _MOTOR_SUNNYSKY_V2806_KV400_
 #define MOTOR_R    (0.5)
@@ -84,7 +84,7 @@
 
 /******************* For PWM *******************/
 
-#define VDC			(20.0f)
+#define VDC			(16.6f)
 
 // PWM resolution
 #define PWM_RESOL	8000.0f

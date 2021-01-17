@@ -10,9 +10,6 @@
 #include "ASR.h"
 
 
-#include "tim.h"
-#include "adc.h"
-#include "spi.h"
 #include "pwm.h"
 #include "parameters.h"
 #include "sin_t.h"
@@ -20,6 +17,10 @@
 
 #include "encoder.h"
 #include "CurrentSensor.h"
+
+
+
+extern TIM_HandleTypeDef htim8;
 
 
 

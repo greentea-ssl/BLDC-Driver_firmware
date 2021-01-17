@@ -2,9 +2,10 @@
 
 #include <pwm.h>
 #include "parameters.h"
-#include "spi.h"
-#include "tim.h"
-//#include "adc.h"
+
+
+
+TIM_HandleTypeDef htim8;
 
 
 

@@ -2,14 +2,14 @@
 
 #include "encoder.h"
 
-#include "spi.h"
+
+extern SPI_HandleTypeDef hspi2;
 
 
 #include "parameters.h"
 #include "sin_t.h"
 #include "ACR.h"
 #include "math.h"
-#include "tim.h"
 #include "flash.h"
 
 

@@ -13,6 +13,9 @@
 #include "encoder.h"
 
 
+extern TIM_HandleTypeDef htim8;
+
+
 APR_TypeDef mainAPR;
 
 

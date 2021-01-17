@@ -5,7 +5,6 @@
 
 #include "encoder.h"
 #include "CurrentSensor.h"
-#include "tim.h"
 
 
 typedef struct

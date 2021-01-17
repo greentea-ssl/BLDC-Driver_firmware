@@ -4,7 +4,7 @@
 #define _CURRENT_SENSOR_H_
 
 
-#include "adc.h"
+#include "main.h"
 
 
 #define MEDIAN_ORDER	1

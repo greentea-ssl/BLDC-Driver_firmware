@@ -3,7 +3,7 @@
 #define _PWM_H_
 
 
-#include "tim.h"
+#include "main.h"
 
 
 

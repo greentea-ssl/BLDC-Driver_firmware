@@ -2,9 +2,13 @@
 
 #include "CurrentSensor.h"
 
-#include "adc.h"
 #include "string.h"
 #include "stdlib.h"
+
+
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+ADC_HandleTypeDef hadc3;
 
 
 
