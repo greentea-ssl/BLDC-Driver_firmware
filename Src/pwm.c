@@ -64,12 +64,19 @@ inline void startPWM(TIM_HandleTypeDef *htim)
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_3);
 
+	// Gate Enable
+	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
+
 }
 
 
 
 inline void stopPWM(TIM_HandleTypeDef *htim)
 {
+
+	// Gate Disable
+	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+
 
 	// 3phase PWM Stopping
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_1);
@@ -79,6 +86,7 @@ inline void stopPWM(TIM_HandleTypeDef *htim)
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_3);
+
 
 }
 

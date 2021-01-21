@@ -416,7 +416,6 @@ int main(void)
 
   CurrentSensor_Start(&mainCS);
 
-
   ACR_Init();
 
   ASR_Init();
@@ -594,7 +593,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
@@ -644,7 +643,7 @@ static void MX_ADC2_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
   */
   hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc2.Init.Resolution = ADC_RESOLUTION_12B;
   hadc2.Init.ScanConvMode = DISABLE;
   hadc2.Init.ContinuousConvMode = DISABLE;
@@ -694,7 +693,7 @@ static void MX_ADC3_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
   */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
   hadc3.Init.ScanConvMode = DISABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
@@ -877,7 +876,7 @@ static void MX_TIM8_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC4REF;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
   {
@@ -899,6 +898,11 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.Pulse = 7999;
+  if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -964,13 +968,13 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 3);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 3);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
   /* DMA2_Stream2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 3);
   HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
 
 }
@@ -1035,20 +1039,126 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+#if 0
 
+void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
+{
+
+		//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+		//HAL_ADC_Start_DMA(hadc, mainCS.AD_Iu, 1);
+
+
+		//CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+
+}
+
+#endif
 
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {
 
+
 	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
 
-	if(htim->Instance == TIM8 && !__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+
+
+
+	if(htim->Instance == TIM8 && __HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
 	{
+
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
+#if 0
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
+		int i;
+		for(i = 0; i < 5; i++)
+		{
+			asm("NOP");
+		}
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+		for(i = 0; i < 2; i++)
+		{
+			asm("NOP");
+		}
+
+
+#if 1
+		for(i = 0; i < 150; i++)
+		{
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, (HAL_ADC_GetState(&hadc1) & HAL_ADC_STATE_REG_BUSY) != 0);
+			//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
+			asm("NOP");
+		}
+#endif
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		for(i = 0; i < 2; i++)
+		{
+			asm("NOP");
+		}
+
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		for(i = 0; i < 2; i++)
+		{
+			asm("NOP");
+		}
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+		HAL_ADC_Start_DMA(&hadc1, mainCS.AD_Iu, 1);
+		HAL_ADC_Start_DMA(&hadc2, mainCS.AD_Iv, 1);
+		HAL_ADC_Start_DMA(&hadc3, mainCS.AD_Iw, 1);
+
+#endif
+
+#if 0
+		timeoutCount = 0;
+
+		while(mainCS.AD_Iu[0] == 0xFFFF || mainCS.AD_Iv[0] == 0xFFFF || mainCS.AD_Iw[0] == 0xFFFF)
+		{
+			if(timeoutCount >= 500)
+			{
+				//break;
+			}
+			timeoutCount += 1;
+		}
+
+
+		mainCS.AD_Iu[0] = 0xFFFF;
+		mainCS.AD_Iv[0] = 0xFFFF;
+		mainCS.AD_Iw[0] = 0xFFFF;
+
+		HAL_ADC_Start_DMA(&hadc1, mainCS.AD_Iu, 1);
+		HAL_ADC_Start_DMA(&hadc2, mainCS.AD_Iv, 1);
+		HAL_ADC_Start_DMA(&hadc3, mainCS.AD_Iw, 1);
+
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+#endif
+
 
 		Encoder_Refresh(&mainEncoder);
 
 		CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
 
 		mainASR.launchFlg = 1;
 		ASR_Refresh(&mainASR);
@@ -1059,9 +1169,16 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 		//APR_prescaler(&mainAPR);
 
+
+
 		Encoder_Request(&mainEncoder);
 
+
+
 		WaveSampler_Sampling(&hWave);
+
+
+#if 1
 
 		if(timeoutEnable == 1)
 		{
@@ -1072,7 +1189,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 			}
 			else
 			{
-				stopPWM(&htim8);
+				//stopPWM(&htim8);
+				// Gate Disable
+				HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
 				timeoutCount = 0;
 				timeoutState = 1;
 			}
@@ -1084,12 +1203,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 #endif
 
+#endif
+
+
 
 	}
 
-	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
 
-	LED_blink();
+	//LED_blink();
 
 }
 
@@ -1103,7 +1225,10 @@ inline void timeoutReset()
 		timeoutState = 0;
 		ASR_Reset(&mainASR);
 		ACR_Reset(&mainACR);
-		startPWM(&htim8);
+		//startPWM(&htim8);
+
+		// Gate Disable
+		HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
 	}
 }
 

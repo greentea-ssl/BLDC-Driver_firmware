@@ -23,6 +23,8 @@ Encoder_TypeDef mainEncoder;
 void Encoder_Init()
 {
 
+	int count;
+
 	mainEncoder.Init.hspi = &hspi2;
 	mainEncoder.Init.SPI_NSS_Port = SPI2_NSS_GPIO_Port;
 	mainEncoder.Init.SPI_NSS_Pin = SPI2_NSS_Pin;
@@ -37,6 +39,12 @@ void Encoder_Init()
 	mainEncoder.cos_theta_re = 1.0f;
 	mainEncoder.sin_theta_re = 0.0f;
 
+	for(count = 0; count < SPEED_CALC_BUF_SIZE; count++)
+	{
+		mainEncoder.prev_theta_buf[count] = 0;
+	}
+
+	mainEncoder.prev_theta_buf_count = 0;
 
 	mainEncoder.firstLaunch = 1;
 
@@ -260,6 +268,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	static float _theta;
 	static float _theta_re;
 	static float d_theta;
+	static float speed_calc_d_theta;
 
 	// Reading RX Data from SPI Encoder
 	HAL_GPIO_WritePin(hEncoder->Init.SPI_NSS_Port, hEncoder->Init.SPI_NSS_Pin, GPIO_PIN_SET);
@@ -306,8 +315,30 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 		hEncoder->turnCount += -1;
 	}
 
+	speed_calc_d_theta = hEncoder->theta - hEncoder->prev_theta_buf[hEncoder->prev_theta_buf_count];
+
+	if(speed_calc_d_theta < - M_PI)
+	{
+		speed_calc_d_theta += 2 * M_PI;
+	}
+	else if(speed_calc_d_theta > M_PI)
+	{
+		speed_calc_d_theta -= 2 * M_PI;
+	}
+
+	hEncoder->omega = speed_calc_d_theta / (hEncoder->Init.cycleTime * SPEED_CALC_BUF_SIZE);
+
+	hEncoder->prev_theta_buf[hEncoder->prev_theta_buf_count] = hEncoder->theta;
+	hEncoder->prev_theta_buf_count ++;
+	if(hEncoder->prev_theta_buf_count > SPEED_CALC_BUF_SIZE - 1)
+	{
+		hEncoder->prev_theta_buf_count = 0;
+	}
+
+#if 0
 	// 速度計算，LPF付き
 	hEncoder->omega = hEncoder->omega * SPEED_LPF_COEFF + d_theta / hEncoder->Init.cycleTime * (1.0f - SPEED_LPF_COEFF);
+#endif
 
 	// マルチターン角度更新
 	hEncoder->theta_multiturn = hEncoder->theta + 2.0f * M_PI * hEncoder->turnCount;

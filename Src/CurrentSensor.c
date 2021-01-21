@@ -53,6 +53,13 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS)
 	{
 	case CS_Type_3shunt:
 
+
+#if 1
+		hCS->AD_Iu[0] = 0xFFFF;
+		hCS->AD_Iv[0] = 0xFFFF;
+		hCS->AD_Iw[0] = 0xFFFF;
+#endif
+
 		HAL_ADC_Start_DMA(hCS->Init.hadc_Iu, hCS->AD_Iu, 1);
 		HAL_ADC_Start_DMA(hCS->Init.hadc_Iv, hCS->AD_Iv, 1);
 		HAL_ADC_Start_DMA(hCS->Init.hadc_Iw, hCS->AD_Iw, 1);
@@ -78,22 +85,43 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 
 	static CurrentSensor_InitTypeDef *hCS_Init;
 
+	int timeoutCount;
+
 	hCS_Init = &hCS->Init;
 
 	switch(hCS->Init.CS_Type)
 	{
 	case CS_Type_3shunt:
 
+		timeoutCount = 0;
 
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iu, hCS->AD_Iu, 1);
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iv, hCS->AD_Iv, 1);
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iw, hCS->AD_Iw, 1);
-
+#if 1
+		while(hCS->AD_Iu[0] == 0xFFFF || hCS->AD_Iv[0] == 0xFFFF || hCS->AD_Iw[0] == 0xFFFF)
+		{
+			if(timeoutCount >= 500)
+			{
+				HAL_ADC_Start_DMA(hCS_Init->hadc_Iu, hCS->AD_Iu, 1);
+				HAL_ADC_Start_DMA(hCS_Init->hadc_Iv, hCS->AD_Iv, 1);
+				HAL_ADC_Start_DMA(hCS_Init->hadc_Iw, hCS->AD_Iw, 1);
+				return;
+			}
+			timeoutCount += 1;
+		}
+#endif
 
 		hCS->AD_Iu_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iu[0];
 		hCS->AD_Iv_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iv[0];
 		hCS->AD_Iw_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iw[0];
 
+#if 1
+		hCS->AD_Iu[0] = 0xFFFF;
+		hCS->AD_Iv[0] = 0xFFFF;
+		hCS->AD_Iw[0] = 0xFFFF;
+#endif
+
+		HAL_ADC_Start_DMA(hCS_Init->hadc_Iu, hCS->AD_Iu, 1);
+		HAL_ADC_Start_DMA(hCS_Init->hadc_Iv, hCS->AD_Iv, 1);
+		HAL_ADC_Start_DMA(hCS_Init->hadc_Iw, hCS->AD_Iw, 1);
 
 		// メディアンフィルタ用バッファ書き込み位置更新
 		hCS->pos_MEDF_I += 1;
