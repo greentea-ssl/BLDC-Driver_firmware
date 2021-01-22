@@ -6,11 +6,7 @@
 #include "stdlib.h"
 
 
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-ADC_HandleTypeDef hadc3;
-
-
+extern ADC_HandleTypeDef hadc1;
 
 const float Vref_AD = 3.3f;
 
@@ -34,12 +30,15 @@ void CurrentSensor_Init()
 	mainCS.Init.Iu_Gain = -10.0f;//9.0f;	// 1 / ( R * OPAmpGain) [A / V]
 	mainCS.Init.Iv_Gain = -10.0f;//5.3f;	// 1 / ( R * OPAmpGain) [A / V]
 	mainCS.Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	mainCS.Init.Vdc_Gain = 12.5385f; //[V / V]
+
 	mainCS.Init.V_Iu_offset = 1.65;
 	mainCS.Init.V_Iv_offset = 1.65;
 	mainCS.Init.V_Iw_offset = 1.65;
-	mainCS.Init.hadc_Iu = &hadc1;
-	mainCS.Init.hadc_Iv = &hadc2;
-	mainCS.Init.hadc_Iw = &hadc3;
+	mainCS.Init.V_Vdc_offset = 0.0;
+
+	mainCS.Init.hadc = &hadc1;
 
 	mainCS.pos_MEDF_I = 0;
 
@@ -54,15 +53,7 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS)
 	case CS_Type_3shunt:
 
 
-#if 1
-		hCS->AD_Iu[0] = 0xFFFF;
-		hCS->AD_Iv[0] = 0xFFFF;
-		hCS->AD_Iw[0] = 0xFFFF;
-#endif
-
-		HAL_ADC_Start_DMA(hCS->Init.hadc_Iu, hCS->AD_Iu, 1);
-		HAL_ADC_Start_DMA(hCS->Init.hadc_Iv, hCS->AD_Iv, 1);
-		HAL_ADC_Start_DMA(hCS->Init.hadc_Iw, hCS->AD_Iw, 1);
+		HAL_ADCEx_InjectedStart(hCS->Init.hadc);
 
 		break;
 	}
@@ -82,10 +73,10 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 	static int32_t AD_Iu_MEDF = 0;
 	static int32_t AD_Iv_MEDF = 0;
 	static int32_t AD_Iw_MEDF = 0;
+	static int32_t AD_Vdc_MEDF = 0;
 
 	static CurrentSensor_InitTypeDef *hCS_Init;
 
-	int timeoutCount;
 
 	hCS_Init = &hCS->Init;
 
@@ -93,35 +84,16 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 	{
 	case CS_Type_3shunt:
 
-		timeoutCount = 0;
 
-#if 1
-		while(hCS->AD_Iu[0] == 0xFFFF || hCS->AD_Iv[0] == 0xFFFF || hCS->AD_Iw[0] == 0xFFFF)
-		{
-			if(timeoutCount >= 500)
-			{
-				HAL_ADC_Start_DMA(hCS_Init->hadc_Iu, hCS->AD_Iu, 1);
-				HAL_ADC_Start_DMA(hCS_Init->hadc_Iv, hCS->AD_Iv, 1);
-				HAL_ADC_Start_DMA(hCS_Init->hadc_Iw, hCS->AD_Iw, 1);
-				return;
-			}
-			timeoutCount += 1;
-		}
-#endif
+		hCS->AD_Iu[0] = hCS->Init.hadc->Instance->JDR1;
+		hCS->AD_Iv[0] = hCS->Init.hadc->Instance->JDR2;
+		hCS->AD_Iw[0] = hCS->Init.hadc->Instance->JDR3;
+		hCS->AD_Vdc[0] = hCS->Init.hadc->Instance->JDR4;
 
 		hCS->AD_Iu_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iu[0];
 		hCS->AD_Iv_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iv[0];
 		hCS->AD_Iw_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iw[0];
-
-#if 1
-		hCS->AD_Iu[0] = 0xFFFF;
-		hCS->AD_Iv[0] = 0xFFFF;
-		hCS->AD_Iw[0] = 0xFFFF;
-#endif
-
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iu, hCS->AD_Iu, 1);
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iv, hCS->AD_Iv, 1);
-		HAL_ADC_Start_DMA(hCS_Init->hadc_Iw, hCS->AD_Iw, 1);
+		hCS->AD_Vdc_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Vdc[0];
 
 		// メディアンフィルタ用バッファ書き込み位置更新
 		hCS->pos_MEDF_I += 1;
@@ -144,10 +116,13 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 		AD_Iw_MEDF = hCS->AD_Iw[0];
 #endif
 
+		AD_Vdc_MEDF = hCS->AD_Vdc[0];
+
 		// 端子電圧更新
 		hCS->V_Iu = (float)AD_Iu_MEDF / AD_Range * Vref_AD - hCS_Init->V_Iu_offset;
 		hCS->V_Iv = (float)AD_Iv_MEDF / AD_Range * Vref_AD - hCS_Init->V_Iv_offset;
 		hCS->V_Iw = (float)AD_Iw_MEDF / AD_Range * Vref_AD - hCS_Init->V_Iw_offset;
+		hCS->V_Vdc = (float)AD_Vdc_MEDF / AD_Range * Vref_AD - hCS_Init->V_Vdc_offset;
 
 
 		/*
@@ -182,6 +157,7 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 		hCS->Iu = hCS->V_Iu * hCS->Init.Iu_Gain;
 		hCS->Iv = hCS->V_Iv * hCS->Init.Iv_Gain;
 		hCS->Iw = hCS->V_Iw * hCS->Init.Iw_Gain;
+		hCS->Vdc = hCS->V_Vdc * hCS->Init.Vdc_Gain;
 
 
 		break; /* CS_Type_3shunt */

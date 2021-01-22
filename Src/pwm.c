@@ -45,6 +45,7 @@ void PWM_Init()
 	HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
 	//HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
 
+	htim8.Instance->CCR4 = 7900;
 
 	startPWM(&htim8);
 
@@ -59,6 +60,7 @@ inline void startPWM(TIM_HandleTypeDef *htim)
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_4);
 
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_2);
@@ -77,16 +79,17 @@ inline void stopPWM(TIM_HandleTypeDef *htim)
 	// Gate Disable
 	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
 
-
+/*
 	// 3phase PWM Stopping
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_4);
 
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_3);
-
+*/
 
 }
 
