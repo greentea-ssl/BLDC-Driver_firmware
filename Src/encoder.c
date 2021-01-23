@@ -263,7 +263,6 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 {
 
 	static uint16_t rawData;
-	static uint16_t angle_raw;
 	static uint8_t parity, i;
 	static float _theta;
 	static float _theta_re;
@@ -282,9 +281,9 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	}
 	if((parity & 0x01) != 0) return -1;
 
-	angle_raw = rawData & 0x3FFF;
+	hEncoder->raw_Angle = rawData & 0x3FFF;
 
-	_theta = (float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI + hEncoder->Init.theta_offset;
+	_theta = (float)hEncoder->raw_Angle / (float)ENCODER_RESOL * 2.0f * M_PI + hEncoder->Init.theta_offset;
 
 	if(_theta < 0.0f)			hEncoder->theta = _theta + 2 * M_PI;
 	else if(_theta >= 2 * M_PI)	hEncoder->theta = _theta - 2 * M_PI;
@@ -344,7 +343,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	hEncoder->theta_multiturn = hEncoder->theta + 2.0f * M_PI * hEncoder->turnCount;
 
 	// 電気角取得
-	_theta_re = fmodf((float)angle_raw / (float)ENCODER_RESOL * 2.0f * M_PI * POLE_PAIRS, 2.0f * M_PI) + hEncoder->Init.theta_re_offset;
+	_theta_re = fmodf((float)hEncoder->raw_Angle / (float)ENCODER_RESOL * 2.0f * M_PI * POLE_PAIRS, 2.0f * M_PI) + hEncoder->Init.theta_re_offset;
 
 	if(_theta_re < 0.0f)			hEncoder->theta_re = _theta_re + 2 * M_PI;
 	else if(_theta_re >= 2 * M_PI)	hEncoder->theta_re = _theta_re - 2 * M_PI;

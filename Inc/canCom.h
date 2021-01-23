@@ -17,7 +17,7 @@ void CAN_Init();
 
 uint8_t getChannel();
 
-
+void sendToMain();
 
 
 

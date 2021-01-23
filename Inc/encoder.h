@@ -42,6 +42,8 @@ typedef struct
 
 	float theta_multiturn;
 
+	uint16_t raw_Angle;
+
 	float p_theta;
 
 	// Rotor Speed

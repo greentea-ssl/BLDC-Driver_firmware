@@ -444,7 +444,7 @@ int main(void)
 
   setZeroEncoder((p_ch != ch)? 1: 0);
 
-  ASR_Start(&mainASR);
+  //ASR_Start(&mainASR);
 
   timeoutEnable = 1;
 
@@ -990,12 +990,10 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 
 #if 1
-	mainASR.launchFlg = 1;
-	ASR_Refresh(&mainASR);
+	//mainASR.launchFlg = 1;
+	//ASR_Refresh(&mainASR);
 
 	ACR_Refresh(&mainACR);
-
-	//ASR_prescaler(&mainASR);
 
 	//APR_prescaler(&mainAPR);
 

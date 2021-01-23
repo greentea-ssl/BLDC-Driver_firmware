@@ -62,6 +62,9 @@ void ACR_Init()
 	mainACR.Init.hCS = &mainCS;
 	mainACR.Init.htim = &htim8;
 
+	mainACR.Id_ref = 0.0;
+	mainACR.Iq_ref = 0.0;
+
 }
 
 
