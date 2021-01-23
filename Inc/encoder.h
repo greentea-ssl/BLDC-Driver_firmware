@@ -7,7 +7,7 @@
 #include "main.h"
 
 
-#define SPEED_CALC_BUF_SIZE		10
+#define SPEED_CALC_BUF_SIZE		14
 
 
 typedef struct

@@ -53,7 +53,7 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS)
 	case CS_Type_3shunt:
 
 
-		HAL_ADCEx_InjectedStart(hCS->Init.hadc);
+		HAL_ADCEx_InjectedStart_IT(hCS->Init.hadc);
 
 		break;
 	}

@@ -117,7 +117,7 @@ inline void APR_Refresh(APR_TypeDef *hAPR)
 				+ hAPR_Init->Ki * hAPR->theta_error_integ
 				- hAPR_Init->Kd * hAPR_Init->hEncoder->omega;
 
-		setSVM_dq(&htim8, 0.0f, hAPR->Vq_ref, hAPR_Init->hEncoder->cos_theta_re, hAPR_Init->hEncoder->sin_theta_re);
+		setSVM_dq(&htim8, 0.0f, hAPR->Vq_ref, hAPR_Init->hACR->Init.hCS->Vdc, hAPR_Init->hEncoder->cos_theta_re, hAPR_Init->hEncoder->sin_theta_re);
 
 	}
 

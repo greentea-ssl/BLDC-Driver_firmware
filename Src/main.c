@@ -282,7 +282,7 @@ int main(void)
   hWave.variableAddr[3] = &mainACR.Iq;
 	*/
 
-
+/*
   hWave.variableAddr[0] = &mainEncoder.theta;
   hWave.variableAddr[1] = &mainEncoder.theta_re;
   hWave.variableAddr[2] = &mainCS.Vdc;
@@ -291,18 +291,19 @@ int main(void)
   hWave.variableAddr[5] = &mainCS.Iv;
   hWave.variableAddr[6] = &mainCS.Iw;
   hWave.variableAddr[7] = &amp_u;
+  */
 
 
-  /*
+
   hWave.variableAddr[0] = &mainEncoder.theta;
   hWave.variableAddr[1] = &mainEncoder.omega;
   hWave.variableAddr[2] = &mainACR.Id_ref;
-  hWave.variableAddr[3] = &mainACR.Iq_ref;
-  hWave.variableAddr[4] = &mainACR.Id;
+  hWave.variableAddr[3] = &mainACR.Id;
+  hWave.variableAddr[4] = &mainACR.Iq_ref;
   hWave.variableAddr[5] = &mainACR.Iq;
   hWave.variableAddr[6] = &amp_u;
   hWave.variableAddr[7] = &amp_v;
-  */
+
 
 
 #if DEBUG_PRINT_ENABLE
@@ -941,21 +942,105 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-#if 0
+#if 1
 
-void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
+
+void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
+//void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
-		//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	static float Vgam_ref;
+	static float Vdel_ref;
 
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	static float phase = 0.0;
 
-		//HAL_ADC_Start_DMA(hadc, mainCS.AD_Iu, 1);
+	static float cos_phase;
+	static float sin_phase;
 
 
-		//CurrentSensor_Refresh(&mainCS, sector_SVM);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+
+#if 1
+
+	Encoder_Refresh(&mainEncoder);
+
+	CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+
+	/*
+	if(mainASR.enable == 1)
+	{
+
+		Vgam_ref = mainASR.omega_ref / 300.0 * 20.0;
+		Vdel_ref = 0.0;
+
+		cos_phase = sin_table2[(int)((phase * 0.3183f + 0.5f) * 5000.0f)];
+		sin_phase = sin_table2[(int)(phase * 1591.54943f)];
+
+		phase += mainACR.Init.cycleTime * mainASR.omega_ref * POLE_PAIRS;
+		if(phase < 0.0) phase += 2 * M_PI;
+		else if(phase >= 2 * M_PI) phase -= 2 * M_PI;
+
+		setSVM_dq(&htim8, Vgam_ref, Vdel_ref, cos_phase, sin_phase);
+
+	}
+	*/
+
+
+#if 1
+	mainASR.launchFlg = 1;
+	ASR_Refresh(&mainASR);
+
+	ACR_Refresh(&mainACR);
+
+	//ASR_prescaler(&mainASR);
+
+	//APR_prescaler(&mainAPR);
+
+
+
+
+#endif
+
+
+	Encoder_Request(&mainEncoder);
+
+	WaveSampler_Sampling(&hWave);
+
+#endif
+
+
+#if 1
+
+	if(timeoutEnable == 1)
+	{
+		// timeout control
+		if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
+		{
+			timeoutCount += 1;
+		}
+		else
+		{
+			//stopPWM(&htim8);
+			// Gate Disable
+			HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+			timeoutCount = 0;
+			timeoutState = 1;
+		}
+	}
+
+#if DUMP_ENABLE
+
+	Dump_Refresh();
+
+#endif
+
+#endif
+
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
 
 
 }
@@ -967,20 +1052,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {
 
 
-	static float Vgam_ref;
-	static float Vdel_ref;
 
-	static float phase = 0.0;
-
-	static float cos_phase;
-	static float sin_phase;
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
-
-
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 
 
 
@@ -988,166 +1064,12 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 	{
 
 
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-
-#if 0
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-
-		int i;
-		for(i = 0; i < 5; i++)
-		{
-			asm("NOP");
-		}
-
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-		for(i = 0; i < 2; i++)
-		{
-			asm("NOP");
-		}
-
-
-#if 1
-		for(i = 0; i < 150; i++)
-		{
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, (HAL_ADC_GetState(&hadc1) & HAL_ADC_STATE_REG_BUSY) != 0);
-			//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
-			asm("NOP");
-		}
-#endif
-
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-		for(i = 0; i < 2; i++)
-		{
-			asm("NOP");
-		}
-
-
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-		for(i = 0; i < 2; i++)
-		{
-			asm("NOP");
-		}
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-		HAL_ADC_Start_DMA(&hadc1, mainCS.AD_Iu, 1);
-		HAL_ADC_Start_DMA(&hadc2, mainCS.AD_Iv, 1);
-		HAL_ADC_Start_DMA(&hadc3, mainCS.AD_Iw, 1);
-
-#endif
-
-#if 0
-		timeoutCount = 0;
-
-		while(mainCS.AD_Iu[0] == 0xFFFF || mainCS.AD_Iv[0] == 0xFFFF || mainCS.AD_Iw[0] == 0xFFFF)
-		{
-			if(timeoutCount >= 500)
-			{
-				//break;
-			}
-			timeoutCount += 1;
-		}
-
-
-		mainCS.AD_Iu[0] = 0xFFFF;
-		mainCS.AD_Iv[0] = 0xFFFF;
-		mainCS.AD_Iw[0] = 0xFFFF;
-
-		HAL_ADC_Start_DMA(&hadc1, mainCS.AD_Iu, 1);
-		HAL_ADC_Start_DMA(&hadc2, mainCS.AD_Iv, 1);
-		HAL_ADC_Start_DMA(&hadc3, mainCS.AD_Iw, 1);
-
-
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-#endif
-
-
-
-#if 1
-
-		//Encoder_Refresh(&mainEncoder);
-
-		mainCS.AD_Iu[0] = hadc1.Instance->JDR1;
-		mainCS.AD_Iv[0] = hadc1.Instance->JDR2;
-		mainCS.AD_Iw[0] = hadc1.Instance->JDR3;
-		mainCS.AD_Vdc[0] = hadc1.Instance->JDR4;
-
-
-		CurrentSensor_Refresh(&mainCS, sector_SVM);
-
-
-		if(mainASR.enable == 1)
-		{
-
-			Vgam_ref = mainASR.omega_ref / 300.0 * 20.0;
-			Vdel_ref = 0.0;
-
-			cos_phase = sin_table2[(int)((phase * 0.3183f + 0.5f) * 5000.0f)];
-			sin_phase = sin_table2[(int)(phase * 1591.54943f)];
-
-			phase += mainACR.Init.cycleTime * mainASR.omega_ref * POLE_PAIRS;
-			if(phase < 0.0) phase += 2 * M_PI;
-			else if(phase >= 2 * M_PI) phase -= 2 * M_PI;
-
-			setSVM_dq(&htim8, Vgam_ref, Vdel_ref, cos_phase, sin_phase);
-
-		}
-
-
-#if 0
-		mainASR.launchFlg = 1;
-		ASR_Refresh(&mainASR);
-
-		ACR_Refresh(&mainACR);
-
-		//ASR_prescaler(&mainASR);
-
-		//APR_prescaler(&mainAPR);
-
-
-
-		Encoder_Request(&mainEncoder);
-
-#endif
-
-
-		WaveSampler_Sampling(&hWave);
-
-#endif
-
-
-#if 0
-
-		if(timeoutEnable == 1)
-		{
-			// timeout control
-			if(timeoutCount < TIMEOUT_MS * TIMEOUT_BASE_FREQ / 1000)
-			{
-				timeoutCount += 1;
-			}
-			else
-			{
-				//stopPWM(&htim8);
-				// Gate Disable
-				HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
-				timeoutCount = 0;
-				timeoutState = 1;
-			}
-		}
-
-#if DUMP_ENABLE
-
-		Dump_Refresh();
-
-#endif
-
-#endif
-
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
 
 	}
+
+
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 	//LED_blink();

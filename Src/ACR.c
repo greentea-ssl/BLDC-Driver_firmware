@@ -198,11 +198,11 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 
 		if(hACR->forced_commute_enable)
 		{
-			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hCS->Vdc, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
 		}
 		else
 		{
-			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hCS->Vdc, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
 		}
 
 
