@@ -29,9 +29,7 @@ void stopPWM(TIM_HandleTypeDef *htim);
 
 void setSVM(float ampl, float phase);
 
-void setSVM_dq(TIM_HandleTypeDef *htim, float Vd, float Vq, float cos_theta_re, float sin_theta_re);
-
-
+void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re);
 
 
 

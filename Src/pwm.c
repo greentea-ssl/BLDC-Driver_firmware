@@ -45,6 +45,7 @@ void PWM_Init()
 	HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
 	//HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
 
+	htim8.Instance->CCR4 = 7900;
 
 	startPWM(&htim8);
 
@@ -59,6 +60,7 @@ inline void startPWM(TIM_HandleTypeDef *htim)
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start_IT(htim, TIM_CHANNEL_4);
 
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Start_IT(htim, TIM_CHANNEL_2);
@@ -77,21 +79,22 @@ inline void stopPWM(TIM_HandleTypeDef *htim)
 	// Gate Disable
 	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
 
-
+/*
 	// 3phase PWM Stopping
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_2);
 	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop_IT(htim, TIM_CHANNEL_4);
 
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_1);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_2);
 	HAL_TIMEx_PWMN_Stop_IT(htim, TIM_CHANNEL_3);
-
+*/
 
 }
 
 
-inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float cos_theta_re, float sin_theta_re)
+inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re)
 {
 
 	static float cross0 = 0.0;
@@ -126,8 +129,8 @@ inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float
 	x2 = refVector[sector_SVM + 1][0];
 	y2 = refVector[sector_SVM + 1][1];
 
-	vect1 = (y2 * x - x2 * y) / ((x1 * y2 - y1 * x2) * VDC);
-	vect2 = (-y1 * x + x1 * y) / ((x1 * y2 - y1 * x2) * VDC);
+	vect1 = (y2 * x - x2 * y) / ((x1 * y2 - y1 * x2) * Vdc);
+	vect2 = (-y1 * x + x1 * y) / ((x1 * y2 - y1 * x2) * Vdc);
 
 	switch(sector_SVM)
 	{
@@ -139,10 +142,9 @@ inline void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float
 	case 5: duty[1] = (1.0 - vect1 - vect2) * 0.5f; 	duty[2] = duty[1] + vect1; 	duty[0] = duty[2] + vect2; 	break;
 	}
 
-
-	if(duty[0] < -1.0f) duty[0] = -1.0f; else if (duty[0] > 1.0f) duty[0] = 1.0f;
-	if(duty[1] < -1.0f) duty[1] = -1.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
-	if(duty[2] < -1.0f) duty[2] = -1.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
+	if(duty[0] < 0.0f) duty[0] = 0.0f; else if (duty[0] > 1.0f) duty[0] = 1.0f;
+	if(duty[1] < 0.0f) duty[1] = 0.0f; else if (duty[1] > 1.0f) duty[1] = 1.0f;
+	if(duty[2] < 0.0f) duty[2] = 0.0f; else if (duty[2] > 1.0f) duty[2] = 1.0f;
 
 	__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, htim->Init.Period * (1.0f - (amp_u = duty[0])));
 	__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, htim->Init.Period * (1.0f - (amp_v = duty[1])));
