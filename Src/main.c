@@ -145,9 +145,9 @@ volatile uint32_t LED_blink_count = 0;
 volatile uint32_t LED_blink_state = 0;
 volatile uint32_t LED_blink_t_us = 0;
 volatile uint32_t LED_blink_times = 0;
-volatile uint32_t LED_blink_Ton_us = 100000;
-volatile uint32_t LED_blink_Toff_us = 400000;
-volatile uint32_t LED_blink_T_wait_us = 2000000;
+volatile uint32_t LED_blink_Ton_us = 50000;
+volatile uint32_t LED_blink_Toff_us = 200000;
+volatile uint32_t LED_blink_T_wait_us = 1000000;
 volatile uint32_t LED_blink_Ts_us = 100;
 
 
@@ -958,7 +958,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	static float sin_phase;
 
 
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
 
 
@@ -1039,9 +1039,11 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 #endif
 
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
 
+
+	LED_blink();
 
 }
 
@@ -1053,10 +1055,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 
 
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-
-	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 
@@ -1069,10 +1068,9 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 	}
 
 
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
-	//LED_blink();
 
 }
 
