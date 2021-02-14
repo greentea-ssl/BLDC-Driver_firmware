@@ -134,7 +134,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		return;
 	}
 
-	mainACR.Iq_ref = Iq_ref_int * 0.00048828125f;
+	mainACR.Iq_ref = Iq_ref_int * 0.0009765625f; // 1/1024
 
 
 	timeoutReset();
@@ -160,7 +160,7 @@ void sendToMain()
 	can1TxHeader.RTR = CAN_RTR_DATA;
 	can1TxHeader.DLC = 8;
 
-	Iq_int16 = (int16_t)(mainACR.Iq * 2048);
+	Iq_int16 = (int16_t)(mainACR.Iq * 1024);
 	theta_uint16 = mainEncoder.raw_Angle;
 	omega_int16 = (int16_t)(mainEncoder.omega * 32);
 
