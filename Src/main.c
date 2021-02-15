@@ -420,6 +420,8 @@ int main(void)
   CurrentSensor_Start(&mainCS);
 
 
+  timeoutEnable = 0;
+
   // Offset calibration
 #if 1
   float sum_uvw[3] = {0, 0, 0};
@@ -440,7 +442,6 @@ int main(void)
 
   ACR_Start(&mainACR);
 
-  timeoutEnable = 0;
 
   setZeroEncoder((p_ch != ch)? 1: 0);
 
