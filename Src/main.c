@@ -17,7 +17,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -258,6 +257,9 @@ int main(void)
 
 
   //initialise_monitor_handles();
+
+
+
 
 
   DRV_Init();
@@ -534,18 +536,18 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 320;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
@@ -554,7 +556,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -587,7 +589,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
@@ -605,7 +607,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
@@ -614,7 +616,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_0;
   sConfigInjected.InjectedRank = 1;
@@ -629,7 +631,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
   sConfigInjected.InjectedRank = 2;
@@ -637,7 +639,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_1;
   sConfigInjected.InjectedRank = 3;
@@ -645,7 +647,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_10;
   sConfigInjected.InjectedRank = 4;
@@ -809,7 +811,7 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 4000;
+  sConfigOC.Pulse = 2000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -827,7 +829,7 @@ static void MX_TIM8_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 7800;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -899,7 +901,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin 
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin
                           |SPI3_NSS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -911,9 +913,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin DB1_Pin OP_CAL_Pin GATE_EN_Pin 
+  /*Configure GPIO pins : LD2_Pin DB1_Pin OP_CAL_Pin GATE_EN_Pin
                            SPI3_NSS_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin 
+  GPIO_InitStruct.Pin = LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin
                           |SPI3_NSS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -959,13 +961,13 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	static float sin_phase;
 
 
-	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
 
 
 #if 1
 
-	Encoder_Refresh(&mainEncoder);
+	//Encoder_Refresh(&mainEncoder);
 
 	CurrentSensor_Refresh(&mainCS, sector_SVM);
 
@@ -990,7 +992,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	*/
 
 
-#if 1
+#if 0
 	//mainASR.launchFlg = 1;
 	//ASR_Refresh(&mainASR);
 
@@ -1004,14 +1006,14 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-	Encoder_Request(&mainEncoder);
+	//Encoder_Request(&mainEncoder);
 
-	WaveSampler_Sampling(&hWave);
+	//WaveSampler_Sampling(&hWave);
 
 #endif
 
 
-#if 1
+#if 0
 
 	if(timeoutEnable == 1)
 	{
@@ -1038,11 +1040,11 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 #endif
 
-	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
 
 
-	LED_blink();
+	//LED_blink();
 
 }
 
@@ -1056,6 +1058,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 	if(htim->Instance == TIM8 && __HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
@@ -1256,7 +1260,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

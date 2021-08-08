@@ -45,7 +45,14 @@ void PWM_Init()
 	HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_UPDATE);
 	//HAL_TIM_GenerateEvent(&htim8, TIM_EVENTSOURCE_TRIGGER);
 
-	htim8.Instance->CCR4 = 7900;
+
+	  // Timer Init
+	__HAL_TIM_SET_AUTORELOAD(&htim8, 2000);
+
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 1000);
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 1000);
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 1000);
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, htim8.Init.Period - 128);
 
 	startPWM(&htim8);
 
