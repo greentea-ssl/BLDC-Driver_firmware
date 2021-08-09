@@ -37,7 +37,8 @@
 #include "canCom.h"
 #include "sin_t.h"
 
-#include "debugDump.h"
+//#include "debugDump.h"
+#include "dump_int.h"
 
 #include "../waveSamplerLib/waveSampler.h"
 
@@ -59,8 +60,6 @@
 
 
 
-
-#define _APR_ENABLE_		1
 
 
 
@@ -86,45 +85,15 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 
-
-/********** ACR DUMP DEBUG **********/
-
-#if _ACR_DUMP_
+uint8_t sequence = 0; /* 0: Initialize, 1: running */
 
 
-float Id_dump[ACR_DUMP_STEPS] = {0.0f};
-float Iq_dump[ACR_DUMP_STEPS] = {0.0f};
-float Id_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Iq_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Vd_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Vq_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-
-
-int ACR_dump_count = 0;
-
-#endif
-
-
-/********** ASR DUMP DEBUG **********/
-
-#if _ASR_DUMP_
-
-#define ASR_DUMP_STEPS		2000
-
-
-float omega_dump[ASR_DUMP_STEPS] = {0.0f};
-float omega_ref_dump[ASR_DUMP_STEPS] = {0.0f};
-float torque_ref_dump[ASR_DUMP_STEPS] = {0.0f};
-
-int ASR_dump_count = 0;
-
-#endif
-
+uint32_t carrier_counter = 0;
 
 
 /********** WaveSampler **********/
 
-WaveSampler_TypeDef hWave;
+//WaveSampler_TypeDef hWave;
 
 
 /********** Timeout Control **********/
@@ -180,7 +149,7 @@ int32_t printFloat(float val);
 #endif /* __GNUC__ */
 void __io_putchar(uint8_t ch)
 {
-	//HAL_UART_Transmit(&huart2, &ch, 1, 1);
+	HAL_UART_Transmit(&huart2, &ch, 1, 1);
 }
 
 #endif
@@ -261,7 +230,6 @@ int main(void)
 
 
 
-
   DRV_Init();
 
 
@@ -269,7 +237,7 @@ int main(void)
   //UartPrintf(&huart2, "Hello world\n");
 
 
-  WaveSampler_Init(&hWave, &huart2);
+  //WaveSampler_Init(&hWave, &huart2);
 
 /*
   hWave.variableAddr[0] = &mainCS.Iu;
@@ -296,7 +264,7 @@ int main(void)
   */
 
 
-
+/*
   hWave.variableAddr[0] = &mainEncoder.theta;
   hWave.variableAddr[1] = &mainEncoder.omega;
   hWave.variableAddr[2] = &mainACR.Id_ref;
@@ -305,8 +273,7 @@ int main(void)
   hWave.variableAddr[5] = &mainACR.Iq;
   hWave.variableAddr[6] = &amp_u;
   hWave.variableAddr[7] = &amp_v;
-
-
+*/
 
 #if DEBUG_PRINT_ENABLE
 
@@ -411,11 +378,11 @@ int main(void)
   CurrentSensor_Init();
 
 
-  ACR_Init();
+  //ACR_Init();
 
-  ASR_Init();
+  //ASR_Init();
 
-  APR_Init();
+  //APR_Init();
 
   PWM_Init();
 
@@ -453,6 +420,16 @@ int main(void)
 
   //APR_Start(&mainAPR);
 
+
+  Dump_Init();
+
+
+  HAL_Delay(1000);
+
+
+  sequence = 1; /* Start */
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -468,14 +445,7 @@ int main(void)
 	  //ASR_Refresh(&mainASR);
 
 
-#if DUMP_ENABLE
-
-	  if(DumpCount >= DUMP_STEPS)
-	  {
-		  break;
-	  }
-
-#endif
+	  if(Dump_isFull()) break;
 
 
   }
@@ -520,6 +490,7 @@ int main(void)
 	}
 */
 
+  printf("Finished.\r\n");
 
 
   while(1);
@@ -960,9 +931,10 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	static float cos_phase;
 	static float sin_phase;
 
+	static uint32_t count = 0;
+
 
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-
 
 
 #if 1
@@ -970,6 +942,56 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	//Encoder_Refresh(&mainEncoder);
 
 	CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+
+	if(sequence == 1)
+	{
+
+	}
+
+
+	if(sequence == 1 && !Dump_isFull())
+	{
+
+
+		if((carrier_counter & (1<<9)) == 0)
+		{
+			htim8.Instance->CCR1 = 1000 - 100;
+			htim8.Instance->CCR2 = 1000 + 50;
+			htim8.Instance->CCR3 = 1000 + 50;
+		}
+		else
+		{
+			htim8.Instance->CCR1 = 1000 + 100;
+			htim8.Instance->CCR2 = 1000 - 50;
+			htim8.Instance->CCR3 = 1000 - 50;
+		}
+
+
+		carrier_counter++;
+
+
+		dump_record[dump_counter][0] = htim8.Instance->CCR1;
+		dump_record[dump_counter][1] = mainCS.AD_Iu[0];
+		dump_record[dump_counter][2] = mainCS.AD_Iv[0];
+		dump_record[dump_counter][3] = mainCS.AD_Iw[0];
+
+		if(dump_counter < DUMP_LENGTH)
+		{
+			dump_counter++;
+		}
+
+	}
+	else
+	{
+
+		htim8.Instance->CCR1 = 1000;
+		htim8.Instance->CCR2 = 1000;
+		htim8.Instance->CCR3 = 1000;
+
+	}
+
+
 
 
 	/*
@@ -1159,7 +1181,7 @@ inline void LED_blink()
 void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
 
-	WaveSampler_TxCplt(&hWave, huart);
+	//WaveSampler_TxCplt(&hWave, huart);
 
 }
 
@@ -1167,7 +1189,7 @@ void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
 
-	WaveSampler_RxCplt(&hWave, huart);
+	//WaveSampler_RxCplt(&hWave, huart);
 
 }
 
