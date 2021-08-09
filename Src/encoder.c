@@ -263,7 +263,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 {
 
 	static uint16_t rawData;
-	static uint8_t parity, i;
+	static uint16_t parity, i;
 	static float _theta;
 	static float _theta_re;
 	static float d_theta;
@@ -274,14 +274,25 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 
 	rawData = (hEncoder->spi2rxBuf[1] << 8) | hEncoder->spi2rxBuf[0];
 
+#if 0
 	parity = 0;
 	for(i = 0; i < 16; i++)
 	{
 		parity += (rawData >> i) & 0x01;
 	}
 	if((parity & 0x01) != 0) return -1;
+#else
+	parity = rawData;
+	parity ^= parity >> 8;
+	parity ^= parity >> 4;
+	parity ^= parity >> 2;
+	parity ^= parity >> 1;
+	if((parity & 0x01) != 0) return -1;
+#endif
 
 	hEncoder->raw_Angle = rawData & 0x3FFF;
+
+#if 0
 
 	_theta = (float)hEncoder->raw_Angle / (float)ENCODER_RESOL * 2.0f * M_PI + hEncoder->Init.theta_offset;
 
@@ -352,6 +363,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 	hEncoder->cos_theta_re = sin_table2[(int)((hEncoder->theta_re * 0.3183f + 0.5f) * 5000.0f)];
 	hEncoder->sin_theta_re = sin_table2[(int)(hEncoder->theta_re * 1591.54943f)];
 
+#endif
 
 	return 0;
 

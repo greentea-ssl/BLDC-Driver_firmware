@@ -444,8 +444,12 @@ int main(void)
 
 	  //ASR_Refresh(&mainASR);
 
+	  HAL_Delay(10);
 
-	  if(Dump_isFull()) break;
+	  printf("%d\r\n", mainEncoder.raw_Angle);
+
+
+	  //if(Dump_isFull()) break;
 
 
   }
@@ -923,23 +927,13 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 //void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
-	static float Vgam_ref;
-	static float Vdel_ref;
-
-	static float phase = 0.0;
-
-	static float cos_phase;
-	static float sin_phase;
-
-	static uint32_t count = 0;
-
 
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
 
 #if 1
 
-	//Encoder_Refresh(&mainEncoder);
+	Encoder_Refresh(&mainEncoder);
 
 	CurrentSensor_Refresh(&mainCS, sector_SVM);
 
@@ -953,7 +947,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	if(sequence == 1 && !Dump_isFull())
 	{
 
-
+#if 0
 		if((carrier_counter & (1<<9)) == 0)
 		{
 			htim8.Instance->CCR1 = 1000 - 100;
@@ -966,7 +960,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 			htim8.Instance->CCR2 = 1000 - 50;
 			htim8.Instance->CCR3 = 1000 - 50;
 		}
-
+#endif
 
 		carrier_counter++;
 
@@ -1028,7 +1022,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-	//Encoder_Request(&mainEncoder);
+	Encoder_Request(&mainEncoder);
 
 	//WaveSampler_Sampling(&hWave);
 
