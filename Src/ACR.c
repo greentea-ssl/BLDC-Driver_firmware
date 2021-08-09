@@ -120,8 +120,8 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	if(hACR->forced_commute_enable)
 	{
 
-		hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
-		hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
+		//hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		//hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
 
 		CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
 

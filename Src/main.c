@@ -36,6 +36,7 @@
 #include "drv8323.h"
 #include "canCom.h"
 #include "sin_t.h"
+#include "motorControl.h"
 
 //#include "debugDump.h"
 #include "dump_int.h"
@@ -90,6 +91,13 @@ uint8_t sequence = 0; /* 0: Initialize, 1: running */
 
 uint32_t carrier_counter = 0;
 
+
+
+Motor_TypeDef motor;
+
+
+uint8_t rxChar = 0;
+uint8_t rxFlag = 0;
 
 /********** WaveSampler **********/
 
@@ -282,6 +290,9 @@ int main(void)
 #endif
 
 
+  HAL_UART_Receive_IT(&huart2, &rxChar, 1);
+
+
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
 
@@ -412,7 +423,7 @@ int main(void)
   ACR_Start(&mainACR);
 
 
-  setZeroEncoder((p_ch != ch)? 1: 0);
+  //setZeroEncoder((p_ch != ch)? 1: 0);
 
   //ASR_Start(&mainASR);
 
@@ -422,6 +433,10 @@ int main(void)
 
 
   Dump_Init();
+
+
+  // Motor Handler initialize
+  Motor_Init(&motor);
 
 
   HAL_Delay(1000);
@@ -444,9 +459,19 @@ int main(void)
 
 	  //ASR_Refresh(&mainASR);
 
-	  HAL_Delay(10);
+	  HAL_Delay(1);
 
-	  printf("%d\r\n", mainEncoder.raw_Angle);
+	  //printf("%d\r\n", mainEncoder.raw_Angle);
+	  //printf("%10d, %10d\n", motor.theta_m_int, motor.theta_re_int);
+	  //printf("%6d, %6d, %6d\n", motor.theta_re_int, motor.Va_pu_2q13, motor.Vb_pu_2q13);
+	  //printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
+	  //printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
+
+	  if(rxFlag)
+	  {
+		  printf("%d\r\n", mainEncoder.raw_Angle);
+		  rxFlag = 0;
+	  }
 
 
 	  //if(Dump_isFull()) break;
@@ -941,12 +966,6 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	if(sequence == 1)
 	{
 
-	}
-
-
-	if(sequence == 1 && !Dump_isFull())
-	{
-
 #if 0
 		if((carrier_counter & (1<<9)) == 0)
 		{
@@ -962,7 +981,30 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		}
 #endif
 
+		motor.AD_Iu = mainCS.AD_Iu[0];
+		motor.AD_Iv = mainCS.AD_Iv[0];
+		motor.AD_Iw = mainCS.AD_Iw[0];
+		motor.AD_Vdc = mainCS.AD_Vdc[0];
+
+		motor.raw_theta_14bit = mainEncoder.raw_Angle;
+
+		// Motor Controller Update
+		Motor_Update(&motor);
+
+#if 0
+		htim8.Instance->CCR1 = motor.duty_u;
+		htim8.Instance->CCR2 = motor.duty_v;
+		htim8.Instance->CCR3 = motor.duty_w;
+#endif
+
+
 		carrier_counter++;
+
+	}
+
+
+	if(sequence == 1 && !Dump_isFull())
+	{
 
 
 		dump_record[dump_counter][0] = htim8.Instance->CCR1;
@@ -974,14 +1016,6 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		{
 			dump_counter++;
 		}
-
-	}
-	else
-	{
-
-		htim8.Instance->CCR1 = 1000;
-		htim8.Instance->CCR2 = 1000;
-		htim8.Instance->CCR3 = 1000;
 
 	}
 
@@ -1184,6 +1218,10 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
 
 	//WaveSampler_RxCplt(&hWave, huart);
+
+	rxFlag = 1;
+
+	HAL_UART_Receive_IT(&huart2, &rxChar, 1);
 
 }
 
