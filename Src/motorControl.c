@@ -38,6 +38,36 @@ inline void dq2ab(int16_t *a, int16_t *b, uint16_t theta_re, int16_t d, int16_t 
 	*b = (sin_theta_re * d + cos_theta_re * q) >> 14;
 }
 
+inline void sqLimit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x, int16_t src_y)
+{
+	int32_t r2 = (int32_t)src_x * (int32_t)src_x + (int32_t)src_y * (int32_t)src_y;
+	int32_t limit2 = (int32_t)limit * (int32_t)limit;
+
+	if(r2 <= limit2) return;
+
+	int32_t dec = (limit << 14) / intSqrt(r2);
+
+	*dst_x = (src_x * dec) >> 14;
+	*dst_y = (src_y * dec) >> 14;
+
+}
+
+
+void CurrentControl(Motor_TypeDef *hMotor)
+{
+
+	hMotor->Id_error = hMotor->Id_ref_pu_2q13 - hMotor->Id_pu_2q13;
+	hMotor->Iq_error = hMotor->Iq_ref_pu_2q13 - hMotor->Iq_pu_2q13;
+
+	IntInteg_Update(&hMotor->Id_error_integ, hMotor->Id_error);
+	IntInteg_Update(&hMotor->Iq_error_integ, hMotor->Iq_error);
+
+	hMotor->Vd_pu_2q13 = (hMotor->Init.acr_Kp_q14 * hMotor->Id_error + hMotor->Init.acr_Ki_q2 * hMotor->Id_error_integ.integ) >> 14;
+	hMotor->Vq_pu_2q13 = (hMotor->Init.acr_Kp_q14 * hMotor->Iq_error + hMotor->Init.acr_Ki_q2 * hMotor->Iq_error_integ.integ) >> 14;
+
+}
+
+
 
 /**********/
 
@@ -45,14 +75,44 @@ inline void dq2ab(int16_t *a, int16_t *b, uint16_t theta_re, int16_t d, int16_t 
 void Motor_Init(Motor_TypeDef *hMotor)
 {
 
+	/***** Motor parameters *****/
+
+	hMotor->motorParam.Pn = 7;
+	hMotor->motorParam.R = 0.35;
+	hMotor->motorParam.Ld = 76.1E-6;
+	hMotor->motorParam.Lq = 76.1E-6;
+
+	/***** Data convention setting *****/
+
 	hMotor->Init.I_base = 15.0;
 	hMotor->Init.V_base = 24.0;
 
-	hMotor->Init.AD_Iu_offset = 2048;
-	hMotor->Init.AD_Iv_offset = 2048;
-	hMotor->Init.AD_Iw_offset = 2048;
+	hMotor->Init.AD_Iu_offset = 2084;
+	hMotor->Init.AD_Iv_offset = 2067;
+	hMotor->Init.AD_Iw_offset = 2077;
 
-	hMotor->Init.Gain_Iad2pu_s14 = 4096/*shift:14bit*/ / 4096/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
+	hMotor->Init.PWM_PRR = 2000;
+
+	hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
+
+	hMotor->Init.Gain_Vad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * 12.5385f/*[V/V]*/ / hMotor->Init.V_base * 8192/*q.13*/;
+
+
+	/***** ACR Setting *****/
+
+	hMotor->Init.acr_omega = 6000.0f;
+
+	hMotor->Init.acr_Kp_q14 = hMotor->Init.acr_omega * hMotor->motorParam.Ld * 16384;
+	hMotor->Init.acr_Ki_q2 = hMotor->Init.acr_omega * hMotor->motorParam.R * 4;
+
+	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/40000, 65536);
+	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/40000, 65536);
+
+	hMotor->Id_error = 0;
+	hMotor->Iq_error = 0;
+	hMotor->Id_ref_pu_2q13 = 0;
+	hMotor->Iq_ref_pu_2q13 = 0;
+
 
 }
 
@@ -61,25 +121,56 @@ void Motor_Update(Motor_TypeDef *hMotor)
 {
 
 	hMotor->theta_m_int = (hMotor->raw_theta_14bit >> 1) & SIN_TBL_MASK;
-	hMotor->theta_re_int = ( ( ((uint32_t)hMotor->raw_theta_14bit * 7) >> 1 ) - 1480) & SIN_TBL_MASK;
+	hMotor->theta_re_int = ( ( ((uint32_t)hMotor->raw_theta_14bit * hMotor->motorParam.Pn) >> 1 ) - 1480) & SIN_TBL_MASK;
 
-	hMotor->Iu_pu_2q13 = ( (hMotor->AD_Iu - hMotor->Init.AD_Iu_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
-	hMotor->Iv_pu_2q13 = ( (hMotor->AD_Iv - hMotor->Init.AD_Iv_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
-	hMotor->Iw_pu_2q13 = ( (hMotor->AD_Iw - hMotor->Init.AD_Iw_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
+	hMotor->Iu_pu_2q13 = ( ((int32_t)hMotor->AD_Iu - (int32_t)hMotor->Init.AD_Iu_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
+	hMotor->Iv_pu_2q13 = ( ((int32_t)hMotor->AD_Iv - (int32_t)hMotor->Init.AD_Iv_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
+	hMotor->Iw_pu_2q13 = ( ((int32_t)hMotor->AD_Iw - (int32_t)hMotor->Init.AD_Iw_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
 
-	//uvw2ab(&hMotor->Ia_pu_2q13, &hMotor->Ib_pu_2q13, hMotor->Iu_pu_2q13, hMotor->Iv_pu_2q13, hMotor->Iw_pu_2q13);
-	//ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+	hMotor->Vdc_pu_2q13 = ( (int32_t)hMotor->AD_Vdc * (int32_t)hMotor->Init.Gain_Vad2pu_s14 ) >> 14;
 
 
-	hMotor->Vd_pu_2q13 = 0;
-	hMotor->Vq_pu_2q13 = 500;
+
+	uvw2ab(&hMotor->Ia_pu_2q13, &hMotor->Ib_pu_2q13, hMotor->Iu_pu_2q13, hMotor->Iv_pu_2q13, hMotor->Iw_pu_2q13);
+	ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+
+
+
+	//hMotor->Va_pu_2q13 = 0;
+	//hMotor->Vb_pu_2q13 = 0;
+	//hMotor->Vu_pu_2q13 = 4096;
+	//hMotor->Vv_pu_2q13 = -2048;
+	//hMotor->Vw_pu_2q13 = -2048;
+	//hMotor->Vd_pu_2q13 = 8192;
+	//hMotor->Vq_pu_2q13 = 8192;
+
+	CurrentControl(hMotor);
+
+
+	// Circular voltage limit
+	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, ((int32_t)hMotor->Vdc_pu_2q13 * 10033) >> 14, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 
 	dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 	ab2uvw(&hMotor->Vu_pu_2q13, &hMotor->Vv_pu_2q13, &hMotor->Vw_pu_2q13, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
 
-	hMotor->duty_u = 1000 - (((int32_t)hMotor->Vu_pu_2q13 * 3000) >> 14);
-	hMotor->duty_v = 1000 - (((int32_t)hMotor->Vv_pu_2q13 * 3000) >> 14);
-	hMotor->duty_w = 1000 - (((int32_t)hMotor->Vw_pu_2q13 * 3000) >> 14);
+	int32_t Gain_Vref2duty_s14 = ((int32_t)hMotor->Init.PWM_PRR << 14) / hMotor->Vdc_pu_2q13;
+
+	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+
+	// Duty Limit
+	if(duty_u < 0) hMotor->duty_u = 0;
+	else if(duty_u > hMotor->Init.PWM_PRR) hMotor->duty_u = hMotor->Init.PWM_PRR - 1;
+	else hMotor->duty_u = duty_u;
+
+	if(duty_v < 0) hMotor->duty_v = 0;
+	else if(duty_v > hMotor->Init.PWM_PRR) hMotor->duty_v = hMotor->Init.PWM_PRR - 1;
+	else hMotor->duty_v = duty_v;
+
+	if(duty_w < 0) hMotor->duty_w = 0;
+	else if(duty_w > hMotor->Init.PWM_PRR) hMotor->duty_w = hMotor->Init.PWM_PRR - 1;
+	else hMotor->duty_w = duty_w;
 
 }
 

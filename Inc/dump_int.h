@@ -7,7 +7,7 @@
 
 
 #define DUMP_CHANNELS (4)
-#define DUMP_LENGTH	(2000)
+#define DUMP_LENGTH	(1000)
 
 
 extern uint32_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];

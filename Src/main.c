@@ -44,6 +44,9 @@
 #include "../waveSamplerLib/waveSampler.h"
 
 
+#include "intMath.h"
+
+
 
 /* USER CODE END Includes */
 
@@ -98,6 +101,10 @@ Motor_TypeDef motor;
 
 uint8_t rxChar = 0;
 uint8_t rxFlag = 0;
+
+
+IntInteg_TypeDef integTest;
+
 
 /********** WaveSampler **********/
 
@@ -445,6 +452,11 @@ int main(void)
   sequence = 1; /* Start */
 
 
+  int sqrt_count = 0;
+
+  IntInteg_Init(&integTest, 0, 268435456/40000, 65536);
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -473,11 +485,26 @@ int main(void)
 		  rxFlag = 0;
 	  }
 
+	  //printf("%10d, %10d, %10d\r\n", motor.AD_Iu, motor.AD_Iv, motor.AD_Iw);
+	  //printf("%d\r\n", motor.Vdc_pu_2q13);
+	  //printf("%d,%d,%d,%d,%d,%d,%d\r\n", carrier_counter, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13, motor.Iu_pu_2q13, motor.Iv_pu_2q13, motor.Iw_pu_2q13);
+	  //printf("%10d, %10d\r\n", motor.Ia_pu_2q13, motor.Ib_pu_2q13);
+	  //printf("%d,\t%10d,\t%10d\r\n", carrier_counter, motor.Id_pu_2q13, motor.Iq_pu_2q13);
 
-	  //if(Dump_isFull()) break;
+	  //printf("%10d, %10d, %10d\r\n", motor.Vd_pu_2q13,motor.Vq_pu_2q13, motor.Vdc_pu_2q13);
+
+	  //printf("%d, %d\r\n", integTest.integ, integTest.error);
+
+	  //printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
+
+	  if(Dump_isFull()) break;
 
 
   }
+
+  motor.Id_ref_pu_2q13 = 0;
+  motor.Iq_ref_pu_2q13 = 0;
+
 
 
   mainACR.Id_ref = 0.0f;
@@ -966,32 +993,30 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	if(sequence == 1)
 	{
 
-#if 0
-		if((carrier_counter & (1<<9)) == 0)
+#if 1
+		if((carrier_counter & (1<<7)) == 0)
 		{
-			htim8.Instance->CCR1 = 1000 - 100;
-			htim8.Instance->CCR2 = 1000 + 50;
-			htim8.Instance->CCR3 = 1000 + 50;
+			motor.Id_ref_pu_2q13 = 546;
+			motor.Iq_ref_pu_2q13 = 0;
 		}
 		else
 		{
-			htim8.Instance->CCR1 = 1000 + 100;
-			htim8.Instance->CCR2 = 1000 - 50;
-			htim8.Instance->CCR3 = 1000 - 50;
+			motor.Id_ref_pu_2q13 = -546;
+			motor.Iq_ref_pu_2q13 = 0;
 		}
 #endif
+
 
 		motor.AD_Iu = mainCS.AD_Iu[0];
 		motor.AD_Iv = mainCS.AD_Iv[0];
 		motor.AD_Iw = mainCS.AD_Iw[0];
 		motor.AD_Vdc = mainCS.AD_Vdc[0];
-
 		motor.raw_theta_14bit = mainEncoder.raw_Angle;
 
 		// Motor Controller Update
 		Motor_Update(&motor);
 
-#if 0
+#if 1
 		htim8.Instance->CCR1 = motor.duty_u;
 		htim8.Instance->CCR2 = motor.duty_v;
 		htim8.Instance->CCR3 = motor.duty_w;
@@ -1007,10 +1032,10 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	{
 
 
-		dump_record[dump_counter][0] = htim8.Instance->CCR1;
-		dump_record[dump_counter][1] = mainCS.AD_Iu[0];
-		dump_record[dump_counter][2] = mainCS.AD_Iv[0];
-		dump_record[dump_counter][3] = mainCS.AD_Iw[0];
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Iq_ref_pu_2q13;
+		dump_record[dump_counter][2] = motor.Id_pu_2q13;
+		dump_record[dump_counter][3] = motor.Iq_pu_2q13;
 
 		if(dump_counter < DUMP_LENGTH)
 		{
