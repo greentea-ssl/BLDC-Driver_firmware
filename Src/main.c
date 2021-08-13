@@ -303,56 +303,129 @@ int main(void)
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
 
-
-  //printf("Hello SPI Gate Driver\n");
-
-
-  DRV_ReadData(&drv8323, ADDR_OCP_Control);
-
-  drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
-  drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrentcausesa latchedfault
-  drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
-  drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
-  //drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 0.75V -> ID = 75A
-
-  DRV_WriteData(&drv8323, ADDR_OCP_Control);
-
-
-  DRV_ReadData(&drv8323, ADDR_CSA_Control);
-
-  drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 0.5V -> 50A
-  drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
-
-  DRV_WriteData(&drv8323, ADDR_CSA_Control);
-
-
-#if DEBUG_PRINT_ENABLE
-
-  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-  PRINT_HEX(drv8323.Reg.DriverControl.word);
-  PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-  PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-  PRINT_HEX(drv8323.Reg.OCP_Control.word);
-  PRINT_HEX(drv8323.Reg.CSA_Control.word);
-
-#endif
-
   // Current Sensing Auto Offset Calibration
   HAL_GPIO_WritePin(OP_CAL_GPIO_Port, OP_CAL_Pin, GPIO_PIN_SET);
   HAL_Delay(10);
   HAL_GPIO_WritePin(OP_CAL_GPIO_Port, OP_CAL_Pin, GPIO_PIN_RESET);
 
 
-  /******** DEBUG ********/
+  //printf("Hello SPI Gate Driver\n");
 
 
-  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+  /*************************************************/
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Initial register data.\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+  /*************************************************/
+
+
+#if 0
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	drv8323.Reg.GateDrive_HS.IDRIVEP_HS = 0b1011; // 440mA
+	drv8323.Reg.GateDrive_HS.IDRIVEN_HS = 0b1011; // 880mA
+	DRV_WriteData(&drv8323, ADDR_GateDrive_HS);
+
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	drv8323.Reg.GateDrive_LS.IDRIVEP_LS = 0b1011; // 440mA
+	drv8323.Reg.GateDrive_LS.IDRIVEN_LS = 0b1011; // 880mA
+	DRV_WriteData(&drv8323, ADDR_GateDrive_LS);
+#endif
+
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	drv8323.Reg.OCP_Control.TRETRY = 0b0; // VDS_OCP and SEN_OCP retry time is 4 ms
+	drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
+	drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
+	drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
+	//drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
+	drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 1.88V -> ID = 75A
+	DRV_WriteData(&drv8323, ADDR_OCP_Control);
+
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	//drv8323.Reg.CSA_Control.DIS_SEN = 0b1;	// Sense overcurrent fault is disabled
+	//drv8323.Reg.CSA_Control.SEN_LVL = 0b00;	// Vsense = 0.25V -> 25A
+	drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 1.0V -> 100A
+	drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
+	DRV_WriteData(&drv8323, ADDR_CSA_Control);
+
+#if 0
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	drv8323.Reg.DriverControl.DIS_CPUV = 1;
+	drv8323.Reg.DriverControl.DIS_GDF = 1;
+	drv8323.Reg.DriverControl.OTW_REP = 1;
+	DRV_WriteData(&drv8323, ADDR_DriverControl);
+#endif
 
 
 #if DEBUG_PRINT_ENABLE
-  PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("Write data.\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
 #endif
+
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	drv8323.Reg.DriverControl.CLR_FLT = 1;	// Clear flt bit
+	DRV_WriteData(&drv8323, ADDR_DriverControl);
+
+
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Check register..\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+
+
+
+  /******** DEBUG ********/
+
 
   HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 
@@ -481,9 +554,11 @@ int main(void)
 
 	  if(rxFlag)
 	  {
-		  printf("%d\r\n", mainEncoder.raw_Angle);
+		  printf("%d\r\n", motor.theta_re_int);
 		  rxFlag = 0;
 	  }
+
+	  //printf("%d\r\n", motor.theta_re_int);
 
 	  //printf("%10d, %10d, %10d\r\n", motor.AD_Iu, motor.AD_Iv, motor.AD_Iw);
 	  //printf("%d\r\n", motor.Vdc_pu_2q13);
@@ -511,6 +586,31 @@ int main(void)
   mainACR.Iq_ref = 0.0f;
 
   HAL_Delay(10);
+
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Check register..\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+
 
   // Gate Disable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
@@ -980,7 +1080,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
 
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
 
 #if 1
@@ -994,16 +1094,63 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	{
 
 #if 1
-		if((carrier_counter & (1<<7)) == 0)
+
+
+#if 0
+		int d = 400;
+
+		switch((carrier_counter >> 7) & 0x3)
 		{
-			motor.Id_ref_pu_2q13 = 546;
+		case 0b00:
+			htim8.Instance->CCR1 = 1500 - 100;
+			htim8.Instance->CCR2 = 1500 + 50;
+			htim8.Instance->CCR3 = 1500 + 50;
+			break;
+
+		case 0b01:
+			htim8.Instance->CCR1 = 1500 + 100;
+			htim8.Instance->CCR2 = 1500 - 50;
+			htim8.Instance->CCR3 = 1500 - 50;
+			break;
+
+		case 0b10:
+			htim8.Instance->CCR1 = 500 - 100;
+			htim8.Instance->CCR2 = 500 + 50;
+			htim8.Instance->CCR3 = 500 + 50;
+			break;
+
+		case 0b11:
+			htim8.Instance->CCR1 = 500 + 100;
+			htim8.Instance->CCR2 = 500 - 50;
+			htim8.Instance->CCR3 = 500 - 50;
+			break;
+		}
+#endif
+
+
+#if 1
+		if((carrier_counter & (1<<9)) == 0)
+		{
+			//motor.Id_ref_pu_2q13 = 546; // 1A
+			//motor.Id_ref_pu_2q13 = 2731; // 5A
+			//motor.Id_ref_pu_2q13 = 4096; // 7.5A;
+			//motor.Id_ref_pu_2q13 = 4915; // 9A;
+			//motor.Id_ref_pu_2q13 = 5461; // 10A;
+			motor.Id_ref_pu_2q13 = 8192; // 15A;
 			motor.Iq_ref_pu_2q13 = 0;
 		}
 		else
 		{
-			motor.Id_ref_pu_2q13 = -546;
+			//motor.Id_ref_pu_2q13 = -546; // 1A
+			//motor.Id_ref_pu_2q13 = -2731; // 5A
+			//motor.Id_ref_pu_2q13 = -4096; // 7.5A;
+			//motor.Id_ref_pu_2q13 = -4915; // 9A;
+			//motor.Id_ref_pu_2q13 = -5461; // 10A;
+			motor.Id_ref_pu_2q13 = -8192; // 15A;
 			motor.Iq_ref_pu_2q13 = 0;
 		}
+#endif
+
 #endif
 
 
@@ -1032,10 +1179,44 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	{
 
 
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
+/*
 		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
 		dump_record[dump_counter][1] = motor.Iq_ref_pu_2q13;
 		dump_record[dump_counter][2] = motor.Id_pu_2q13;
 		dump_record[dump_counter][3] = motor.Iq_pu_2q13;
+*/
+
+#if 0
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][3] = motor.Id_error;
+		dump_record[dump_counter][4] = motor.Id_error_integ.integ;
+		dump_record[dump_counter][5] = motor.Vdc_pu_2q13;
+#endif
+
+
+#if 1
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
+		dump_record[dump_counter][3] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][4] = motor.Vq_pu_2q13;
+		dump_record[dump_counter][5] = motor.Vu_pu_2q13;
+		dump_record[dump_counter][6] = motor.Vv_pu_2q13;
+		dump_record[dump_counter][7] = motor.Vw_pu_2q13;
+#endif
+
+#if 0
+		dump_record[dump_counter][0] = htim8.Instance->CCR1;
+		dump_record[dump_counter][1] = htim8.Instance->CCR2;
+		dump_record[dump_counter][2] = htim8.Instance->CCR3;
+		dump_record[dump_counter][3] = motor.Iu_pu_2q13;
+		dump_record[dump_counter][4] = motor.Iv_pu_2q13;
+		dump_record[dump_counter][5] = motor.Iw_pu_2q13;
+#endif
 
 		if(dump_counter < DUMP_LENGTH)
 		{
@@ -1115,7 +1296,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 #endif
 
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
 
 
@@ -1133,8 +1314,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 	if(htim->Instance == TIM8 && __HAL_TIM_IS_TIM_COUNTING_DOWN(htim))

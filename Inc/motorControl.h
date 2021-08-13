@@ -58,6 +58,8 @@ typedef struct
 
 	uint16_t duty_u, duty_v, duty_w;
 
+	uint8_t sector;
+
 	uint16_t raw_theta_14bit;
 	int16_t theta_m_int, theta_re_int;
 

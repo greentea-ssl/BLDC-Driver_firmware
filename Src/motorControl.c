@@ -105,14 +105,17 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Init.acr_Kp_q14 = hMotor->Init.acr_omega * hMotor->motorParam.Ld * 16384;
 	hMotor->Init.acr_Ki_q2 = hMotor->Init.acr_omega * hMotor->motorParam.R * 4;
 
-	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/40000, 65536);
-	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/40000, 65536);
+	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/40000, 32768);
+	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/40000, 32768);
 
 	hMotor->Id_error = 0;
 	hMotor->Iq_error = 0;
 	hMotor->Id_ref_pu_2q13 = 0;
 	hMotor->Iq_ref_pu_2q13 = 0;
 
+	hMotor->duty_u = hMotor->Init.PWM_PRR / 2;
+	hMotor->duty_v = hMotor->Init.PWM_PRR / 2;
+	hMotor->duty_w = hMotor->Init.PWM_PRR / 2;
 
 }
 
@@ -129,7 +132,30 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 	hMotor->Vdc_pu_2q13 = ( (int32_t)hMotor->AD_Vdc * (int32_t)hMotor->Init.Gain_Vad2pu_s14 ) >> 14;
 
+	// Sector detection
+	uint8_t sign_uv = (hMotor->Vu_pu_2q13 >= hMotor->Vv_pu_2q13)? 1: 0;
+	uint8_t sign_vw = (hMotor->Vv_pu_2q13 >= hMotor->Vw_pu_2q13)? 1: 0;
+	uint8_t sign_wu = (hMotor->Vw_pu_2q13 >= hMotor->Vu_pu_2q13)? 1: 0;
 
+	switch((sign_uv << 2) | (sign_vw << 1) | sign_wu)
+	{
+	case 0b110: hMotor->sector = 1; break;
+	case 0b010: hMotor->sector = 2; break;
+	case 0b011: hMotor->sector = 3; break;
+	case 0b001: hMotor->sector = 4; break;
+	case 0b101: hMotor->sector = 5; break;
+	case 0b100: hMotor->sector = 6; break;
+	default: hMotor->sector = 0; break;
+	}
+
+	// Current source selection
+	switch(hMotor->sector)
+	{
+	case 1: case 2: hMotor->Iw_pu_2q13 = - hMotor->Iu_pu_2q13 - hMotor->Iv_pu_2q13; break;
+	case 3: case 4: hMotor->Iu_pu_2q13 = - hMotor->Iv_pu_2q13 - hMotor->Iw_pu_2q13; break;
+	case 5: case 6: hMotor->Iv_pu_2q13 = - hMotor->Iw_pu_2q13 - hMotor->Iu_pu_2q13; break;
+	default: break;
+	}
 
 	uvw2ab(&hMotor->Ia_pu_2q13, &hMotor->Ib_pu_2q13, hMotor->Iu_pu_2q13, hMotor->Iv_pu_2q13, hMotor->Iw_pu_2q13);
 	ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);

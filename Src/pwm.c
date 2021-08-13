@@ -52,7 +52,7 @@ void PWM_Init()
 	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 1000);
 	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 1000);
 	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 1000);
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, htim8.Init.Period - 128);
+	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, htim8.Init.Period - 1);
 
 	startPWM(&htim8);
 
