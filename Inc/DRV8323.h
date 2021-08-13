@@ -155,12 +155,12 @@ extern DRV_TypeDef drv8323;
 void DRV_Init();
 
 
-void DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr);
+HAL_StatusTypeDef DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr);
 
 
-void DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr);
+HAL_StatusTypeDef DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr);
 
-void DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr);
+HAL_StatusTypeDef DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr);
 
 
 

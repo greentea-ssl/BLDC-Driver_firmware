@@ -22,7 +22,7 @@ void DRV_Init()
 }
 
 
-void DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr)
+HAL_StatusTypeDef DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB
@@ -32,15 +32,16 @@ void DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr)
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_TransmitReceive(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2, 1);
+	HAL_StatusTypeDef ret = HAL_SPI_TransmitReceive(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2, 1);
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_SET);
 
+	return ret;
 }
 
 
 
-void DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr)
+HAL_StatusTypeDef DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB
@@ -50,15 +51,17 @@ void DRV_ReadData(DRV_TypeDef *hdrv, regAddr_t addr)
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_TransmitReceive(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2, 1);
+	HAL_StatusTypeDef ret = HAL_SPI_TransmitReceive(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2, 1);
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_SET);
 
-	hdrv->Reg.words[addr] = (hdrv->rxBuf[0] << 8) | hdrv->rxBuf[1];
+	hdrv->Reg.words[addr] = ((hdrv->rxBuf[0] << 8) | hdrv->rxBuf[1]) & 0x7FF;
+
+	return ret;
 
 }
 
-void DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr)
+HAL_StatusTypeDef DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr)
 {
 
 	// MSB
@@ -68,12 +71,13 @@ void DRV_ReadData_IT(DRV_TypeDef *hdrv, regAddr_t addr)
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_TransmitReceive_IT(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2);
+	HAL_StatusTypeDef ret = HAL_SPI_TransmitReceive_IT(hdrv->hspi, hdrv->txBuf, hdrv->rxBuf, 2);
 
 	HAL_GPIO_WritePin(hdrv->NSS_GPIOx, hdrv->NSS_GPIO_Pin, GPIO_PIN_SET);
 
 	hdrv->rxFlag = 0;
 
+	return ret;
 }
 
 
