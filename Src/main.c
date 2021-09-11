@@ -1220,10 +1220,8 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	if(sequence == 1)
 	{
 
-#if 1
 
-
-#if 1
+#if 0
 
 		int zeroPoint = 4000;
 		int comAmp = 3200;
@@ -1262,30 +1260,29 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-#if 0
-		if((carrier_counter & (1<<9)) == 0)
+#if 1
+		if((carrier_counter & (1<<6)) == 0)
 		{
 			//motor.Id_ref_pu_2q13 = 546; // 1A
-			//motor.Id_ref_pu_2q13 = 2731; // 5A
+			motor.Id_ref_pu_2q13 = 2731; // 5A
 			//motor.Id_ref_pu_2q13 = 4096; // 7.5A;
 			//motor.Id_ref_pu_2q13 = 4915; // 9A;
 			//motor.Id_ref_pu_2q13 = 5461; // 10A;
-			motor.Id_ref_pu_2q13 = 8192; // 15A;
+			//motor.Id_ref_pu_2q13 = 8192; // 15A;
 			motor.Iq_ref_pu_2q13 = 0;
 		}
 		else
 		{
 			//motor.Id_ref_pu_2q13 = -546; // 1A
-			//motor.Id_ref_pu_2q13 = -2731; // 5A
+			motor.Id_ref_pu_2q13 = -2731; // 5A
 			//motor.Id_ref_pu_2q13 = -4096; // 7.5A;
 			//motor.Id_ref_pu_2q13 = -4915; // 9A;
 			//motor.Id_ref_pu_2q13 = -5461; // 10A;
-			motor.Id_ref_pu_2q13 = -8192; // 15A;
+			//motor.Id_ref_pu_2q13 = -8192; // 15A;
 			motor.Iq_ref_pu_2q13 = 0;
 		}
 #endif
 
-#endif
 
 
 		motor.AD_Iu = mainCS.AD_Iu[0];
@@ -1295,7 +1292,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		motor.raw_theta_14bit = mainEncoder.raw_Angle;
 
 		// Motor Controller Update
-		//Motor_Update(&motor);
+		Motor_Update(&motor);
 
 #if 1
 		htim8.Instance->CCR1 = motor.duty_u;
@@ -1351,7 +1348,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		dump_record[dump_counter][5] = motor.Iw_pu_2q13;
 #endif
 
-#if 1
+#if 0
 		dump_record[dump_counter][0] = htim8.Instance->CCR1;
 		dump_record[dump_counter][1] = htim8.Instance->CCR2;
 		dump_record[dump_counter][2] = htim8.Instance->CCR3;
@@ -1360,6 +1357,30 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		dump_record[dump_counter][5] = motor.AD_Iw;
 		dump_record[dump_counter][6] = motor.AD_Vdc;
 #endif
+
+
+#if 0
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
+		dump_record[dump_counter][3] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][4] = motor.Vq_pu_2q13;
+		dump_record[dump_counter][5] = motor.Iu_pu_2q13;
+		dump_record[dump_counter][6] = motor.Iv_pu_2q13;
+		dump_record[dump_counter][7] = motor.Iw_pu_2q13;
+#endif
+
+#if 1
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][3] = motor.Id_error;
+		dump_record[dump_counter][4] = motor.Id_error_integ.integ;
+		dump_record[dump_counter][5] = motor.Iu_pu_2q13;
+		dump_record[dump_counter][6] = motor.Iv_pu_2q13;
+		dump_record[dump_counter][7] = motor.Iw_pu_2q13;
+#endif
+
 
 		if(dump_counter < DUMP_LENGTH)
 		{

@@ -26,8 +26,12 @@ typedef struct
 
 	uint16_t PWM_PRR;
 
+	uint16_t DutyRateLimit_q5;
+
 	int32_t Gain_Iad2pu_s14;
 	int32_t Gain_Vad2pu_s14;
+
+	int32_t Gain_Ib_by_Vb_q10;
 
 	float acr_omega;
 

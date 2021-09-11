@@ -62,8 +62,10 @@ void CurrentControl(Motor_TypeDef *hMotor)
 	IntInteg_Update(&hMotor->Id_error_integ, hMotor->Id_error);
 	IntInteg_Update(&hMotor->Iq_error_integ, hMotor->Iq_error);
 
-	hMotor->Vd_pu_2q13 = (hMotor->Init.acr_Kp_q14 * hMotor->Id_error + hMotor->Init.acr_Ki_q2 * hMotor->Id_error_integ.integ) >> 14;
-	hMotor->Vq_pu_2q13 = (hMotor->Init.acr_Kp_q14 * hMotor->Iq_error + hMotor->Init.acr_Ki_q2 * hMotor->Iq_error_integ.integ) >> 14;
+	hMotor->Vd_pu_2q13 = ((hMotor->Init.acr_Kp_q14 * hMotor->Id_error >> 14) + (hMotor->Init.acr_Ki_q2 * hMotor->Id_error_integ.integ >> 14))
+			* hMotor->Init.Gain_Ib_by_Vb_q10 >> 10;
+	hMotor->Vq_pu_2q13 = ((hMotor->Init.acr_Kp_q14 * hMotor->Iq_error >> 14) + (hMotor->Init.acr_Ki_q2 * hMotor->Iq_error_integ.integ >> 14))
+			* hMotor->Init.Gain_Ib_by_Vb_q10 >> 10;
 
 }
 
@@ -91,22 +93,26 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Init.AD_Iv_offset = 2067;
 	hMotor->Init.AD_Iw_offset = 2077;
 
-	hMotor->Init.PWM_PRR = 2000;
+	hMotor->Init.PWM_PRR = 8000;
+
+	hMotor->Init.DutyRateLimit_q5 = 29; //  = 0.9 * 32
 
 	hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
 
 	hMotor->Init.Gain_Vad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * 12.5385f/*[V/V]*/ / hMotor->Init.V_base * 8192/*q.13*/;
 
+	hMotor->Init.Gain_Ib_by_Vb_q10 = hMotor->Init.I_base / hMotor->Init.V_base * 1024;
+
 
 	/***** ACR Setting *****/
 
-	hMotor->Init.acr_omega = 6000.0f;
+	hMotor->Init.acr_omega = 2000.0f;
 
 	hMotor->Init.acr_Kp_q14 = hMotor->Init.acr_omega * hMotor->motorParam.Ld * 16384;
 	hMotor->Init.acr_Ki_q2 = hMotor->Init.acr_omega * hMotor->motorParam.R * 4;
 
-	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/40000, 32768);
-	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/40000, 32768);
+	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/10000, 32768);
+	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/10000, 32768);
 
 	hMotor->Id_error = 0;
 	hMotor->Iq_error = 0;
@@ -174,7 +180,9 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 
 	// Circular voltage limit
-	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, ((int32_t)hMotor->Vdc_pu_2q13 * 10033) >> 14, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+	// Vdq_lim = Vdc / 2 / sqrt(3/2) * DutyLimitRate
+	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
+	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 
 	dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 	ab2uvw(&hMotor->Vu_pu_2q13, &hMotor->Vv_pu_2q13, &hMotor->Vw_pu_2q13, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
