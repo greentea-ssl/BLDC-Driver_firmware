@@ -38,6 +38,8 @@ typedef struct
 	int32_t acr_Kp_q14;
 	int32_t acr_Ki_q2;
 
+	int32_t acr_limErrFB_gain_q10;
+
 }MotorInit_TypeDef;
 
 
@@ -70,6 +72,8 @@ typedef struct
 
 	int32_t Id_error, Iq_error;
 	int32_t Id_ref_pu_2q13, Iq_ref_pu_2q13;
+
+	int32_t Vd_limit_error, Vq_limit_error;
 
 	IntInteg_TypeDef Id_error_integ, Iq_error_integ;
 

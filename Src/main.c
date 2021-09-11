@@ -582,7 +582,7 @@ int main(void)
 
 	  //printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
 
-	  if(Dump_isFull()) break;//printf("a");
+	  //if(Dump_isFull()) printf("a");
 
 
   }
@@ -1263,26 +1263,27 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #if 1
 		if((carrier_counter & (1<<6)) == 0)
 		{
+			motor.Id_ref_pu_2q13 = 0; // 0A
 			//motor.Id_ref_pu_2q13 = 546; // 1A
-			motor.Id_ref_pu_2q13 = 2731; // 5A
+			//motor.Id_ref_pu_2q13 = 2731; // 5A
 			//motor.Id_ref_pu_2q13 = 4096; // 7.5A;
 			//motor.Id_ref_pu_2q13 = 4915; // 9A;
 			//motor.Id_ref_pu_2q13 = 5461; // 10A;
 			//motor.Id_ref_pu_2q13 = 8192; // 15A;
-			motor.Iq_ref_pu_2q13 = 0;
+			motor.Iq_ref_pu_2q13 = 546;
 		}
 		else
 		{
+			motor.Id_ref_pu_2q13 = 0; // 0A
 			//motor.Id_ref_pu_2q13 = -546; // 1A
-			motor.Id_ref_pu_2q13 = -2731; // 5A
+			//motor.Id_ref_pu_2q13 = -2731; // 5A
 			//motor.Id_ref_pu_2q13 = -4096; // 7.5A;
 			//motor.Id_ref_pu_2q13 = -4915; // 9A;
 			//motor.Id_ref_pu_2q13 = -5461; // 10A;
 			//motor.Id_ref_pu_2q13 = -8192; // 15A;
-			motor.Iq_ref_pu_2q13 = 0;
+			motor.Iq_ref_pu_2q13 = 546;
 		}
 #endif
-
 
 
 		motor.AD_Iu = mainCS.AD_Iu[0];
