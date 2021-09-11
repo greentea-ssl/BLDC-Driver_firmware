@@ -4,11 +4,21 @@
 
 #include "main.h"
 
-#include "ASR.h"
-#include "APR.h"
+#include "motorControl.h"
+#include "encoder.h"
 
 
 extern CAN_HandleTypeDef hcan1;
+
+
+
+
+extern Motor_TypeDef motor;
+
+extern Encoder_TypeDef mainEncoder;
+
+
+
 
 
 uint8_t motorChannel = 0;
@@ -134,7 +144,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		return;
 	}
 
-	mainACR.Iq_ref = Iq_ref_int * 0.0009765625f; // 1/1024
+	motor.Iq_ref_pu_2q13 = Iq_ref_int * 8 / motor.Init.I_base;
 
 
 	timeoutReset();
@@ -160,7 +170,7 @@ void sendToMain()
 	can1TxHeader.RTR = CAN_RTR_DATA;
 	can1TxHeader.DLC = 8;
 
-	Iq_int16 = (int16_t)(mainACR.Iq * 1024);
+	Iq_int16 = (int16_t)(motor.Iq_pu_2q13 * motor.Init.I_base / 8192);
 	theta_uint16 = mainEncoder.raw_Angle;
 	omega_int16 = (int16_t)(mainEncoder.omega * 32);
 

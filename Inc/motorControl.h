@@ -40,6 +40,10 @@ typedef struct
 
 	int32_t acr_limErrFB_gain_q10;
 
+	int16_t Id_limit_pu_2q13;
+	int16_t Iq_limit_pu_2q13;
+
+
 }MotorInit_TypeDef;
 
 

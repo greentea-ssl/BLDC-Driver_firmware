@@ -56,6 +56,18 @@ inline void sqLimit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x
 void CurrentControl(Motor_TypeDef *hMotor)
 {
 
+	// Current limit
+	if(hMotor->Id_ref_pu_2q13 < -hMotor->Init.Id_limit_pu_2q13)
+		hMotor->Id_ref_pu_2q13 = -hMotor->Init.Id_limit_pu_2q13;
+	else if(hMotor->Id_ref_pu_2q13 > hMotor->Init.Id_limit_pu_2q13)
+		hMotor->Id_ref_pu_2q13 = hMotor->Init.Id_limit_pu_2q13;
+
+	if(hMotor->Iq_ref_pu_2q13 < -hMotor->Init.Iq_limit_pu_2q13)
+		hMotor->Iq_ref_pu_2q13 = -hMotor->Init.Iq_limit_pu_2q13;
+	else if(hMotor->Iq_ref_pu_2q13 > hMotor->Init.Iq_limit_pu_2q13)
+		hMotor->Iq_ref_pu_2q13 = hMotor->Init.Iq_limit_pu_2q13;
+
+
 	hMotor->Id_error = hMotor->Id_ref_pu_2q13 - hMotor->Id_pu_2q13;
 	hMotor->Iq_error = hMotor->Iq_ref_pu_2q13 - hMotor->Iq_pu_2q13;
 
@@ -121,6 +133,9 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/10000, 32768);
 
 	hMotor->Init.acr_limErrFB_gain_q10 = hMotor->Init.V_base / hMotor->Init.I_base / acr_Kp * 1024;
+
+	hMotor->Init.Id_limit_pu_2q13 = 8192;
+	hMotor->Init.Iq_limit_pu_2q13 = 8192;
 
 	hMotor->Id_error = 0;
 	hMotor->Iq_error = 0;

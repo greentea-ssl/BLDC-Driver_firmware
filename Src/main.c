@@ -535,16 +535,12 @@ int main(void)
   sequence = 1; /* Start */
 
 
-  int sqrt_count = 0;
-
-  IntInteg_Init(&integTest, 0, 268435456/40000, 65536);
-
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while(1)
   {
     /* USER CODE END WHILE */
 
@@ -1260,7 +1256,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-#if 1
+#if 0
 		if((carrier_counter & (1<<6)) == 0)
 		{
 			motor.Id_ref_pu_2q13 = 0; // 0A
@@ -1371,7 +1367,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		dump_record[dump_counter][7] = motor.Iw_pu_2q13;
 #endif
 
-#if 1
+#if 0
 		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
 		dump_record[dump_counter][1] = motor.Id_pu_2q13;
 		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
@@ -1452,12 +1448,6 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 			timeoutState = 1;
 		}
 	}
-
-#if DUMP_ENABLE
-
-	Dump_Refresh();
-
-#endif
 
 #endif
 
