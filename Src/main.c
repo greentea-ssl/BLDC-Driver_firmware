@@ -41,7 +41,7 @@
 //#include "debugDump.h"
 #include "dump_int.h"
 
-#include "../waveSamplerLib/waveSampler.h"
+//#include "../waveSamplerLib/waveSampler.h"
 
 
 #include "intMath.h"
@@ -76,6 +76,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+ADC_HandleTypeDef hadc3;
 
 CAN_HandleTypeDef hcan1;
 
@@ -146,6 +148,8 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_ADC2_Init(void);
+static void MX_ADC3_Init(void);
 /* USER CODE BEGIN PFP */
 
 void LED_blink();
@@ -232,6 +236,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
+  MX_ADC2_Init();
+  MX_ADC3_Init();
   MX_CAN1_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
@@ -342,13 +348,17 @@ int main(void)
 
 #if 0
 	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
-	drv8323.Reg.GateDrive_HS.IDRIVEP_HS = 0b1011; // 440mA
-	drv8323.Reg.GateDrive_HS.IDRIVEN_HS = 0b1011; // 880mA
+	//drv8323.Reg.GateDrive_HS.IDRIVEP_HS = 0b1011; // 440mA
+	//drv8323.Reg.GateDrive_HS.IDRIVEN_HS = 0b1011; // 880mA
+	drv8323.Reg.GateDrive_HS.IDRIVEP_HS = 0b1001; // 330mA
+	drv8323.Reg.GateDrive_HS.IDRIVEN_HS = 0b0111; // 380mA
 	DRV_WriteData(&drv8323, ADDR_GateDrive_HS);
 
 	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
-	drv8323.Reg.GateDrive_LS.IDRIVEP_LS = 0b1011; // 440mA
-	drv8323.Reg.GateDrive_LS.IDRIVEN_LS = 0b1011; // 880mA
+	//drv8323.Reg.GateDrive_LS.IDRIVEP_LS = 0b1011; // 440mA
+	//drv8323.Reg.GateDrive_LS.IDRIVEN_LS = 0b1011; // 880mA
+	drv8323.Reg.GateDrive_LS.IDRIVEP_LS = 0b1001; // 330mA
+	drv8323.Reg.GateDrive_LS.IDRIVEN_LS = 0b1001; // 380mA
 	DRV_WriteData(&drv8323, ADDR_GateDrive_LS);
 #endif
 
@@ -572,7 +582,7 @@ int main(void)
 
 	  //printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
 
-	  if(Dump_isFull()) break;
+	  if(Dump_isFull()) break;//printf("a");
 
 
   }
@@ -747,9 +757,9 @@ static void MX_ADC1_Init(void)
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_0;
   sConfigInjected.InjectedRank = 1;
-  sConfigInjected.InjectedNbrOfConversion = 4;
-  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_15CYCLES;
-  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONVEDGE_FALLING;
+  sConfigInjected.InjectedNbrOfConversion = 2;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONVEDGE_RISING;
   sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T8_CC4;
   sConfigInjected.AutoInjectedConv = DISABLE;
   sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
@@ -760,24 +770,8 @@ static void MX_ADC1_Init(void)
   }
   /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
-  sConfigInjected.InjectedRank = 2;
-  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
-  */
-  sConfigInjected.InjectedChannel = ADC_CHANNEL_1;
-  sConfigInjected.InjectedRank = 3;
-  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
-  */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_10;
-  sConfigInjected.InjectedRank = 4;
+  sConfigInjected.InjectedRank = 2;
   if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
@@ -785,6 +779,138 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_InjectionConfTypeDef sConfigInjected = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc2.Init.ScanConvMode = ENABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DMAContinuousRequests = DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
+  sConfigInjected.InjectedRank = 1;
+  sConfigInjected.InjectedNbrOfConversion = 1;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONVEDGE_RISING;
+  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T8_CC4;
+  sConfigInjected.AutoInjectedConv = DISABLE;
+  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+  sConfigInjected.InjectedOffset = 0;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief ADC3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC3_Init(void)
+{
+
+  /* USER CODE BEGIN ADC3_Init 0 */
+
+  /* USER CODE END ADC3_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_InjectionConfTypeDef sConfigInjected = {0};
+
+  /* USER CODE BEGIN ADC3_Init 1 */
+
+  /* USER CODE END ADC3_Init 1 */
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc3.Instance = ADC3;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc3.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc3.Init.ScanConvMode = ENABLE;
+  hadc3.Init.ContinuousConvMode = DISABLE;
+  hadc3.Init.DiscontinuousConvMode = DISABLE;
+  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc3.Init.NbrOfConversion = 1;
+  hadc3.Init.DMAContinuousRequests = DISABLE;
+  hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_1;
+  sConfigInjected.InjectedRank = 1;
+  sConfigInjected.InjectedNbrOfConversion = 1;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONVEDGE_RISING;
+  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJECCONV_T8_CC4;
+  sConfigInjected.AutoInjectedConv = DISABLE;
+  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+  sConfigInjected.InjectedOffset = 0;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC3_Init 2 */
+
+  /* USER CODE END ADC3_Init 2 */
 
 }
 
@@ -1079,6 +1205,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 //void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
+	if(hadc->Instance != mainCS.Init.hadc[0]->Instance) return;
 
 	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
@@ -1096,39 +1223,46 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #if 1
 
 
-#if 0
-		int d = 400;
+#if 1
+
+		int zeroPoint = 4000;
+		int comAmp = 3200;
+		int uAmp = 400;
 
 		switch((carrier_counter >> 7) & 0x3)
 		{
 		case 0b00:
-			htim8.Instance->CCR1 = 1500 - 100;
-			htim8.Instance->CCR2 = 1500 + 50;
-			htim8.Instance->CCR3 = 1500 + 50;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+			motor.duty_u = zeroPoint + comAmp - uAmp;
+			motor.duty_v = zeroPoint + comAmp + (uAmp>>1);
+			motor.duty_w = zeroPoint + comAmp + (uAmp>>1);
 			break;
 
 		case 0b01:
-			htim8.Instance->CCR1 = 1500 + 100;
-			htim8.Instance->CCR2 = 1500 - 50;
-			htim8.Instance->CCR3 = 1500 - 50;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+			motor.duty_u = zeroPoint + comAmp + uAmp;
+			motor.duty_v = zeroPoint + comAmp - (uAmp>>1);
+			motor.duty_w = zeroPoint + comAmp - (uAmp>>1);
 			break;
 
 		case 0b10:
-			htim8.Instance->CCR1 = 500 - 100;
-			htim8.Instance->CCR2 = 500 + 50;
-			htim8.Instance->CCR3 = 500 + 50;
+			motor.duty_u = zeroPoint - comAmp - uAmp;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			motor.duty_v = zeroPoint - comAmp + (uAmp>>1);
+			motor.duty_w = zeroPoint - comAmp + (uAmp>>1);
 			break;
 
 		case 0b11:
-			htim8.Instance->CCR1 = 500 + 100;
-			htim8.Instance->CCR2 = 500 - 50;
-			htim8.Instance->CCR3 = 500 - 50;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			motor.duty_u = zeroPoint - comAmp + uAmp;
+			motor.duty_v = zeroPoint - comAmp - (uAmp>>1);
+			motor.duty_w = zeroPoint - comAmp - (uAmp>>1);
 			break;
 		}
 #endif
 
 
-#if 1
+#if 0
 		if((carrier_counter & (1<<9)) == 0)
 		{
 			//motor.Id_ref_pu_2q13 = 546; // 1A
@@ -1161,7 +1295,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		motor.raw_theta_14bit = mainEncoder.raw_Angle;
 
 		// Motor Controller Update
-		Motor_Update(&motor);
+		//Motor_Update(&motor);
 
 #if 1
 		htim8.Instance->CCR1 = motor.duty_u;
@@ -1179,7 +1313,6 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	{
 
 
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
 /*
 		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
@@ -1198,7 +1331,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-#if 1
+#if 0
 		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
 		dump_record[dump_counter][1] = motor.Id_pu_2q13;
 		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
@@ -1216,6 +1349,16 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		dump_record[dump_counter][3] = motor.Iu_pu_2q13;
 		dump_record[dump_counter][4] = motor.Iv_pu_2q13;
 		dump_record[dump_counter][5] = motor.Iw_pu_2q13;
+#endif
+
+#if 1
+		dump_record[dump_counter][0] = htim8.Instance->CCR1;
+		dump_record[dump_counter][1] = htim8.Instance->CCR2;
+		dump_record[dump_counter][2] = htim8.Instance->CCR3;
+		dump_record[dump_counter][3] = motor.AD_Iu;
+		dump_record[dump_counter][4] = motor.AD_Iv;
+		dump_record[dump_counter][5] = motor.AD_Iw;
+		dump_record[dump_counter][6] = motor.AD_Vdc;
 #endif
 
 		if(dump_counter < DUMP_LENGTH)

@@ -7,6 +7,8 @@
 
 
 extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+extern ADC_HandleTypeDef hadc3;
 
 const float Vref_AD = 3.3f;
 
@@ -38,7 +40,9 @@ void CurrentSensor_Init()
 	mainCS.Init.V_Iw_offset = 1.65;
 	mainCS.Init.V_Vdc_offset = 0.0;
 
-	mainCS.Init.hadc = &hadc1;
+	mainCS.Init.hadc[0] = &hadc1;
+	mainCS.Init.hadc[1] = &hadc2;
+	mainCS.Init.hadc[2] = &hadc3;
 
 	mainCS.pos_MEDF_I = 0;
 
@@ -53,7 +57,9 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS)
 	case CS_Type_3shunt:
 
 
-		HAL_ADCEx_InjectedStart_IT(hCS->Init.hadc);
+		HAL_ADCEx_InjectedStart_IT(hCS->Init.hadc[0]);
+		HAL_ADCEx_InjectedStart_IT(hCS->Init.hadc[1]);
+		HAL_ADCEx_InjectedStart_IT(hCS->Init.hadc[2]);
 
 		break;
 	}
@@ -85,10 +91,10 @@ inline void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector
 	case CS_Type_3shunt:
 
 
-		hCS->AD_Iu[0] = hCS->Init.hadc->Instance->JDR1;
-		hCS->AD_Iv[0] = hCS->Init.hadc->Instance->JDR2;
-		hCS->AD_Iw[0] = hCS->Init.hadc->Instance->JDR3;
-		hCS->AD_Vdc[0] = hCS->Init.hadc->Instance->JDR4;
+		hCS->AD_Iu[0] = hCS->Init.hadc[0]->Instance->JDR1;
+		hCS->AD_Iv[0] = hCS->Init.hadc[1]->Instance->JDR1;
+		hCS->AD_Iw[0] = hCS->Init.hadc[2]->Instance->JDR1;
+		hCS->AD_Vdc[0] = hCS->Init.hadc[0]->Instance->JDR2;
 
 		hCS->AD_Iu_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iu[0];
 		hCS->AD_Iv_buf[hCS->pos_MEDF_I] = (int32_t)hCS->AD_Iv[0];

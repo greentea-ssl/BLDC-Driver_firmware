@@ -26,7 +26,7 @@ typedef struct
 
 	CurrentSensor_Type CS_Type;
 
-	ADC_HandleTypeDef *hadc;
+	ADC_HandleTypeDef *hadc[3];
 
 	float Iu_Gain;
 	float Iv_Gain;

@@ -7,8 +7,8 @@ HeaderPath=Drivers\STM32F4xx_HAL_Driver\Inc;Drivers\STM32F4xx_HAL_Driver\Inc\Leg
 CDefines=USE_HAL_DRIVER;STM32F446xx;USE_HAL_DRIVER;USE_HAL_DRIVER;
 
 [PreviousGenFiles]
-HeaderPath=C:/Users/Akito/OneDrive - stn.nagaokaut.ac.jp/SSL/cubeIDEprojects/BLDC-Driver/Inc
+HeaderPath=C:/Users/Akito/OneDrive - stn.nagaokaut.ac.jp/SSL/cubeIDEprojects/BLDC-Driver_firmware/Inc
 HeaderFiles=stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=C:/Users/Akito/OneDrive - stn.nagaokaut.ac.jp/SSL/cubeIDEprojects/BLDC-Driver/Src
+SourcePath=C:/Users/Akito/OneDrive - stn.nagaokaut.ac.jp/SSL/cubeIDEprojects/BLDC-Driver_firmware/Src
 SourceFiles=stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 
