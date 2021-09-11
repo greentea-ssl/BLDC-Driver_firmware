@@ -17,7 +17,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -37,10 +36,15 @@
 #include "drv8323.h"
 #include "canCom.h"
 #include "sin_t.h"
+#include "motorControl.h"
 
-#include "debugDump.h"
+//#include "debugDump.h"
+#include "dump_int.h"
 
 #include "../waveSamplerLib/waveSampler.h"
+
+
+#include "intMath.h"
 
 
 
@@ -60,8 +64,6 @@
 
 
 
-
-#define _APR_ENABLE_		1
 
 
 
@@ -87,45 +89,26 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 
-
-/********** ACR DUMP DEBUG **********/
-
-#if _ACR_DUMP_
+uint8_t sequence = 0; /* 0: Initialize, 1: running */
 
 
-float Id_dump[ACR_DUMP_STEPS] = {0.0f};
-float Iq_dump[ACR_DUMP_STEPS] = {0.0f};
-float Id_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Iq_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Vd_ref_dump[ACR_DUMP_STEPS] = {0.0f};
-float Vq_ref_dump[ACR_DUMP_STEPS] = {0.0f};
+uint32_t carrier_counter = 0;
 
 
-int ACR_dump_count = 0;
 
-#endif
-
-
-/********** ASR DUMP DEBUG **********/
-
-#if _ASR_DUMP_
-
-#define ASR_DUMP_STEPS		2000
+Motor_TypeDef motor;
 
 
-float omega_dump[ASR_DUMP_STEPS] = {0.0f};
-float omega_ref_dump[ASR_DUMP_STEPS] = {0.0f};
-float torque_ref_dump[ASR_DUMP_STEPS] = {0.0f};
+uint8_t rxChar = 0;
+uint8_t rxFlag = 0;
 
-int ASR_dump_count = 0;
 
-#endif
-
+IntInteg_TypeDef integTest;
 
 
 /********** WaveSampler **********/
 
-WaveSampler_TypeDef hWave;
+//WaveSampler_TypeDef hWave;
 
 
 /********** Timeout Control **********/
@@ -181,7 +164,7 @@ int32_t printFloat(float val);
 #endif /* __GNUC__ */
 void __io_putchar(uint8_t ch)
 {
-	//HAL_UART_Transmit(&huart2, &ch, 1, 1);
+	HAL_UART_Transmit(&huart2, &ch, 1, 1);
 }
 
 #endif
@@ -260,6 +243,8 @@ int main(void)
   //initialise_monitor_handles();
 
 
+
+
   DRV_Init();
 
 
@@ -267,7 +252,7 @@ int main(void)
   //UartPrintf(&huart2, "Hello world\n");
 
 
-  WaveSampler_Init(&hWave, &huart2);
+  //WaveSampler_Init(&hWave, &huart2);
 
 /*
   hWave.variableAddr[0] = &mainCS.Iu;
@@ -294,7 +279,7 @@ int main(void)
   */
 
 
-
+/*
   hWave.variableAddr[0] = &mainEncoder.theta;
   hWave.variableAddr[1] = &mainEncoder.omega;
   hWave.variableAddr[2] = &mainACR.Id_ref;
@@ -303,8 +288,7 @@ int main(void)
   hWave.variableAddr[5] = &mainACR.Iq;
   hWave.variableAddr[6] = &amp_u;
   hWave.variableAddr[7] = &amp_v;
-
-
+*/
 
 #if DEBUG_PRINT_ENABLE
 
@@ -313,43 +297,11 @@ int main(void)
 #endif
 
 
+  HAL_UART_Receive_IT(&huart2, &rxChar, 1);
+
+
   // Gate Enable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
-
-
-  //printf("Hello SPI Gate Driver\n");
-
-
-  DRV_ReadData(&drv8323, ADDR_OCP_Control);
-
-  drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
-  drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrentcausesa latchedfault
-  drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
-  drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
-  //drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 0.75V -> ID = 75A
-
-  DRV_WriteData(&drv8323, ADDR_OCP_Control);
-
-
-  DRV_ReadData(&drv8323, ADDR_CSA_Control);
-
-  drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 0.5V -> 50A
-  drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
-
-  DRV_WriteData(&drv8323, ADDR_CSA_Control);
-
-
-#if DEBUG_PRINT_ENABLE
-
-  PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-  PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-  PRINT_HEX(drv8323.Reg.DriverControl.word);
-  PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-  PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-  PRINT_HEX(drv8323.Reg.OCP_Control.word);
-  PRINT_HEX(drv8323.Reg.CSA_Control.word);
-
-#endif
 
   // Current Sensing Auto Offset Calibration
   HAL_GPIO_WritePin(OP_CAL_GPIO_Port, OP_CAL_Pin, GPIO_PIN_SET);
@@ -357,15 +309,123 @@ int main(void)
   HAL_GPIO_WritePin(OP_CAL_GPIO_Port, OP_CAL_Pin, GPIO_PIN_RESET);
 
 
-  /******** DEBUG ********/
+  //printf("Hello SPI Gate Driver\n");
 
 
-  DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+  /*************************************************/
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Initial register data.\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+  /*************************************************/
+
+
+#if 0
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	drv8323.Reg.GateDrive_HS.IDRIVEP_HS = 0b1011; // 440mA
+	drv8323.Reg.GateDrive_HS.IDRIVEN_HS = 0b1011; // 880mA
+	DRV_WriteData(&drv8323, ADDR_GateDrive_HS);
+
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	drv8323.Reg.GateDrive_LS.IDRIVEP_LS = 0b1011; // 440mA
+	drv8323.Reg.GateDrive_LS.IDRIVEN_LS = 0b1011; // 880mA
+	DRV_WriteData(&drv8323, ADDR_GateDrive_LS);
+#endif
+
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	drv8323.Reg.OCP_Control.TRETRY = 0b0; // VDS_OCP and SEN_OCP retry time is 4 ms
+	drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
+	drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
+	drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
+	//drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
+	drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 1.88V -> ID = 75A
+	DRV_WriteData(&drv8323, ADDR_OCP_Control);
+
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	//drv8323.Reg.CSA_Control.DIS_SEN = 0b1;	// Sense overcurrent fault is disabled
+	//drv8323.Reg.CSA_Control.SEN_LVL = 0b00;	// Vsense = 0.25V -> 25A
+	drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 1.0V -> 100A
+	drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
+	DRV_WriteData(&drv8323, ADDR_CSA_Control);
+
+#if 0
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	drv8323.Reg.DriverControl.DIS_CPUV = 1;
+	drv8323.Reg.DriverControl.DIS_GDF = 1;
+	drv8323.Reg.DriverControl.OTW_REP = 1;
+	DRV_WriteData(&drv8323, ADDR_DriverControl);
+#endif
 
 
 #if DEBUG_PRINT_ENABLE
-  PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("Write data.\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
 #endif
+
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	drv8323.Reg.DriverControl.CLR_FLT = 1;	// Clear flt bit
+	DRV_WriteData(&drv8323, ADDR_DriverControl);
+
+
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Check register..\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+
+
+
+  /******** DEBUG ********/
+
 
   HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
 
@@ -409,11 +469,11 @@ int main(void)
   CurrentSensor_Init();
 
 
-  ACR_Init();
+  //ACR_Init();
 
-  ASR_Init();
+  //ASR_Init();
 
-  APR_Init();
+  //APR_Init();
 
   PWM_Init();
 
@@ -443,13 +503,32 @@ int main(void)
   ACR_Start(&mainACR);
 
 
-  setZeroEncoder((p_ch != ch)? 1: 0);
+  //setZeroEncoder((p_ch != ch)? 1: 0);
 
   //ASR_Start(&mainASR);
 
   timeoutEnable = 1;
 
   //APR_Start(&mainAPR);
+
+
+  Dump_Init();
+
+
+  // Motor Handler initialize
+  Motor_Init(&motor);
+
+
+  HAL_Delay(1000);
+
+
+  sequence = 1; /* Start */
+
+
+  int sqrt_count = 0;
+
+  IntInteg_Init(&integTest, 0, 268435456/40000, 65536);
+
 
   /* USER CODE END 2 */
 
@@ -465,24 +544,73 @@ int main(void)
 
 	  //ASR_Refresh(&mainASR);
 
+	  HAL_Delay(1);
 
-#if DUMP_ENABLE
+	  //printf("%d\r\n", mainEncoder.raw_Angle);
+	  //printf("%10d, %10d\n", motor.theta_m_int, motor.theta_re_int);
+	  //printf("%6d, %6d, %6d\n", motor.theta_re_int, motor.Va_pu_2q13, motor.Vb_pu_2q13);
+	  //printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
+	  //printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
 
-	  if(DumpCount >= DUMP_STEPS)
+	  if(rxFlag)
 	  {
-		  break;
+		  printf("%d\r\n", motor.theta_re_int);
+		  rxFlag = 0;
 	  }
 
-#endif
+	  //printf("%d\r\n", motor.theta_re_int);
+
+	  //printf("%10d, %10d, %10d\r\n", motor.AD_Iu, motor.AD_Iv, motor.AD_Iw);
+	  //printf("%d\r\n", motor.Vdc_pu_2q13);
+	  //printf("%d,%d,%d,%d,%d,%d,%d\r\n", carrier_counter, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13, motor.Iu_pu_2q13, motor.Iv_pu_2q13, motor.Iw_pu_2q13);
+	  //printf("%10d, %10d\r\n", motor.Ia_pu_2q13, motor.Ib_pu_2q13);
+	  //printf("%d,\t%10d,\t%10d\r\n", carrier_counter, motor.Id_pu_2q13, motor.Iq_pu_2q13);
+
+	  //printf("%10d, %10d, %10d\r\n", motor.Vd_pu_2q13,motor.Vq_pu_2q13, motor.Vdc_pu_2q13);
+
+	  //printf("%d, %d\r\n", integTest.integ, integTest.error);
+
+	  //printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
+
+	  if(Dump_isFull()) break;
 
 
   }
+
+  motor.Id_ref_pu_2q13 = 0;
+  motor.Iq_ref_pu_2q13 = 0;
+
 
 
   mainACR.Id_ref = 0.0f;
   mainACR.Iq_ref = 0.0f;
 
   HAL_Delay(10);
+
+#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Check register..\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+#endif
+
 
   // Gate Disable
   HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
@@ -518,6 +646,7 @@ int main(void)
 	}
 */
 
+  printf("Finished.\r\n");
 
 
   while(1);
@@ -534,18 +663,18 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 320;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
@@ -554,7 +683,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -587,7 +716,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
@@ -605,7 +734,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
@@ -614,7 +743,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_0;
   sConfigInjected.InjectedRank = 1;
@@ -629,7 +758,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_4;
   sConfigInjected.InjectedRank = 2;
@@ -637,7 +766,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_1;
   sConfigInjected.InjectedRank = 3;
@@ -645,7 +774,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time 
+  /** Configures for the selected ADC injected channel its corresponding rank in the sequencer and its sample time
   */
   sConfigInjected.InjectedChannel = ADC_CHANNEL_10;
   sConfigInjected.InjectedRank = 4;
@@ -809,7 +938,7 @@ static void MX_TIM8_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 4000;
+  sConfigOC.Pulse = 2000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -827,7 +956,7 @@ static void MX_TIM8_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 7800;
+  sConfigOC.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -899,7 +1028,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin 
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin
                           |SPI3_NSS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -911,9 +1040,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin DB1_Pin OP_CAL_Pin GATE_EN_Pin 
+  /*Configure GPIO pins : LD2_Pin DB1_Pin OP_CAL_Pin GATE_EN_Pin
                            SPI3_NSS_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin 
+  GPIO_InitStruct.Pin = LD2_Pin|DB1_Pin|OP_CAL_Pin|GATE_EN_Pin
                           |SPI3_NSS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -950,17 +1079,8 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 //void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
-	static float Vgam_ref;
-	static float Vdel_ref;
-
-	static float phase = 0.0;
-
-	static float cos_phase;
-	static float sin_phase;
-
 
 	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-
 
 
 #if 1
@@ -968,6 +1088,144 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	Encoder_Refresh(&mainEncoder);
 
 	CurrentSensor_Refresh(&mainCS, sector_SVM);
+
+
+	if(sequence == 1)
+	{
+
+#if 1
+
+
+#if 0
+		int d = 400;
+
+		switch((carrier_counter >> 7) & 0x3)
+		{
+		case 0b00:
+			htim8.Instance->CCR1 = 1500 - 100;
+			htim8.Instance->CCR2 = 1500 + 50;
+			htim8.Instance->CCR3 = 1500 + 50;
+			break;
+
+		case 0b01:
+			htim8.Instance->CCR1 = 1500 + 100;
+			htim8.Instance->CCR2 = 1500 - 50;
+			htim8.Instance->CCR3 = 1500 - 50;
+			break;
+
+		case 0b10:
+			htim8.Instance->CCR1 = 500 - 100;
+			htim8.Instance->CCR2 = 500 + 50;
+			htim8.Instance->CCR3 = 500 + 50;
+			break;
+
+		case 0b11:
+			htim8.Instance->CCR1 = 500 + 100;
+			htim8.Instance->CCR2 = 500 - 50;
+			htim8.Instance->CCR3 = 500 - 50;
+			break;
+		}
+#endif
+
+
+#if 1
+		if((carrier_counter & (1<<9)) == 0)
+		{
+			//motor.Id_ref_pu_2q13 = 546; // 1A
+			//motor.Id_ref_pu_2q13 = 2731; // 5A
+			//motor.Id_ref_pu_2q13 = 4096; // 7.5A;
+			//motor.Id_ref_pu_2q13 = 4915; // 9A;
+			//motor.Id_ref_pu_2q13 = 5461; // 10A;
+			motor.Id_ref_pu_2q13 = 8192; // 15A;
+			motor.Iq_ref_pu_2q13 = 0;
+		}
+		else
+		{
+			//motor.Id_ref_pu_2q13 = -546; // 1A
+			//motor.Id_ref_pu_2q13 = -2731; // 5A
+			//motor.Id_ref_pu_2q13 = -4096; // 7.5A;
+			//motor.Id_ref_pu_2q13 = -4915; // 9A;
+			//motor.Id_ref_pu_2q13 = -5461; // 10A;
+			motor.Id_ref_pu_2q13 = -8192; // 15A;
+			motor.Iq_ref_pu_2q13 = 0;
+		}
+#endif
+
+#endif
+
+
+		motor.AD_Iu = mainCS.AD_Iu[0];
+		motor.AD_Iv = mainCS.AD_Iv[0];
+		motor.AD_Iw = mainCS.AD_Iw[0];
+		motor.AD_Vdc = mainCS.AD_Vdc[0];
+		motor.raw_theta_14bit = mainEncoder.raw_Angle;
+
+		// Motor Controller Update
+		Motor_Update(&motor);
+
+#if 1
+		htim8.Instance->CCR1 = motor.duty_u;
+		htim8.Instance->CCR2 = motor.duty_v;
+		htim8.Instance->CCR3 = motor.duty_w;
+#endif
+
+
+		carrier_counter++;
+
+	}
+
+
+	if(sequence == 1 && !Dump_isFull())
+	{
+
+
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
+/*
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Iq_ref_pu_2q13;
+		dump_record[dump_counter][2] = motor.Id_pu_2q13;
+		dump_record[dump_counter][3] = motor.Iq_pu_2q13;
+*/
+
+#if 0
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][3] = motor.Id_error;
+		dump_record[dump_counter][4] = motor.Id_error_integ.integ;
+		dump_record[dump_counter][5] = motor.Vdc_pu_2q13;
+#endif
+
+
+#if 1
+		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
+		dump_record[dump_counter][1] = motor.Id_pu_2q13;
+		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
+		dump_record[dump_counter][3] = motor.Vd_pu_2q13;
+		dump_record[dump_counter][4] = motor.Vq_pu_2q13;
+		dump_record[dump_counter][5] = motor.Vu_pu_2q13;
+		dump_record[dump_counter][6] = motor.Vv_pu_2q13;
+		dump_record[dump_counter][7] = motor.Vw_pu_2q13;
+#endif
+
+#if 0
+		dump_record[dump_counter][0] = htim8.Instance->CCR1;
+		dump_record[dump_counter][1] = htim8.Instance->CCR2;
+		dump_record[dump_counter][2] = htim8.Instance->CCR3;
+		dump_record[dump_counter][3] = motor.Iu_pu_2q13;
+		dump_record[dump_counter][4] = motor.Iv_pu_2q13;
+		dump_record[dump_counter][5] = motor.Iw_pu_2q13;
+#endif
+
+		if(dump_counter < DUMP_LENGTH)
+		{
+			dump_counter++;
+		}
+
+	}
+
+
 
 
 	/*
@@ -990,7 +1248,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	*/
 
 
-#if 1
+#if 0
 	//mainASR.launchFlg = 1;
 	//ASR_Refresh(&mainASR);
 
@@ -1006,12 +1264,12 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 	Encoder_Request(&mainEncoder);
 
-	WaveSampler_Sampling(&hWave);
+	//WaveSampler_Sampling(&hWave);
 
 #endif
 
 
-#if 1
+#if 0
 
 	if(timeoutEnable == 1)
 	{
@@ -1042,7 +1300,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 
 
-	LED_blink();
+	//LED_blink();
 
 }
 
@@ -1056,6 +1314,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 
 	if(htim->Instance == TIM8 && __HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
@@ -1155,7 +1415,7 @@ inline void LED_blink()
 void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
 
-	WaveSampler_TxCplt(&hWave, huart);
+	//WaveSampler_TxCplt(&hWave, huart);
 
 }
 
@@ -1163,7 +1423,11 @@ void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
 
-	WaveSampler_RxCplt(&hWave, huart);
+	//WaveSampler_RxCplt(&hWave, huart);
+
+	rxFlag = 1;
+
+	HAL_UART_Receive_IT(&huart2, &rxChar, 1);
 
 }
 
@@ -1256,7 +1520,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
