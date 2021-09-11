@@ -145,6 +145,8 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Vd_limit_error = 0;
 	hMotor->Vq_limit_error = 0;
 
+	hMotor->sector = 0;
+
 	hMotor->duty_u = hMotor->Init.PWM_PRR / 2;
 	hMotor->duty_v = hMotor->Init.PWM_PRR / 2;
 	hMotor->duty_w = hMotor->Init.PWM_PRR / 2;
@@ -242,7 +244,28 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 
 
-/***** Private functions *****/
+
+void Motor_Reset(Motor_TypeDef *hMotor)
+{
+
+	hMotor->Id_error = 0;
+	hMotor->Iq_error = 0;
+	hMotor->Id_ref_pu_2q13 = 0;
+	hMotor->Iq_ref_pu_2q13 = 0;
+
+	hMotor->Vd_limit_error = 0;
+	hMotor->Vq_limit_error = 0;
+
+	hMotor->sector = 0;
+
+	hMotor->duty_u = hMotor->Init.PWM_PRR / 2;
+	hMotor->duty_v = hMotor->Init.PWM_PRR / 2;
+	hMotor->duty_w = hMotor->Init.PWM_PRR / 2;
+
+	IntInteg_Reset(&hMotor->Id_error_integ);
+	IntInteg_Reset(&hMotor->Iq_error_integ);
+
+}
 
 
 

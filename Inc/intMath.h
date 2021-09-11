@@ -22,6 +22,7 @@ void IntInteg_Init(IntInteg_TypeDef *hInteg, int16_t gainShift, int32_t Ts_q28, 
 
 int32_t IntInteg_Update(IntInteg_TypeDef *hInteg, int16_t u);
 
+void IntInteg_Reset(IntInteg_TypeDef *hInteg);
 
 
 

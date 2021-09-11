@@ -18,6 +18,7 @@ extern Motor_TypeDef motor;
 extern Encoder_TypeDef mainEncoder;
 
 
+extern void timeoutReset();
 
 
 

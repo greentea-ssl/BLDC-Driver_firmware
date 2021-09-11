@@ -28,9 +28,6 @@
 #include <math.h>
 #include "pwm.h"
 #include "parameters.h"
-#include "ACR.h"
-#include "ASR.h"
-#include "APR.h"
 #include "encoder.h"
 #include "CurrentSensor.h"
 #include "drv8323.h"
@@ -206,8 +203,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 
-	int count = 0;
-
 	uint8_t p_ch, ch;
 
 	/********** for ASR ***********/
@@ -241,8 +236,8 @@ int main(void)
   MX_CAN1_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
-  MX_TIM8_Init();
   MX_USART2_UART_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -252,6 +247,12 @@ int main(void)
 
 
   DRV_Init();
+
+  // Motor Handler initialize
+  Motor_Init(&motor);
+
+
+  timeoutEnable = 1;
 
 
 
@@ -470,30 +471,20 @@ int main(void)
 
   CAN_Init();
 
-
   Encoder_Init();
 
-
-  HAL_Delay(100);
 
   CurrentSensor_Init();
 
 
-  //ACR_Init();
-
-  //ASR_Init();
-
-  //APR_Init();
+  CurrentSensor_Start(&mainCS);
 
   PWM_Init();
 
-  CurrentSensor_Start(&mainCS);
 
-
-  timeoutEnable = 0;
 
   // Offset calibration
-#if 1
+#if 0
   float sum_uvw[3] = {0, 0, 0};
   for(count = 0; count < 1000; count++)
   {
@@ -507,32 +498,22 @@ int main(void)
   mainCS.Init.V_Iw_offset += sum_uvw[2] / 1000.0;
 #endif
 
+  //HAL_Delay(1000);
 
-  HAL_Delay(1);
 
-  ACR_Start(&mainACR);
+  sequence = 1; /* Start */
+
+  //ACR_Start(&mainACR);
 
 
   //setZeroEncoder((p_ch != ch)? 1: 0);
 
   //ASR_Start(&mainASR);
 
-  timeoutEnable = 1;
 
   //APR_Start(&mainAPR);
 
 
-  Dump_Init();
-
-
-  // Motor Handler initialize
-  Motor_Init(&motor);
-
-
-  HAL_Delay(1000);
-
-
-  sequence = 1; /* Start */
 
 
 
@@ -550,13 +531,23 @@ int main(void)
 
 	  //ASR_Refresh(&mainASR);
 
-	  HAL_Delay(1);
+	  HAL_Delay(10);
 
 	  //printf("%d\r\n", mainEncoder.raw_Angle);
 	  //printf("%10d, %10d\n", motor.theta_m_int, motor.theta_re_int);
 	  //printf("%6d, %6d, %6d\n", motor.theta_re_int, motor.Va_pu_2q13, motor.Vb_pu_2q13);
 	  //printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
 	  //printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
+
+	  printf("0x%8x, 0x%8x\n", HAL_CAN_GetState(&hcan1), HAL_CAN_GetError(&hcan1));
+
+
+	  if(HAL_CAN_GetState(&hcan1) == 0x05)
+	  {
+		  MX_CAN1_Init();
+		  CAN_Init();
+		  HAL_CAN_ResetError(&hcan1);
+	  }
 
 	  if(rxFlag)
 	  {
@@ -588,8 +579,8 @@ int main(void)
 
 
 
-  mainACR.Id_ref = 0.0f;
-  mainACR.Iq_ref = 0.0f;
+  //mainACR.Id_ref = 0.0f;
+  //mainACR.Iq_ref = 0.0f;
 
   HAL_Delay(10);
 
@@ -1430,7 +1421,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 #endif
 
 
-#if 0
+#if 1
 
 	if(timeoutEnable == 1)
 	{
@@ -1443,7 +1434,11 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		{
 			//stopPWM(&htim8);
 			// Gate Disable
-			HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+			//HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+
+			motor.Id_ref_pu_2q13 = 0;
+			motor.Iq_ref_pu_2q13 = 0;
+
 			timeoutCount = 0;
 			timeoutState = 1;
 		}
@@ -1490,18 +1485,21 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 
 
-inline void timeoutReset()
+void timeoutReset()
 {
 	timeoutCount = 0;
+	timeoutState = 0;
+
 	if(timeoutState == 1)
 	{
 		timeoutState = 0;
-		ASR_Reset(&mainASR);
-		ACR_Reset(&mainACR);
+
+		Motor_Reset(&motor);
+
 		//startPWM(&htim8);
 
-		// Gate Disable
-		HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
+		// Gate Enable
+		//HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_SET);
 	}
 }
 

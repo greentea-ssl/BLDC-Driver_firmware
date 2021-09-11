@@ -93,7 +93,7 @@ void Motor_Init(Motor_TypeDef *hMotor);
 void Motor_Update(Motor_TypeDef *hMotor);
 
 
-
+void Motor_Reset(Motor_TypeDef *hMotor);
 
 
 

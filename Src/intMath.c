@@ -40,6 +40,10 @@ void IntInteg_Init(IntInteg_TypeDef *hInteg, int16_t gainShift, int32_t Ts_q28, 
 	hInteg->gainShift = gainShift;
 	hInteg->Ts_q28 = Ts_q28;
 	hInteg->limit = limit;
+
+	hInteg->integ = 0;
+	hInteg->error = 0;
+
 }
 
 int32_t IntInteg_Update(IntInteg_TypeDef *hInteg, int16_t u)
@@ -53,6 +57,13 @@ int32_t IntInteg_Update(IntInteg_TypeDef *hInteg, int16_t u)
 }
 
 
+void IntInteg_Reset(IntInteg_TypeDef *hInteg)
+{
+
+	hInteg->integ = 0;
+	hInteg->error = 0;
+
+}
 
 
 
