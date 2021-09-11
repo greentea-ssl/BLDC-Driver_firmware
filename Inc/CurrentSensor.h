@@ -81,7 +81,7 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS);
  * UVWの電流値を更新するだけ
  * 座標変換とかはやらない
  */
-void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector);
+void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS);
 
 
 /*

@@ -1214,7 +1214,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 	Encoder_Refresh(&mainEncoder);
 
-	CurrentSensor_Refresh(&mainCS, sector_SVM);
+	CurrentSensor_Refresh(&mainCS);
 
 
 	if(sequence == 1)
