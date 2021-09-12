@@ -43,9 +43,15 @@ typedef struct
 	int16_t Id_limit_pu_2q13;
 	int16_t Iq_limit_pu_2q13;
 
+	int16_t theta_int_offset;
 
 }MotorInit_TypeDef;
 
+
+typedef enum{
+	MOTOR_MODE_CC_FORCE = 1,
+	MOTOR_MODE_CC_VECTOR = 2,
+}Motor_RunMode_Enum;
 
 
 typedef struct
@@ -53,6 +59,8 @@ typedef struct
 	MotorInit_TypeDef Init;
 
 	MotorParam_TypeDef motorParam;
+
+	Motor_RunMode_Enum RunMode;
 
 	uint16_t AD_Iu, AD_Iv, AD_Iw, AD_Vdc;
 
@@ -73,7 +81,12 @@ typedef struct
 	uint16_t raw_theta_14bit;
 	int16_t theta_m_int, theta_re_int;
 
+	// Forced commutation
+	int8_t forced_commutation_enable;
+	int32_t Igam_ref_pu_2q13, Idel_ref_pu_2q13;
+	int16_t theta_force_int;
 
+	// ACR
 	int32_t Id_error, Iq_error;
 	int32_t Id_ref_pu_2q13, Iq_ref_pu_2q13;
 

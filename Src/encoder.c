@@ -3,17 +3,25 @@
 #include "encoder.h"
 
 
+#include <string.h>
+
+#include "motorControl.h"
+
+
 extern SPI_HandleTypeDef hspi2;
 
 
+extern Motor_TypeDef motor;
+
+
 #include "parameters.h"
-#include "sin_t.h"
-#include "ACR.h"
+
 #include "math.h"
 #include "flash.h"
+#include "motorControl.h"
 
+#include "sin_t.h"
 
-uint32_t *flash_data;
 
 
 Encoder_TypeDef mainEncoder;
@@ -57,80 +65,35 @@ void Encoder_Init()
 
 #if 1
 
-void setZeroEncoder(uint8_t exe)
+uint16_t setZeroEncoder(uint8_t exe)
 {
 
-	const int32_t forced_commute_steps = 2000;
+	uint16_t ret_theta_offset = 0;
 
-
-
-	volatile uint32_t forced_commute_count = 0;
-
-	const float forced_I_gamma_ref = 5.0f;
-	const float forced_I_delta_ref = 0.0f;
-
-	volatile float sensed_theta_re_error;
-
-	volatile float sensed_theta_error;
-	volatile float sensed_theta_error_sum = 0.0f;
-	volatile float sensed_theta_error_ave = 0.0f;
-
+	uint32_t *flash_data;
 
 	flash_data = (uint32_t*)Flash_load();
 
 	if(exe == 0)
 	{
 
-		memcpy(&mainEncoder.Init.theta_re_offset, flash_data, 4);
+		memcpy(&ret_theta_offset, flash_data, 2);
 
-#if DEBUG_PRINT_ENABLE
-		printf("flash_data:%d\n", mainEncoder.Init.theta_re_offset * 100000);
-		printf(" theta_re_offset = %d\n", (int)(mainEncoder.Init.theta_re_offset * 100000));
-#endif
-
-		return;
+		return ret_theta_offset & SIN_TBL_MASK;
 	}
 
+	motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / motor.Init.I_base * 8192);
+	motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / motor.Init.I_base * 8192);
 
-	mainACR.Id_ref = forced_I_gamma_ref;
-	mainACR.Iq_ref = forced_I_delta_ref;
-
-	mainEncoder.Init.theta_re_offset = 0.0f;
-
-	mainACR.forced_theta_re = 0.0f;
-
-	mainACR.forced_commute_enable = 1;
+	motor.Init.theta_int_offset = 0;
+	motor.theta_force_int = 0;
+	motor.RunMode = MOTOR_MODE_CC_FORCE;
 
 	HAL_Delay(1000);
 
+	ret_theta_offset = motor.theta_re_int & SIN_TBL_MASK;
 
-	mainEncoder.Init.theta_re_offset = 0.0f - mainEncoder.theta_re;
-
-	mainACR.Id_ref = 0.0f;
-	mainACR.Iq_ref = 0.0f;
-
-
-	while(mainEncoder.Init.theta_re_offset < -M_PI)	mainEncoder.Init.theta_re_offset += 2.0f * M_PI;
-	while(mainEncoder.Init.theta_re_offset > M_PI)	mainEncoder.Init.theta_re_offset -= 2.0f * M_PI;
-
-#if DEBUG_PRINT_ENABLE
-
-	printf(" theta_re_offset = %d -- ", (int)(mainEncoder.Init.theta_re_offset * 100000));
-	HAL_Delay(1);
-	printf(" theta_re_offset = %d\n", (int)(mainEncoder.Init.theta_re_offset * 100000));
-	HAL_Delay(1);
-	printf(" theta_re_offset(4) = %d -- ", (int)(mainEncoder.Init.theta_re_offset * 10000));
-	HAL_Delay(1);
-	printf(" theta_re_offset(4) = %d\n", (int)(mainEncoder.Init.theta_re_offset * 10000));
-	HAL_Delay(1);
-
-	printf("(theta_re_offset < 1.0f) = %d\n", (int)(mainEncoder.Init.theta_re_offset < 1.0f));
-
-	printf("(theta_re_offset > -1.0f) = %d\n", (int)(mainEncoder.Init.theta_re_offset > -1.0f));
-
-#endif
-
-	memcpy(flash_data, &mainEncoder.Init.theta_re_offset, 4);
+	memcpy(flash_data, &motor.Init.theta_int_offset , 2);
 
 	if (!Flash_store())
 	{
@@ -144,99 +107,10 @@ void setZeroEncoder(uint8_t exe)
 	printf("flash_data:%lu\n", *flash_data);
 #endif
 
+	Motor_Reset(&motor);
+	motor.RunMode = MOTOR_MODE_CC_VECTOR;
 
-	mainACR.forced_commute_enable = 0;
-
-	ACR_Reset(&mainACR);
-
-
-
-#if 0
-
-	requestEncoder();
-
-	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
-	{
-		HAL_Delay(1);
-		timeoutReset();
-		refreshEncoder();
-		sensed_theta_error = forced_theta - theta;
-		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
-		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
-		sensed_theta_error_sum += sensed_theta_error;
-		forced_theta = forced_commute_count * 2.0f * M_PI / forced_commute_steps;
-		forced_commute_count += 1;
-
-		requestEncoder();
-	}
-
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-
-	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
-	{
-		HAL_Delay(1);
-		timeoutReset();
-		refreshEncoder();
-		sensed_theta_error = forced_theta - theta;
-		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
-		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
-		sensed_theta_error_sum += sensed_theta_error;
-		forced_theta = (forced_commute_steps - forced_commute_count - 1) * 2.0f * M_PI / forced_commute_steps;
-		forced_commute_count += 1;
-
-		requestEncoder();
-	}
-
-
-	theta_offset = sensed_theta_error_sum * 0.5f / forced_commute_steps;
-
-	theta_re_offset = fmod(theta_offset * POLE_PAIRS, 2.0f * M_PI);
-	while(theta_re_offset < -M_PI)	theta_re_offset += 2.0f * M_PI;
-	while(theta_re_offset > M_PI)	theta_re_offset -= 2.0f * M_PI;
-
-	printf("theta_offset = %d\n", (int)(theta_offset * 100000));
-
-	sensed_theta_error_sum = 0.0f;
-
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-	timeoutReset();	HAL_Delay(100);
-
-	requestEncoder();
-
-	for(forced_commute_count = 0; forced_commute_count < forced_commute_steps; forced_commute_count++)
-	{
-		HAL_Delay(1);
-		timeoutReset();
-		refreshEncoder();
-		sensed_theta_error = forced_theta - theta;
-		while(sensed_theta_error < -M_PI)	sensed_theta_error += 2.0f * M_PI;
-		while(sensed_theta_error > M_PI)	sensed_theta_error -= 2.0f * M_PI;
-		sensed_theta_error_sum += sensed_theta_error;
-		forced_theta = forced_commute_count * 2.0f * M_PI / forced_commute_steps;
-		forced_commute_count += 1;
-
-		requestEncoder();
-	}
-
-	sensed_theta_error_ave = sensed_theta_error_sum * 1.0f / forced_commute_steps;
-
-	printf("error_ave = %d\n", (int)(sensed_theta_error_ave * 100000));
-
-
-	ACR_Reset();
-
-	forced_commute_enable = 0;
-
-
-#endif
-
+	return ret_theta_offset;
 
 }
 

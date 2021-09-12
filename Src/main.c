@@ -88,7 +88,13 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 
-uint8_t sequence = 0; /* 0: Initialize, 1: running */
+typedef enum {
+	Seq_Init = 0,
+	Seq_PosAdj = 1,
+	Seq_Running = 2,
+}Sequense_TypeDef;
+
+Sequense_TypeDef sequence = Seq_Init;
 
 
 uint32_t carrier_counter = 0;
@@ -445,25 +451,14 @@ int main(void)
 
   p_ch = getChannel();
 
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);		HAL_Delay(100);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);	HAL_Delay(100);
-
+  int count;
+  for(count = 0; count < 6; count++)
+  {
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	  HAL_Delay(100);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	  HAL_Delay(100);
+  }
 
   ch = getChannel();
 
@@ -501,12 +496,16 @@ int main(void)
   //HAL_Delay(1000);
 
 
-  sequence = 1; /* Start */
+  sequence = Seq_PosAdj;
+
+  motor.Init.theta_int_offset = setZeroEncoder((p_ch != ch)? 1: 0);
+
+  printf("THETA_INT_OFFSET = %d\n", motor.Init.theta_int_offset);
+
 
   //ACR_Start(&mainACR);
 
 
-  //setZeroEncoder((p_ch != ch)? 1: 0);
 
   //ASR_Start(&mainASR);
 
@@ -514,6 +513,7 @@ int main(void)
   //APR_Start(&mainAPR);
 
 
+  sequence = Seq_Running; /* Start */
 
 
 
@@ -539,9 +539,10 @@ int main(void)
 	  //printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
 	  //printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
 
-	  printf("0x%8x, 0x%8x\n", HAL_CAN_GetState(&hcan1), HAL_CAN_GetError(&hcan1));
+	  //printf("0x%8x, 0x%8x\n", HAL_CAN_GetState(&hcan1), HAL_CAN_GetError(&hcan1));
 
 
+	  // Reset CAN Error
 	  if(HAL_CAN_GetState(&hcan1) == 0x05)
 	  {
 		  MX_CAN1_Init();
@@ -1204,74 +1205,8 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 	CurrentSensor_Refresh(&mainCS);
 
 
-	if(sequence == 1)
+	if(sequence == Seq_Running || sequence == Seq_PosAdj)
 	{
-
-
-#if 0
-
-		int zeroPoint = 4000;
-		int comAmp = 3200;
-		int uAmp = 400;
-
-		switch((carrier_counter >> 7) & 0x3)
-		{
-		case 0b00:
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-			motor.duty_u = zeroPoint + comAmp - uAmp;
-			motor.duty_v = zeroPoint + comAmp + (uAmp>>1);
-			motor.duty_w = zeroPoint + comAmp + (uAmp>>1);
-			break;
-
-		case 0b01:
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-			motor.duty_u = zeroPoint + comAmp + uAmp;
-			motor.duty_v = zeroPoint + comAmp - (uAmp>>1);
-			motor.duty_w = zeroPoint + comAmp - (uAmp>>1);
-			break;
-
-		case 0b10:
-			motor.duty_u = zeroPoint - comAmp - uAmp;
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-			motor.duty_v = zeroPoint - comAmp + (uAmp>>1);
-			motor.duty_w = zeroPoint - comAmp + (uAmp>>1);
-			break;
-
-		case 0b11:
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-			motor.duty_u = zeroPoint - comAmp + uAmp;
-			motor.duty_v = zeroPoint - comAmp - (uAmp>>1);
-			motor.duty_w = zeroPoint - comAmp - (uAmp>>1);
-			break;
-		}
-#endif
-
-
-#if 0
-		if((carrier_counter & (1<<6)) == 0)
-		{
-			motor.Id_ref_pu_2q13 = 0; // 0A
-			//motor.Id_ref_pu_2q13 = 546; // 1A
-			//motor.Id_ref_pu_2q13 = 2731; // 5A
-			//motor.Id_ref_pu_2q13 = 4096; // 7.5A;
-			//motor.Id_ref_pu_2q13 = 4915; // 9A;
-			//motor.Id_ref_pu_2q13 = 5461; // 10A;
-			//motor.Id_ref_pu_2q13 = 8192; // 15A;
-			motor.Iq_ref_pu_2q13 = 546;
-		}
-		else
-		{
-			motor.Id_ref_pu_2q13 = 0; // 0A
-			//motor.Id_ref_pu_2q13 = -546; // 1A
-			//motor.Id_ref_pu_2q13 = -2731; // 5A
-			//motor.Id_ref_pu_2q13 = -4096; // 7.5A;
-			//motor.Id_ref_pu_2q13 = -4915; // 9A;
-			//motor.Id_ref_pu_2q13 = -5461; // 10A;
-			//motor.Id_ref_pu_2q13 = -8192; // 15A;
-			motor.Iq_ref_pu_2q13 = 546;
-		}
-#endif
-
 
 		motor.AD_Iu = mainCS.AD_Iu[0];
 		motor.AD_Iv = mainCS.AD_Iv[0];
@@ -1288,15 +1223,13 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 		htim8.Instance->CCR3 = motor.duty_w;
 #endif
 
-
 		carrier_counter++;
 
 	}
 
 
-	if(sequence == 1 && !Dump_isFull())
+	if(sequence == Seq_Running && !Dump_isFull())
 	{
-
 
 
 /*
