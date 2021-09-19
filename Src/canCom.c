@@ -173,7 +173,7 @@ void sendToMain()
 
 	Iq_int16 = (int16_t)((int32_t)(motor.Iq_pu_2q13 * motor.Init.I_base) >> 3);
 	theta_uint16 = mainEncoder.raw_Angle;
-	omega_int16 = (int16_t)(mainEncoder.omega * 32);
+	omega_int16 = motor.omega_q5;
 
 	can1TxData[0] = 0;
 

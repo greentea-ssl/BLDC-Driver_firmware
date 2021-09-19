@@ -109,6 +109,27 @@ void CurrentControl(Motor_TypeDef *hMotor)
 }
 
 
+void UpdateSpeed(Motor_TypeDef *hMotor)
+{
+
+	if(hMotor->p_theta_m_int == 65535)
+	{
+		hMotor->p_theta_m_int = hMotor->theta_m_int;
+		hMotor->omega_q5 = 0;
+		return;
+	}
+
+	int32_t delta_theta_int = hMotor->theta_m_int - hMotor->p_theta_m_int;
+
+	if(delta_theta_int < -4096) delta_theta_int += 8192;
+	else if(delta_theta_int > 4096) delta_theta_int -= 8192;
+
+	// ( (delta_theta_int / 8192 * 2 * M_PI)[rad] * 10000[Hz] )[rad/s] * 32
+	hMotor->omega_q5 = (int16_t)((delta_theta_int * 62832) >> 13);
+	//hMotor->omega_q5 = (int16_t)hMotor->p_theta_m_int;
+
+}
+
 
 /**********/
 
@@ -183,6 +204,9 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	hMotor->sector = 0;
 
+	hMotor->p_theta_m_int = 65535;
+	hMotor->omega_q5 = 0;
+
 	hMotor->duty_u = hMotor->Init.PWM_PRR / 2;
 	hMotor->duty_v = hMotor->Init.PWM_PRR / 2;
 	hMotor->duty_w = hMotor->Init.PWM_PRR / 2;
@@ -195,6 +219,10 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 	hMotor->theta_m_int = (hMotor->raw_theta_14bit >> 1) & SIN_TBL_MASK;
 	hMotor->theta_re_int = ( ( ((uint32_t)hMotor->raw_theta_14bit * hMotor->motorParam.Pn) >> 1 ) - hMotor->Init.theta_int_offset) & SIN_TBL_MASK;
+
+	UpdateSpeed(hMotor);
+
+	hMotor->p_theta_m_int = hMotor->theta_m_int;
 
 	hMotor->Iu_pu_2q13 = ( ((int32_t)hMotor->AD_Iu - (int32_t)hMotor->Init.AD_Iu_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
 	hMotor->Iv_pu_2q13 = ( ((int32_t)hMotor->AD_Iv - (int32_t)hMotor->Init.AD_Iv_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;

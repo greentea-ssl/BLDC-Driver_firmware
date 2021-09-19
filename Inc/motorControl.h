@@ -81,6 +81,9 @@ typedef struct
 	uint16_t raw_theta_14bit;
 	int16_t theta_m_int, theta_re_int;
 
+	int16_t p_theta_m_int;
+	int16_t omega_q5;
+
 	// Forced commutation
 	int8_t forced_commutation_enable;
 	int32_t Igam_ref_pu_2q13, Idel_ref_pu_2q13;
