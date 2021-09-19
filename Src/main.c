@@ -1383,7 +1383,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 
 
-	//LED_blink();
+	LED_blink();
 
 }
 
