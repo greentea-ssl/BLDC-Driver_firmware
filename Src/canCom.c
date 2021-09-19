@@ -171,7 +171,7 @@ void sendToMain()
 	can1TxHeader.RTR = CAN_RTR_DATA;
 	can1TxHeader.DLC = 8;
 
-	Iq_int16 = (int16_t)(motor.Iq_pu_2q13 * motor.Init.I_base / 8192);
+	Iq_int16 = (int16_t)((int32_t)(motor.Iq_pu_2q13 * motor.Init.I_base) >> 3);
 	theta_uint16 = mainEncoder.raw_Angle;
 	omega_int16 = (int16_t)(mainEncoder.omega * 32);
 
