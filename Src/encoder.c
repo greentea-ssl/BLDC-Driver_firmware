@@ -70,7 +70,7 @@ uint16_t setZeroEncoder(uint8_t exe)
 
 	uint16_t ret_theta_offset = 0;
 
-	uint32_t *flash_data;
+	uint16_t *flash_data;
 
 	flash_data = (uint32_t*)Flash_load();
 
@@ -93,7 +93,7 @@ uint16_t setZeroEncoder(uint8_t exe)
 
 	ret_theta_offset = motor.theta_re_int & SIN_TBL_MASK;
 
-	memcpy(flash_data, &motor.Init.theta_int_offset , 2);
+	memcpy(flash_data, &ret_theta_offset , 2);
 
 	if (!Flash_store())
 	{
@@ -104,7 +104,7 @@ uint16_t setZeroEncoder(uint8_t exe)
 
 
 #if DEBUG_PRINT_ENABLE
-	printf("flash_data:%lu\n", *flash_data);
+	printf("flash_data:%d\n", *flash_data);
 #endif
 
 	Motor_Reset(&motor);
