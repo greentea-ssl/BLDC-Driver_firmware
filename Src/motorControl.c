@@ -3,6 +3,8 @@
 
 #include "motorControl.h"
 
+#include "parameters.h"
+
 #include "sin_t.h"
 
 /***** Private functions prototypes *****/
@@ -120,10 +122,10 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	/***** Motor parameters *****/
 
-	hMotor->motorParam.Pn = 7;
-	hMotor->motorParam.R = 0.35;
-	hMotor->motorParam.Ld = 76.1E-6;
-	hMotor->motorParam.Lq = 76.1E-6;
+	hMotor->motorParam.Pn = POLE_PAIRS;
+	hMotor->motorParam.R = MOTOR_R;
+	hMotor->motorParam.Ld = MOTOR_Ld;
+	hMotor->motorParam.Lq = MOTOR_Lq;
 
 	/***** Data convention setting *****/
 

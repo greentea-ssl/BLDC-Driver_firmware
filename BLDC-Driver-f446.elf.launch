@@ -5,6 +5,7 @@
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_swv" value="false"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.launch.formatVersion" value="2"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.loadList" value="{&quot;fItems&quot;:[{&quot;fIsFromMainTab&quot;:true,&quot;fPath&quot;:&quot;Debug/BLDC-Driver-f446.elf&quot;,&quot;fProjectName&quot;:&quot;BLDC-Driver-f446&quot;,&quot;fPerformBuild&quot;:true,&quot;fDownload&quot;:true,&quot;fLoadSymbols&quot;:true}]}"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.override_start_address_mode" value="default"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.remoteCommand" value="target remote"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.startServer" value="true"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.startuptab.exception.divby0" value="true"/>
@@ -16,6 +17,7 @@
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.swv_trace_hclk" value="16000000"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.swv_wait_for_sync" value="true"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.useRemoteTarget" value="true"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.vector_table" value=""/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.verify_flash_download" value="true"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_DEVICE_SHAREABLE_ALLOWED" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.openocd.DBG_INTERFACE" value="Swd"/>
@@ -54,6 +56,7 @@
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.itmports" value="1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.itmports_priv" value="0:0:0:0"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.pc_sample" value="0:1024"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.swv.swv_wait_for_sync" value="true"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.timestamps" value="1:1"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.trace_events" value="Cpi=0:Exc=0:Sleep=0:Lsu=0:Fold=0:Exetrc=0"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
@@ -78,7 +81,7 @@
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useFileForSymbols" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useProjBinaryForImage" value="true"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useProjBinaryForSymbols" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="${TOOLCHAIN_PATH}/arm-none-eabi-gdb"/>
+    <stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="arm-none-eabi-gdb"/>
     <booleanAttribute key="org.eclipse.cdt.dsf.gdb.NON_STOP" value="true"/>
     <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
     <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="remote"/>
