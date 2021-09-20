@@ -26,21 +26,17 @@ typedef struct
 
 	CurrentSensor_Type CS_Type;
 
-	ADC_HandleTypeDef *hadc_Iu;
-	ADC_HandleTypeDef *hadc_Iv;
-	ADC_HandleTypeDef *hadc_Iw;
-	ADC_HandleTypeDef *hadc_Idc;
+	ADC_HandleTypeDef *hadc[3];
 
 	float Iu_Gain;
 	float Iv_Gain;
 	float Iw_Gain;
+	float Vdc_Gain;
 
 	float V_Iu_offset;
 	float V_Iv_offset;
 	float V_Iw_offset;
-
-	float V_Idc_offset;
-
+	float V_Vdc_offset;
 
 }CurrentSensor_InitTypeDef;
 
@@ -51,19 +47,21 @@ typedef struct
 
 	CurrentSensor_InitTypeDef Init;
 
-	uint16_t AD_Iu[1];
-	uint16_t AD_Iv[1];
-	uint16_t AD_Iw[1];
+	volatile uint16_t AD_Iu[1];
+	volatile uint16_t AD_Iv[1];
+	volatile uint16_t AD_Iw[1];
+	volatile uint16_t AD_Vdc[1];
 
 	int32_t pos_MEDF_I;
 
 	int32_t AD_Iu_buf[MEDIAN_ORDER];
 	int32_t AD_Iv_buf[MEDIAN_ORDER];
 	int32_t AD_Iw_buf[MEDIAN_ORDER];
+	int32_t AD_Vdc_buf[MEDIAN_ORDER];
 
-	float V_Iu, V_Iv, V_Iw;
+	float V_Iu, V_Iv, V_Iw, V_Vdc;
 
-	float Iu, Iv, Iw;
+	float Iu, Iv, Iw, Vdc;
 
 }CurrentSensor_TypeDef;
 
@@ -83,7 +81,7 @@ void CurrentSensor_Start(CurrentSensor_TypeDef *hCS);
  * UVWの電流値を更新するだけ
  * 座標変換とかはやらない
  */
-void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS, uint8_t SVM_sector);
+void CurrentSensor_Refresh(CurrentSensor_TypeDef *hCS);
 
 
 /*

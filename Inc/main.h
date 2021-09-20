@@ -67,7 +67,6 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
 
-extern void timeoutReset();
 
 
 /* USER CODE END EFP */

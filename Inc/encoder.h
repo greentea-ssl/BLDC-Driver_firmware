@@ -7,6 +7,8 @@
 #include "main.h"
 
 
+#define SPEED_CALC_BUF_SIZE		14
+
 
 typedef struct
 {
@@ -40,10 +42,16 @@ typedef struct
 
 	float theta_multiturn;
 
+	uint16_t raw_Angle;
+
 	float p_theta;
 
 	// Rotor Speed
 	float omega;
+
+	float prev_theta_buf[SPEED_CALC_BUF_SIZE];
+
+	int prev_theta_buf_count;
 
 
 	float firstLaunch;
@@ -74,7 +82,7 @@ extern Encoder_TypeDef mainEncoder;
 void Encoder_Init();
 
 
-void setZeroEncoder(uint8_t exe);
+uint16_t setZeroEncoder(uint8_t exe);
 
 
 void Encoder_Request(Encoder_TypeDef *hEncoder);

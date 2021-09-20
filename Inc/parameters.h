@@ -58,9 +58,9 @@
 #define MOTOR_Lq   (62E-6)
 #endif
 #ifdef _MOTOR_SUNNYSKY_V2806_KV400_
-#define MOTOR_R    (0.5)
-#define MOTOR_Ld   (1E-3)
-#define MOTOR_Lq   (1E-3)
+#define MOTOR_R    (0.35)
+#define MOTOR_Ld   (76.1E-6)
+#define MOTOR_Lq   (76.1E-6)
 #endif
 
 
@@ -83,8 +83,6 @@
 
 
 /******************* For PWM *******************/
-
-#define VDC			(16.6f)
 
 // PWM resolution
 #define PWM_RESOL	8000.0f

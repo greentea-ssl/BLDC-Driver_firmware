@@ -4,11 +4,22 @@
 
 #include "main.h"
 
-#include "ASR.h"
-#include "APR.h"
+#include "motorControl.h"
+#include "encoder.h"
 
 
 extern CAN_HandleTypeDef hcan1;
+
+
+
+
+extern Motor_TypeDef motor;
+
+extern Encoder_TypeDef mainEncoder;
+
+
+extern void timeoutReset();
+
 
 
 uint8_t motorChannel = 0;
@@ -33,9 +44,10 @@ void CAN_Init()
 	sFilterConfig.FilterBank = 0;
 	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
+	//sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
+	sFilterConfig.FilterIdHigh = 0x300 << 5;
 	sFilterConfig.FilterIdLow = 0x0000;
-	sFilterConfig.FilterMaskIdHigh = 0xfc00;
+	sFilterConfig.FilterMaskIdHigh = 0x7ff << 5;
 	sFilterConfig.FilterMaskIdLow = 0x0006;
 	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 	sFilterConfig.FilterActivation = ENABLE;
@@ -106,50 +118,86 @@ void HAL_CAN_TxMailbox2CompleteCallback (CAN_HandleTypeDef * hcan)
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 
-	union _rcdata{
-		struct{
-			float fval;
-		};
-		struct{
-			uint8_t byte[4];
-		};
-	}controlRef;
-
+	int16_t Iq_ref_int = 0;
 
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can1RxHeader, can1RxData);
 
 	can1RxFlg = 1;
 
-	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x01 && can1RxHeader.DLC == 0x4)
+	if(can1RxHeader.DLC != 8) return;
+
+
+	switch(motorChannel)
 	{
-		controlRef.byte[0] = can1RxData[0];
-		controlRef.byte[1] = can1RxData[1];
-		controlRef.byte[2] = can1RxData[2];
-		controlRef.byte[3] = can1RxData[3];
+	case 0:
+		Iq_ref_int = ((int16_t)can1RxData[1] << 8) | can1RxData[0]; break;
 
-		mainASR.omega_ref = controlRef.fval;
+	case 1:
+		Iq_ref_int = ((int16_t)can1RxData[3] << 8) | can1RxData[2]; break;
 
-		timeoutReset();
+	case 2:
+		Iq_ref_int = ((int16_t)can1RxData[5] << 8) | can1RxData[4]; break;
 
+	case 3:
+		Iq_ref_int = ((int16_t)can1RxData[7] << 8) | can1RxData[6]; break;
+
+	default:
+		return;
 	}
 
-
-	if(((can1RxHeader.StdId & 0x1c) >> 2) == 0x02 && can1RxHeader.DLC == 0x4)
-	{
-		controlRef.byte[0] = can1RxData[0];
-		controlRef.byte[1] = can1RxData[1];
-		controlRef.byte[2] = can1RxData[2];
-		controlRef.byte[3] = can1RxData[3];
-
-		mainAPR.theta_ref = controlRef.fval;
-
-		timeoutReset();
-	}
+	motor.Iq_ref_pu_2q13 = Iq_ref_int * 8 / motor.Init.I_base;
 
 
-	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_SET);
+	timeoutReset();
+
+	// send response
+	sendToMain();
 
 }
+
+
+void sendToMain()
+{
+
+	uint32_t can1TxMailbox;
+	CAN_TxHeaderTypeDef can1TxHeader;
+	uint8_t can1TxData[8];
+
+	int16_t Iq_int16, theta_uint16, omega_int16;
+
+	can1TxHeader.StdId = 0x400 + motorChannel;
+	can1TxHeader.ExtId = 0x00;
+	can1TxHeader.IDE = CAN_ID_STD;
+	can1TxHeader.RTR = CAN_RTR_DATA;
+	can1TxHeader.DLC = 8;
+
+	Iq_int16 = (int16_t)((int32_t)(motor.Iq_pu_2q13 * motor.Init.I_base) >> 3);
+	theta_uint16 = mainEncoder.raw_Angle;
+	omega_int16 = motor.omega_q5;
+
+	can1TxData[0] = 0;
+
+	can1TxData[1] = Iq_int16 & 0xff;
+	can1TxData[2] = (Iq_int16 >> 8) & 0xff;
+
+	can1TxData[3] = theta_uint16 & 0xff;
+	can1TxData[4] = (theta_uint16 >> 8) & 0xff;
+
+	can1TxData[5] = omega_int16 & 0xff;
+	can1TxData[6] = (omega_int16 >> 8) & 0xff;
+
+	can1TxData[7] = 0;
+
+
+	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_TX_MAILBOX_EMPTY);
+
+	HAL_CAN_AddTxMessage(&hcan1, &can1TxHeader, can1TxData, &can1TxMailbox);
+
+	return;
+}
+
+
+
 
 
 

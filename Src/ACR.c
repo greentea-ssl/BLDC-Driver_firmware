@@ -45,15 +45,15 @@ void ACR_Init()
 
 	//ACR_CalcGain(&mainACR, MOTOR_R, MOTOR_Lq, 2000);
 
-	mainACR.Init.Kp = 0.3f;
-	mainACR.Init.Ki = 150.0f;
+	mainACR.Init.Kp = 0.2f;
+	mainACR.Init.Ki = 100.0f;
 
 
 	mainACR.Init.Id_limit = 15.0f;
 	mainACR.Init.Iq_limit = 15.0f;
 
-	mainACR.Init.Id_error_integ_limit = 1.0f;
-	mainACR.Init.Iq_error_integ_limit = 1.0f;
+	mainACR.Init.Id_error_integ_limit = 100.0f;
+	mainACR.Init.Iq_error_integ_limit = 100.0f;
 
 	mainACR.Init.cycleTime = 100E-6;
 
@@ -61,6 +61,9 @@ void ACR_Init()
 
 	mainACR.Init.hCS = &mainCS;
 	mainACR.Init.htim = &htim8;
+
+	mainACR.Id_ref = 0.0;
+	mainACR.Iq_ref = 0.0;
 
 }
 
@@ -117,8 +120,8 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 	if(hACR->forced_commute_enable)
 	{
 
-		hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
-		hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
+		//hACR->forced_cos_theta_re = sin_table2[(int)((hACR->forced_theta_re * 0.3183f + 0.5f) * 5000.0f)];
+		//hACR->forced_sin_theta_re = sin_table2[(int)(hACR->forced_theta_re * 1591.54943f)];
 
 		CurrentSensor_getIdq(&mainCS, &hACR->Id, &hACR->Iq, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
 
@@ -189,8 +192,8 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 		hACR->p_Id_error = hACR->Id_error;
 		hACR->p_Iq_error = hACR->Iq_error;
 
-		hACR->Vd_ref = - hACR_Init->Kp * hACR->Id + hACR_Init->Ki * hACR->Id_error_integ;
-		hACR->Vq_ref = - hACR_Init->Kp * hACR->Iq + hACR_Init->Ki * hACR->Iq_error_integ;
+		hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ;
+		hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ;
 
 		//hACR->Vd_ref = hACR_Init->Kp * hACR->Id_error + hACR_Init->Ki * hACR->Id_error_integ + hACR_Init->hEncoder->omega * POLE_PAIRS * -MOTOR_Lq * hACR->Iq;
 		//hACR->Vq_ref = hACR_Init->Kp * hACR->Iq_error + hACR_Init->Ki * hACR->Iq_error_integ + hACR_Init->hEncoder->omega * POLE_PAIRS * (MOTOR_psi + MOTOR_Ld * hACR->Id);
@@ -198,11 +201,11 @@ inline void ACR_Refresh(ACR_TypeDef *hACR)
 
 		if(hACR->forced_commute_enable)
 		{
-			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hCS->Vdc, hACR->forced_cos_theta_re, hACR->forced_sin_theta_re);
 		}
 		else
 		{
-			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
+			setSVM_dq(&htim8, hACR->Vd_ref, hACR->Vq_ref, hACR_Init->hCS->Vdc, hACR_Init->hEncoder->cos_theta_re, hACR_Init->hEncoder->sin_theta_re);
 		}
 
 
