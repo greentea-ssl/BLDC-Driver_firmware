@@ -125,7 +125,7 @@ void UpdateSpeed(Motor_TypeDef *hMotor)
 	else if(delta_theta_int > 4096) delta_theta_int -= 8192;
 
 	// ( (delta_theta_int / 8192 * 2 * M_PI)[rad] * 10000[Hz] )[rad/s] * 32
-	hMotor->omega_q5 = (int16_t)((delta_theta_int * 62832) >> 13);
+	hMotor->omega_q5 = (int16_t)((delta_theta_int * 62832) >> 8);
 	//hMotor->omega_q5 = (int16_t)hMotor->p_theta_m_int;
 
 }
