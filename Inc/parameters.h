@@ -82,6 +82,8 @@
 #define SPEED_LPF_COEFF		0//(SPEED_LPF_FS/(SPEED_LPF_CUTOFF + SPEED_LPF_FS))
 
 
+#define SPEED_CALC_BUF_SIZE		(14)
+
 /******************* For PWM *******************/
 
 // PWM resolution
