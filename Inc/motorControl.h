@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+#include "parameters.h"
 
 #include "intMath.h"
 
@@ -32,6 +33,8 @@ typedef struct
 	int32_t Gain_Vad2pu_s14;
 
 	int32_t Gain_Ib_by_Vb_q10;
+
+	int32_t Gain_dOmegaInt_to_omegaQ5_q8;
 
 	float acr_omega;
 
@@ -81,7 +84,8 @@ typedef struct
 	uint16_t raw_theta_14bit;
 	int16_t theta_m_int, theta_re_int;
 
-	int16_t p_theta_m_int;
+	int16_t p_theta_int_buf[SPEED_CALC_BUF_SIZE];
+	int16_t p_theta_buf_count;
 	int16_t omega_q5;
 
 	// Forced commutation
