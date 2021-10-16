@@ -10,9 +10,6 @@
 
 extern CAN_HandleTypeDef hcan1;
 
-
-
-
 extern Motor_TypeDef motor;
 
 extern Encoder_TypeDef mainEncoder;

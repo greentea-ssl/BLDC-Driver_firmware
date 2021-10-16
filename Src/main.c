@@ -35,10 +35,7 @@
 #include "sin_t.h"
 #include "motorControl.h"
 
-//#include "debugDump.h"
 #include "dump_int.h"
-
-//#include "../waveSamplerLib/waveSampler.h"
 
 
 #include "intMath.h"
