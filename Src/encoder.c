@@ -72,7 +72,7 @@ uint16_t setZeroEncoder(uint8_t exe)
 
 	uint16_t *flash_data;
 
-	flash_data = (uint32_t*)Flash_load();
+	flash_data = (uint16_t*)Flash_load();
 
 	if(exe == 0)
 	{
@@ -120,7 +120,6 @@ uint16_t setZeroEncoder(uint8_t exe)
 inline void Encoder_Request(Encoder_TypeDef *hEncoder)
 {
 
-
 	// Reading Encoder for next sampling
 	hEncoder->spi2txBuf[0] = 0xff;
 	hEncoder->spi2txBuf[1] = 0xff;
@@ -129,7 +128,6 @@ inline void Encoder_Request(Encoder_TypeDef *hEncoder)
 
 	HAL_SPI_TransmitReceive_IT(hEncoder->Init.hspi, hEncoder->spi2txBuf, hEncoder->spi2rxBuf, 1);
 
-
 }
 
 
@@ -137,11 +135,7 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 {
 
 	static uint16_t rawData;
-	static uint16_t parity, i;
-	static float _theta;
-	static float _theta_re;
-	static float d_theta;
-	static float speed_calc_d_theta;
+	static uint16_t parity;
 
 	// Reading RX Data from SPI Encoder
 	HAL_GPIO_WritePin(hEncoder->Init.SPI_NSS_Port, hEncoder->Init.SPI_NSS_Pin, GPIO_PIN_SET);
@@ -165,79 +159,6 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 #endif
 
 	hEncoder->raw_Angle = rawData & 0x3FFF;
-
-#if 0
-
-	_theta = (float)hEncoder->raw_Angle / (float)ENCODER_RESOL * 2.0f * M_PI + hEncoder->Init.theta_offset;
-
-	if(_theta < 0.0f)			hEncoder->theta = _theta + 2 * M_PI;
-	else if(_theta >= 2 * M_PI)	hEncoder->theta = _theta - 2 * M_PI;
-	else						hEncoder->theta = _theta;
-
-
-	// 差分角度計算，初めのステップは速度ゼロとする
-	if(hEncoder->firstLaunch != 0)
-	{
-		d_theta = 0.0f;
-		hEncoder->firstLaunch = 0;
-	}
-	else
-	{
-		d_theta = hEncoder->theta - hEncoder->p_theta;
-	}
-	hEncoder->p_theta = hEncoder->theta;
-
-	// Unwrapping Process
-	if(d_theta < - M_PI)
-	{
-		d_theta += 2 * M_PI;
-		hEncoder->turnCount += 1;
-	}
-	else if(d_theta > M_PI)
-	{
-		d_theta -= 2 * M_PI;
-		hEncoder->turnCount += -1;
-	}
-
-	speed_calc_d_theta = hEncoder->theta - hEncoder->prev_theta_buf[hEncoder->prev_theta_buf_count];
-
-	if(speed_calc_d_theta < - M_PI)
-	{
-		speed_calc_d_theta += 2 * M_PI;
-	}
-	else if(speed_calc_d_theta > M_PI)
-	{
-		speed_calc_d_theta -= 2 * M_PI;
-	}
-
-	hEncoder->omega = speed_calc_d_theta / (hEncoder->Init.cycleTime * SPEED_CALC_BUF_SIZE);
-
-	hEncoder->prev_theta_buf[hEncoder->prev_theta_buf_count] = hEncoder->theta;
-	hEncoder->prev_theta_buf_count ++;
-	if(hEncoder->prev_theta_buf_count > SPEED_CALC_BUF_SIZE - 1)
-	{
-		hEncoder->prev_theta_buf_count = 0;
-	}
-
-#if 0
-	// 速度計算，LPF付き
-	hEncoder->omega = hEncoder->omega * SPEED_LPF_COEFF + d_theta / hEncoder->Init.cycleTime * (1.0f - SPEED_LPF_COEFF);
-#endif
-
-	// マルチターン角度更新
-	hEncoder->theta_multiturn = hEncoder->theta + 2.0f * M_PI * hEncoder->turnCount;
-
-	// 電気角取得
-	_theta_re = fmodf((float)hEncoder->raw_Angle / (float)ENCODER_RESOL * 2.0f * M_PI * POLE_PAIRS, 2.0f * M_PI) + hEncoder->Init.theta_re_offset;
-
-	if(_theta_re < 0.0f)			hEncoder->theta_re = _theta_re + 2 * M_PI;
-	else if(_theta_re >= 2 * M_PI)	hEncoder->theta_re = _theta_re - 2 * M_PI;
-	else							hEncoder->theta_re = _theta_re;
-
-	hEncoder->cos_theta_re = sin_table2[(int)((hEncoder->theta_re * 0.3183f + 0.5f) * 5000.0f)];
-	hEncoder->sin_theta_re = sin_table2[(int)(hEncoder->theta_re * 1591.54943f)];
-
-#endif
 
 	return 0;
 
