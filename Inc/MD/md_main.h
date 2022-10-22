@@ -52,7 +52,9 @@ void MD_Init(MD_Handler_t* h);
 
 void MD_Update_SyncPWM(MD_Handler_t* h);
 
+int MD_Update_Async(MD_Handler_t* h);
 
+void MD_End(MD_Handler_t* h);
 
 
 

@@ -38,6 +38,10 @@ extern UART_HandleTypeDef huart2;
 
 
 
+#define DEBUG_PRINT_ENABLE 1
+
+
+
 #define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
 
 
@@ -314,6 +318,122 @@ void MD_Update_SyncPWM(MD_Handler_t* h)
 }
 
 
+
+int MD_Update_Async(MD_Handler_t* h)
+{
+
+
+	HAL_Delay(10);
+
+	//printf("%d\r\n", mainEncoder.raw_Angle);
+	//printf("%10d, %10d\n", motor.theta_m_int, motor.theta_re_int);
+	//printf("%6d, %6d, %6d\n", motor.theta_re_int, motor.Va_pu_2q13, motor.Vb_pu_2q13);
+	//printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
+	//printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
+
+	//printf("0x%8x, 0x%8x\n", HAL_CAN_GetState(&hcan1), HAL_CAN_GetError(&hcan1));
+
+
+	// Reset CAN Error
+	if(HAL_CAN_GetState(&hcan1) == 0x05)
+	{
+		HAL_CAN_Init(&hcan1);
+		CAN_Init();
+		HAL_CAN_ResetError(&hcan1);
+	}
+
+	//printf("%d\r\n", motor.theta_re_int);
+
+	//printf("%10d, %10d, %10d\r\n", motor.AD_Iu, motor.AD_Iv, motor.AD_Iw);
+	//printf("%d\r\n", motor.Vdc_pu_2q13);
+	//printf("%d,%d,%d,%d,%d,%d,%d\r\n", carrier_counter, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13, motor.Iu_pu_2q13, motor.Iv_pu_2q13, motor.Iw_pu_2q13);
+	//printf("%10d, %10d\r\n", motor.Ia_pu_2q13, motor.Ib_pu_2q13);
+	//printf("%d,\t%10d,\t%10d\r\n", carrier_counter, motor.Id_pu_2q13, motor.Iq_pu_2q13);
+
+	//printf("%10d, %10d, %10d\r\n", motor.Vd_pu_2q13,motor.Vq_pu_2q13, motor.Vdc_pu_2q13);
+
+	//printf("%d, %d\r\n", integTest.integ, integTest.error);
+
+	//printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
+
+	//if(Dump_isFull()) printf("a");
+
+
+	return 0; /* 0: continue, 1: End*/
+}
+
+void MD_End(MD_Handler_t* h)
+{
+	md_sys.motor.Id_ref_pu_2q13 = 0;
+	md_sys.motor.Iq_ref_pu_2q13 = 0;
+
+
+	//mainACR.Id_ref = 0.0f;
+	//mainACR.Iq_ref = 0.0f;
+
+	HAL_Delay(10);
+
+	#if DEBUG_PRINT_ENABLE
+
+	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+
+	printf("Check register..\r\n");
+
+	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(drv8323.Reg.DriverControl.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+
+	printf("-----------------------\r\n");
+
+	#endif
+
+
+	// Gate Disable
+	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+
+	HAL_Delay(10);
+
+	stopPWM(&htim8);
+
+	HAL_Delay(10);
+
+
+	Dump_Print();
+
+	/*
+	printf("t, Id, Iq, Id_ref, Iq_ref, Vd_ref, Vq_ref, theta_re, omega\n");
+
+	for(count = 0; count < DUMP_STEPS; count++)
+	{
+
+		printf("%.4e, ", count * DUMP_CYCLETIME);
+
+		printf("%.4f, ", record[count].Id);
+		printf("%.4f, ", record[count].Iq);
+		printf("%.4f, ", record[count].Id_ref);
+		printf("%.4f, ", record[count].Iq_ref);
+		printf("%.4f, ", record[count].Vd_ref);
+		printf("%.4f, ", record[count].Vq_ref);
+		printf("%.4f, ", record[count].theta_re);
+		printf("%.4f, ", record[count].omega);
+
+		printf("\n");
+
+	}
+	*/
+
+	printf("Finished.\r\n");
+}
 
 
 

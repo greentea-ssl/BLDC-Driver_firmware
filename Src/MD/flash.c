@@ -10,7 +10,7 @@
 
 #include "flash.h"
 
-
+#include <string.h>
 
 
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
