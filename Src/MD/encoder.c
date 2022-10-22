@@ -6,22 +6,16 @@
 #include <string.h>
 
 #include "motorControl.h"
+#include "parameters.h"
+#include "math.h"
+#include "flash.h"
+#include "md_main.h"
+#include "sin_t.h"
 
 
 extern SPI_HandleTypeDef hspi2;
 
-
-extern Motor_TypeDef motor;
-
-
-#include "parameters.h"
-
-#include "math.h"
-#include "flash.h"
-#include "motorControl.h"
-
-#include "sin_t.h"
-
+extern MD_Handler_t md_sys;
 
 
 Encoder_TypeDef mainEncoder;
@@ -82,16 +76,16 @@ uint16_t setZeroEncoder(uint8_t exe)
 		return ret_theta_offset & SIN_TBL_MASK;
 	}
 
-	motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / motor.Init.I_base * 8192);
-	motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / motor.Init.I_base * 8192);
+	md_sys.motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / md_sys.motor.Init.I_base * 8192);
+	md_sys.motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / md_sys.motor.Init.I_base * 8192);
 
-	motor.Init.theta_int_offset = 0;
-	motor.theta_force_int = 0;
-	motor.RunMode = MOTOR_MODE_CC_FORCE;
+	md_sys.motor.Init.theta_int_offset = 0;
+	md_sys.motor.theta_force_int = 0;
+	md_sys.motor.RunMode = MOTOR_MODE_CC_FORCE;
 
 	HAL_Delay(1000);
 
-	ret_theta_offset = motor.theta_re_int & SIN_TBL_MASK;
+	ret_theta_offset = md_sys.motor.theta_re_int & SIN_TBL_MASK;
 
 	memcpy(flash_data, &ret_theta_offset , 2);
 
@@ -107,8 +101,8 @@ uint16_t setZeroEncoder(uint8_t exe)
 	printf("flash_data:%d\n", *flash_data);
 #endif
 
-	Motor_Reset(&motor);
-	motor.RunMode = MOTOR_MODE_CC_VECTOR;
+	Motor_Reset(&md_sys.motor);
+	md_sys.motor.RunMode = MOTOR_MODE_CC_VECTOR;
 
 	return ret_theta_offset;
 

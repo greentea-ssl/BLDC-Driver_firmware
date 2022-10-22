@@ -6,8 +6,7 @@
 
 #include "main.h"
 
-
-#define SPEED_CALC_BUF_SIZE		14
+#include "parameters.h"
 
 
 typedef struct

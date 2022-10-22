@@ -117,10 +117,6 @@ void UpdateSpeed(Motor_TypeDef *hMotor)
 
 	int32_t delta_theta_int;
 
-	if(delta_theta_int < -4096) delta_theta_int += 8192;
-	else if(delta_theta_int > 4096) delta_theta_int -= 8192;
-
-
 	delta_theta_int = hMotor->theta_m_int - hMotor->p_theta_int_buf[hMotor->p_theta_buf_count];
 
 
