@@ -6,6 +6,7 @@
 
 #include "motorControl.h"
 #include "pwm.h"
+#include "encoder.h"
 
 typedef enum {
 	Seq_Init = 0,
@@ -46,6 +47,8 @@ typedef struct
 	Motor_TypeDef motor;
 
 	PWM_Handler_t pwm;
+
+	Encoder_TypeDef encoder;
 
 	FlashStoredData_t* pFlashData;
 

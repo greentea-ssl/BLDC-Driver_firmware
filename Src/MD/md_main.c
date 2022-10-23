@@ -115,7 +115,8 @@ void MD_Init(MD_Handler_t* h)
 
 	CAN_Init();
 
-	Encoder_Init();
+
+	Encoder_Init(&h->encoder);
 
 
 	CurrentSensor_Init();
@@ -204,7 +205,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 
 #if 1
 
-	Encoder_Refresh(&mainEncoder);
+	Encoder_Refresh(&h->encoder);
 
 	CurrentSensor_Refresh(&mainCS);
 
@@ -216,7 +217,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		h->motor.AD_Iv = mainCS.AD_Iv[0];
 		h->motor.AD_Iw = mainCS.AD_Iw[0];
 		h->motor.AD_Vdc = mainCS.AD_Vdc[0];
-		h->motor.raw_theta_14bit = mainEncoder.raw_Angle;
+		h->motor.raw_theta_14bit = h->encoder.raw_Angle;
 
 		// Motor Controller Update
 		Motor_Update(&h->motor);
@@ -315,7 +316,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	}
 
 
-	Encoder_Request(&mainEncoder);
+	Encoder_Request(&h->encoder);
 
 
 #endif

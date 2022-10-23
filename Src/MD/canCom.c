@@ -166,7 +166,7 @@ void sendToMain()
 	can1TxHeader.DLC = 8;
 
 	Iq_int16 = (int16_t)((int32_t)(md_sys.motor.Iq_pu_2q13 * md_sys.motor.Init.I_base) >> 3);
-	theta_uint16 = mainEncoder.raw_Angle;
+	theta_uint16 = md_sys.encoder.raw_Angle;
 	omega_int16 = md_sys.motor.omega_q5;
 
 	can1TxData[0] = 0;

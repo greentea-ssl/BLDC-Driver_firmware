@@ -5,7 +5,6 @@
 
 
 #include "main.h"
-
 #include "parameters.h"
 
 
@@ -71,12 +70,7 @@ typedef struct
 }Encoder_TypeDef;
 
 
-
-extern Encoder_TypeDef mainEncoder;
-
-
-
-void Encoder_Init();
+void Encoder_Init(Encoder_TypeDef *hEncoder);
 
 void Encoder_Request(Encoder_TypeDef *hEncoder);
 

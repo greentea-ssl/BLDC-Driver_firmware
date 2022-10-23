@@ -2,56 +2,38 @@
 
 #include "encoder.h"
 
-
 #include <string.h>
 
-#include "motorControl.h"
 #include "parameters.h"
 #include "math.h"
-#include "flash.h"
-#include "md_main.h"
 #include "sin_t.h"
 
 
-extern SPI_HandleTypeDef hspi2;
-
-extern MD_Handler_t md_sys;
-
-
-Encoder_TypeDef mainEncoder;
-
-
-
-void Encoder_Init()
+void Encoder_Init(Encoder_TypeDef *hEncoder)
 {
 
 	int count;
 
-	mainEncoder.Init.hspi = &hspi2;
-	mainEncoder.Init.SPI_NSS_Port = SPI2_NSS_GPIO_Port;
-	mainEncoder.Init.SPI_NSS_Pin = SPI2_NSS_Pin;
+	hEncoder->Init.theta_offset = 0.0f;
+	hEncoder->Init.theta_re_offset = -3.0723f;
+	hEncoder->Init.cycleTime = 100E-6;
 
-	mainEncoder.Init.theta_offset = 0.0f;
-	mainEncoder.Init.theta_re_offset = -3.0723f;
-	mainEncoder.Init.cycleTime = 100E-6;
-
-	mainEncoder.theta = 0.0f;
-	mainEncoder.theta_re = 0.0f;
-	mainEncoder.cos_theta_re = 1.0f;
-	mainEncoder.sin_theta_re = 0.0f;
+	hEncoder->theta = 0.0f;
+	hEncoder->theta_re = 0.0f;
+	hEncoder->cos_theta_re = 1.0f;
+	hEncoder->sin_theta_re = 0.0f;
 
 	for(count = 0; count < SPEED_CALC_BUF_SIZE; count++)
 	{
-		mainEncoder.prev_theta_buf[count] = 0;
+		hEncoder->prev_theta_buf[count] = 0;
 	}
 
-	mainEncoder.prev_theta_buf_count = 0;
+	hEncoder->prev_theta_buf_count = 0;
 
-	mainEncoder.firstLaunch = 1;
+	hEncoder->firstLaunch = 1;
 
 	// SPI Interrupt Setting
-	__HAL_SPI_ENABLE_IT(mainEncoder.Init.hspi, SPI_IT_TXE | SPI_IT_RXNE);
-
+	__HAL_SPI_ENABLE_IT(hEncoder->Init.hspi, SPI_IT_TXE | SPI_IT_RXNE);
 
 }
 

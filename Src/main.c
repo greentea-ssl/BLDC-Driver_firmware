@@ -189,6 +189,9 @@ int main(void)
 
   // Set peripheral handler
   md_sys.pwm.htim = &htim8;
+  md_sys.encoder.Init.hspi = &hspi2;
+  md_sys.encoder.Init.SPI_NSS_Port = SPI2_NSS_GPIO_Port;
+  md_sys.encoder.Init.SPI_NSS_Pin = SPI2_NSS_Pin;
 
   MD_Init(&md_sys);
 
