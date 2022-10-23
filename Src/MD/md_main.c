@@ -44,7 +44,7 @@ extern UART_HandleTypeDef huart2;
 #define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
 
 
-void DRV_Setting();
+void DRV_Setting(MD_Handler_t* h);
 
 void MD_Calibration(MD_Handler_t* h);
 
@@ -75,7 +75,7 @@ void MD_Init(MD_Handler_t* h)
 
 	h->carrier_counter = 0;
 
-	DRV_Init();
+	DRV_Init(&h->drv8323);
 
 	// Motor Handler initialize
 	Motor_Init(&h->motor);
@@ -90,7 +90,7 @@ void MD_Init(MD_Handler_t* h)
 
 	//printf("Hello SPI Gate Driver\n");
 
-	DRV_Setting();
+	DRV_Setting(h);
 
 
 	/******** DEBUG ********/
@@ -412,23 +412,23 @@ void MD_End(MD_Handler_t* h)
 
 	#if DEBUG_PRINT_ENABLE
 
-	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
-	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
-	DRV_ReadData(&drv8323, ADDR_DriverControl);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
-	DRV_ReadData(&drv8323, ADDR_OCP_Control);
-	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&h->drv8323, ADDR_DriverControl);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&h->drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
 
 	printf("Check register..\r\n");
 
-	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-	PRINT_HEX(drv8323.Reg.DriverControl.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-	PRINT_HEX(drv8323.Reg.OCP_Control.word);
-	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(h->drv8323.Reg.DriverControl.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(h->drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(h->drv8323.Reg.CSA_Control.word);
 
 	printf("-----------------------\r\n");
 
@@ -550,7 +550,7 @@ void timeoutReset(MD_Handler_t* h)
 
 
 
-void DRV_Setting()
+void DRV_Setting(MD_Handler_t* h)
 {
 
 
@@ -567,23 +567,23 @@ void DRV_Setting()
 	/*************************************************/
 	#if DEBUG_PRINT_ENABLE
 
-	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
-	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
-	DRV_ReadData(&drv8323, ADDR_DriverControl);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
-	DRV_ReadData(&drv8323, ADDR_OCP_Control);
-	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&h->drv8323, ADDR_DriverControl);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&h->drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
 
 	printf("Initial register data.\r\n");
 
-	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-	PRINT_HEX(drv8323.Reg.DriverControl.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-	PRINT_HEX(drv8323.Reg.OCP_Control.word);
-	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(h->drv8323.Reg.DriverControl.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(h->drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(h->drv8323.Reg.CSA_Control.word);
 
 	printf("-----------------------\r\n");
 
@@ -607,21 +607,21 @@ void DRV_Setting()
 	DRV_WriteData(&drv8323, ADDR_GateDrive_LS);
 	#endif
 
-	DRV_ReadData(&drv8323, ADDR_OCP_Control);
-	drv8323.Reg.OCP_Control.TRETRY = 0b0; // VDS_OCP and SEN_OCP retry time is 4 ms
-	drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
-	drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
-	drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
+	DRV_ReadData(&h->drv8323, ADDR_OCP_Control);
+	h->drv8323.Reg.OCP_Control.TRETRY = 0b0; // VDS_OCP and SEN_OCP retry time is 4 ms
+	h->drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
+	h->drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
+	h->drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
 	//drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
-	drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 1.88V -> ID = 75A
-	DRV_WriteData(&drv8323, ADDR_OCP_Control);
+	h->drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 1.88V -> ID = 75A
+	DRV_WriteData(&h->drv8323, ADDR_OCP_Control);
 
-	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
 	//drv8323.Reg.CSA_Control.DIS_SEN = 0b1;	// Sense overcurrent fault is disabled
 	//drv8323.Reg.CSA_Control.SEN_LVL = 0b00;	// Vsense = 0.25V -> 25A
-	drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 1.0V -> 100A
-	drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
-	DRV_WriteData(&drv8323, ADDR_CSA_Control);
+	h->drv8323.Reg.CSA_Control.SEN_LVL = 0b11;	// Vsense = 1.0V -> 100A
+	h->drv8323.Reg.CSA_Control.CSA_GAIN = 0b01;	// Amplifier Gain = 10V/V
+	DRV_WriteData(&h->drv8323, ADDR_CSA_Control);
 
 	#if 0
 	DRV_ReadData(&drv8323, ADDR_DriverControl);
@@ -636,42 +636,42 @@ void DRV_Setting()
 
 	printf("Write data.\r\n");
 
-	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-	PRINT_HEX(drv8323.Reg.DriverControl.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-	PRINT_HEX(drv8323.Reg.OCP_Control.word);
-	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(h->drv8323.Reg.DriverControl.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(h->drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(h->drv8323.Reg.CSA_Control.word);
 
 	printf("-----------------------\r\n");
 
 	#endif
 
-	DRV_ReadData(&drv8323, ADDR_DriverControl);
-	drv8323.Reg.DriverControl.CLR_FLT = 1;	// Clear flt bit
-	DRV_WriteData(&drv8323, ADDR_DriverControl);
+	DRV_ReadData(&h->drv8323, ADDR_DriverControl);
+	h->drv8323.Reg.DriverControl.CLR_FLT = 1;	// Clear flt bit
+	DRV_WriteData(&h->drv8323, ADDR_DriverControl);
 
 
 	#if DEBUG_PRINT_ENABLE
 
-	DRV_ReadData(&drv8323, ADDR_FaultStatus1);
-	DRV_ReadData(&drv8323, ADDR_FaultStatus2);
-	DRV_ReadData(&drv8323, ADDR_DriverControl);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_HS);
-	DRV_ReadData(&drv8323, ADDR_GateDrive_LS);
-	DRV_ReadData(&drv8323, ADDR_OCP_Control);
-	DRV_ReadData(&drv8323, ADDR_CSA_Control);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus1);
+	DRV_ReadData(&h->drv8323, ADDR_FaultStatus2);
+	DRV_ReadData(&h->drv8323, ADDR_DriverControl);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_HS);
+	DRV_ReadData(&h->drv8323, ADDR_GateDrive_LS);
+	DRV_ReadData(&h->drv8323, ADDR_OCP_Control);
+	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
 
 	printf("Check register..\r\n");
 
-	PRINT_HEX(drv8323.Reg.FaultStatus1.word);
-	PRINT_HEX(drv8323.Reg.FaultStatus2.word);
-	PRINT_HEX(drv8323.Reg.DriverControl.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_HS.word);
-	PRINT_HEX(drv8323.Reg.GateDrive_LS.word);
-	PRINT_HEX(drv8323.Reg.OCP_Control.word);
-	PRINT_HEX(drv8323.Reg.CSA_Control.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus1.word);
+	PRINT_HEX(h->drv8323.Reg.FaultStatus2.word);
+	PRINT_HEX(h->drv8323.Reg.DriverControl.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_HS.word);
+	PRINT_HEX(h->drv8323.Reg.GateDrive_LS.word);
+	PRINT_HEX(h->drv8323.Reg.OCP_Control.word);
+	PRINT_HEX(h->drv8323.Reg.CSA_Control.word);
 
 	printf("-----------------------\r\n");
 

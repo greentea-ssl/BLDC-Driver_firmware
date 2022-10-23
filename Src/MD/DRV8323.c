@@ -2,22 +2,9 @@
 #include "DRV8323.h"
 
 
-extern SPI_HandleTypeDef hspi3;
 
-
-
-DRV_TypeDef drv8323;
-
-
-
-void DRV_Init()
+void DRV_Init(DRV_TypeDef *hdrv)
 {
-
-	drv8323.NSS_GPIOx = SPI3_NSS_GPIO_Port;
-	drv8323.NSS_GPIO_Pin = SPI3_NSS_Pin;
-	drv8323.hspi = &hspi3;
-
-
 
 }
 

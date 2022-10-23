@@ -148,11 +148,7 @@ typedef enum{
 
 
 
-extern DRV_TypeDef drv8323;
-
-
-
-void DRV_Init();
+void DRV_Init(DRV_TypeDef *hdrv);
 
 
 HAL_StatusTypeDef DRV_WriteData(DRV_TypeDef *hdrv, regAddr_t addr);

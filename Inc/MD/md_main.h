@@ -7,7 +7,8 @@
 #include "motorControl.h"
 #include "pwm.h"
 #include "encoder.h"
-#include "CurrentSensor.h"
+#include "currentSensor.h"
+#include "drv8323.h"
 
 
 typedef enum {
@@ -53,6 +54,8 @@ typedef struct
 	Encoder_TypeDef encoder;
 
 	CurrentSensor_TypeDef currentSense;
+
+	DRV_TypeDef drv8323;
 
 	FlashStoredData_t* pFlashData;
 

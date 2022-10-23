@@ -195,6 +195,9 @@ int main(void)
   md_sys.currentSense.Init.hadc[0] = &hadc1;
   md_sys.currentSense.Init.hadc[1] = &hadc2;
   md_sys.currentSense.Init.hadc[2] = &hadc3;
+  md_sys.drv8323.NSS_GPIOx = SPI3_NSS_GPIO_Port;
+  md_sys.drv8323.NSS_GPIO_Pin = SPI3_NSS_Pin;
+  md_sys.drv8323.hspi = &hspi3;
   MD_Init(&md_sys);
 
 
