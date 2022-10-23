@@ -2,6 +2,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
 
@@ -21,10 +22,7 @@
 #include "intMath.h"
 
 
-extern MD_Handler_t md_sys;
-
-
-#define DEBUG_PRINT_ENABLE 0
+#define DEBUG_PRINT_ENABLE 1
 
 #define DUMP_DEBUG_ENABLE 0
 
@@ -60,8 +58,6 @@ void MD_Init(MD_Handler_t* h)
 	h->led_blink.LED_blink_T_wait_us = 1000000;
 	h->led_blink.LED_blink_Ts_us = 100;
 
-
-	h->sequence = Seq_Init;
 
 	h->carrier_counter = 0;
 
@@ -108,45 +104,40 @@ void MD_Init(MD_Handler_t* h)
 
 	PWM_Start(&h->pwm);
 
-
-	// Offset calibration
-	#if 0
-	float sum_uvw[3] = {0, 0, 0};
-	for(count = 0; count < 1000; count++)
-	{
-	  HAL_Delay(1);
-	  sum_uvw[0] += mainCS.V_Iu;
-	  sum_uvw[1] += mainCS.V_Iv;
-	  sum_uvw[2] += mainCS.V_Iw;
-	}
-	mainCS.Init.V_Iu_offset += sum_uvw[0] / 1000.0;
-	mainCS.Init.V_Iv_offset += sum_uvw[1] / 1000.0;
-	mainCS.Init.V_Iw_offset += sum_uvw[2] / 1000.0;
-	#endif
-
-	//HAL_Delay(1000);
-
-
-	h->sequence = Seq_PosAdj;
-
-
-	//h->motor.Init.theta_int_offset = setZeroEncoder((p_ch != ch)? 1: 0);
 	h->pFlashData = (FlashStoredData_t*)Flash_load();
 	if(ch != p_ch)
 	{
 		MD_Calibration(h);
 	}
+	const int cs_offset_err_limit = 512;
+	const int theta_offset_limit = 8192;
+	if(h->pFlashData->theta_offset >= theta_offset_limit ||
+			abs(h->pFlashData->AD_Iu_offset_err) >= cs_offset_err_limit ||
+			abs(h->pFlashData->AD_Iv_offset_err) >= cs_offset_err_limit ||
+			abs(h->pFlashData->AD_Iw_offset_err) >= cs_offset_err_limit)
+	{
+		h->pFlashData->AD_Iu_offset_err = 0;
+		h->pFlashData->AD_Iv_offset_err = 0;
+		h->pFlashData->AD_Iw_offset_err = 0;
+		h->pFlashData->theta_offset = 0;
+	}
+	h->motor.Init.AD_Iu_offset = h->pFlashData->AD_Iu_offset_err + 2048;
+	h->motor.Init.AD_Iv_offset = h->pFlashData->AD_Iv_offset_err + 2048;
+	h->motor.Init.AD_Iw_offset = h->pFlashData->AD_Iw_offset_err + 2048;
 	h->motor.Init.theta_int_offset = h->pFlashData->theta_offset;
-
 #if DEBUG_PRINT_ENABLE
-	printf("THETA_INT_OFFSET = %d\n", h->motor.Init.theta_int_offset);
+	printf("AD_Iu_offset = %d\n", h->motor.Init.AD_Iu_offset);
+	printf("AD_Iv_offset = %d\n", h->motor.Init.AD_Iv_offset);
+	printf("AD_Iw_offset = %d\n", h->motor.Init.AD_Iw_offset);
+	printf("theta_int_offset = %d\n", h->motor.Init.theta_int_offset);
 #endif
 
 	h->timeoutEnable = 1;
 	h->timeoutCount = 0;
 
-
-	h->sequence = Seq_Running; /* Start */
+	/* Start */
+	Motor_Reset(&h->motor);
+	h->motor.RunMode = MOTOR_MODE_CC_VECTOR;
 
 }
 
@@ -155,16 +146,33 @@ void MD_Init(MD_Handler_t* h)
 void MD_Calibration(MD_Handler_t* h)
 {
 
-	md_sys.motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / md_sys.motor.Init.I_base * 8192);
-	md_sys.motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / md_sys.motor.Init.I_base * 8192);
+	/***** Current sense offset calibration *****/
+	const int cal_sample_num = 1000;
+	uint32_t sum_offset_err[3] = {0, 0, 0};
+	for(int i = 0; i < cal_sample_num; i++)
+	{
+		HAL_Delay(1);
+		sum_offset_err[0] += h->motor.AD_Iu - 2048;
+		sum_offset_err[1] += h->motor.AD_Iv - 2048;
+		sum_offset_err[2] += h->motor.AD_Iw - 2048;
+	}
+	h->pFlashData->AD_Iu_offset_err = sum_offset_err[0] / cal_sample_num;
+	h->pFlashData->AD_Iv_offset_err = sum_offset_err[1] / cal_sample_num;
+	h->pFlashData->AD_Iw_offset_err = sum_offset_err[2] / cal_sample_num;
 
-	md_sys.motor.Init.theta_int_offset = 0;
-	md_sys.motor.theta_force_int = 0;
-	md_sys.motor.RunMode = MOTOR_MODE_CC_FORCE;
+
+	/***** Encoder offset calibration *****/
+
+	h->motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / h->motor.Init.I_base * 8192);
+	h->motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / h->motor.Init.I_base * 8192);
+
+	h->motor.Init.theta_int_offset = 0;
+	h->motor.theta_force_int = 0;
+	h->motor.RunMode = MOTOR_MODE_CC_FORCE;
 
 	HAL_Delay(1000);
 
-	h->pFlashData->theta_offset = md_sys.motor.theta_re_int & SIN_TBL_MASK;
+	h->pFlashData->theta_offset = h->motor.theta_re_int & SIN_TBL_MASK;
 
 	if (!Flash_store())
 	{
@@ -173,8 +181,7 @@ void MD_Calibration(MD_Handler_t* h)
 #endif
 	}
 
-	Motor_Reset(&md_sys.motor);
-	md_sys.motor.RunMode = MOTOR_MODE_CC_VECTOR;
+	h->motor.RunMode = MOTOR_MODE_CV_FORCE;
 
 }
 
@@ -188,7 +195,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	CurrentSensor_Refresh(&h->currentSense);
 
 #if DUMP_DEBUG_ENABLE
-	if(h->sequence == Seq_Running)
+	if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR)
 	{
 		// 5A: 2731, 10A: 5461, 15A: 8192
 		if(h->carrier_counter % 400 < 100)
@@ -215,26 +222,23 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	}
 #endif
 
-	if(h->sequence == Seq_Running || h->sequence == Seq_PosAdj)
-	{
-		h->motor.AD_Iu = h->currentSense.AD_Iu[0];
-		h->motor.AD_Iv = h->currentSense.AD_Iv[0];
-		h->motor.AD_Iw = h->currentSense.AD_Iw[0];
-		h->motor.AD_Vdc = h->currentSense.AD_Vdc[0];
-		h->motor.raw_theta_14bit = h->encoder.raw_Angle;
+	h->motor.AD_Iu = h->currentSense.AD_Iu[0];
+	h->motor.AD_Iv = h->currentSense.AD_Iv[0];
+	h->motor.AD_Iw = h->currentSense.AD_Iw[0];
+	h->motor.AD_Vdc = h->currentSense.AD_Vdc[0];
+	h->motor.raw_theta_14bit = h->encoder.raw_Angle;
 
-		// Motor Controller Update
-		Motor_Update(&h->motor);
+	// Motor Controller Update
+	Motor_Update(&h->motor);
 
 #if 1
-		h->pwm.htim->Instance->CCR1 = h->motor.duty_u;
-		h->pwm.htim->Instance->CCR2 = h->motor.duty_v;
-		h->pwm.htim->Instance->CCR3 = h->motor.duty_w;
+	h->pwm.htim->Instance->CCR1 = h->motor.duty_u;
+	h->pwm.htim->Instance->CCR2 = h->motor.duty_v;
+	h->pwm.htim->Instance->CCR3 = h->motor.duty_w;
 #endif
 
-	}
 
-	if(h->sequence == Seq_Running && !Dump_isFull())
+	if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR && !Dump_isFull())
 	{
 		Dump_Update(h);
 	}
@@ -273,11 +277,11 @@ int MD_Update_Async(MD_Handler_t* h)
 	HAL_Delay(10);
 
 	// Reset CAN Error
-	if(HAL_CAN_GetState(md_sys.hcan) == 0x05)
+	if(HAL_CAN_GetState(h->hcan) == 0x05)
 	{
-		HAL_CAN_Init(md_sys.hcan);
+		HAL_CAN_Init(h->hcan);
 		CAN_Init();
-		HAL_CAN_ResetError(md_sys.hcan);
+		HAL_CAN_ResetError(h->hcan);
 	}
 
 #if DUMP_DEBUG_ENABLE
@@ -293,8 +297,8 @@ int MD_Update_Async(MD_Handler_t* h)
 
 void MD_End(MD_Handler_t* h)
 {
-	md_sys.motor.Id_ref_pu_2q13 = 0;
-	md_sys.motor.Iq_ref_pu_2q13 = 0;
+	h->motor.Id_ref_pu_2q13 = 0;
+	h->motor.Iq_ref_pu_2q13 = 0;
 
 	// Gate Disable
 	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);

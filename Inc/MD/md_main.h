@@ -10,14 +10,6 @@
 #include "currentSensor.h"
 #include "drv8323.h"
 
-
-typedef enum {
-	Seq_Init = 0,
-	Seq_PosAdj = 1,
-	Seq_Running = 2,
-}Sequense_TypeDef;
-
-
 typedef struct
 {
 	uint32_t LED_blink_count;
@@ -34,16 +26,14 @@ typedef struct
 typedef struct
 {
 	uint16_t theta_offset;
-	uint16_t AD_Iu_offset;
-	uint16_t AD_Iv_offset;
-	uint16_t AD_Iw_offset;
+	int16_t AD_Iu_offset_err;
+	int16_t AD_Iv_offset_err;
+	int16_t AD_Iw_offset_err;
 }FlashStoredData_t;
 
 
 typedef struct
 {
-
-	Sequense_TypeDef sequence;
 
 	uint8_t motor_channel;
 

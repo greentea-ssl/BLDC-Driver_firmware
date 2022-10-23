@@ -61,18 +61,23 @@ inline void sqLimit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x
 void CurrentControl(Motor_TypeDef *hMotor)
 {
 
-	// Current limit
-	if(hMotor->Id_ref_pu_2q13 < -hMotor->Init.Id_limit_pu_2q13)
-		hMotor->Id_ref_pu_2q13 = -hMotor->Init.Id_limit_pu_2q13;
-	else if(hMotor->Id_ref_pu_2q13 > hMotor->Init.Id_limit_pu_2q13)
-		hMotor->Id_ref_pu_2q13 = hMotor->Init.Id_limit_pu_2q13;
+	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR)
+	{
+		// Current limit
+		if(hMotor->Id_ref_pu_2q13 < -hMotor->Init.Id_limit_pu_2q13)
+			hMotor->Id_ref_pu_2q13 = -hMotor->Init.Id_limit_pu_2q13;
+		else if(hMotor->Id_ref_pu_2q13 > hMotor->Init.Id_limit_pu_2q13)
+			hMotor->Id_ref_pu_2q13 = hMotor->Init.Id_limit_pu_2q13;
 
-	if(hMotor->Iq_ref_pu_2q13 < -hMotor->Init.Iq_limit_pu_2q13)
-		hMotor->Iq_ref_pu_2q13 = -hMotor->Init.Iq_limit_pu_2q13;
-	else if(hMotor->Iq_ref_pu_2q13 > hMotor->Init.Iq_limit_pu_2q13)
-		hMotor->Iq_ref_pu_2q13 = hMotor->Init.Iq_limit_pu_2q13;
+		if(hMotor->Iq_ref_pu_2q13 < -hMotor->Init.Iq_limit_pu_2q13)
+			hMotor->Iq_ref_pu_2q13 = -hMotor->Init.Iq_limit_pu_2q13;
+		else if(hMotor->Iq_ref_pu_2q13 > hMotor->Init.Iq_limit_pu_2q13)
+			hMotor->Iq_ref_pu_2q13 = hMotor->Init.Iq_limit_pu_2q13;
 
-	if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
+		hMotor->Id_error = hMotor->Id_ref_pu_2q13 - hMotor->Id_pu_2q13;
+		hMotor->Iq_error = hMotor->Iq_ref_pu_2q13 - hMotor->Iq_pu_2q13;
+	}
+	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
 	{
 		// Current limit
 		if(hMotor->Igam_ref_pu_2q13 < -hMotor->Init.Id_limit_pu_2q13)
@@ -84,16 +89,7 @@ void CurrentControl(Motor_TypeDef *hMotor)
 			hMotor->Idel_ref_pu_2q13 = -hMotor->Init.Iq_limit_pu_2q13;
 		else if(hMotor->Idel_ref_pu_2q13 > hMotor->Init.Iq_limit_pu_2q13)
 			hMotor->Idel_ref_pu_2q13 = hMotor->Init.Iq_limit_pu_2q13;
-	}
 
-	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR)
-	{
-		hMotor->Id_error = hMotor->Id_ref_pu_2q13 - hMotor->Id_pu_2q13;
-		hMotor->Iq_error = hMotor->Iq_ref_pu_2q13 - hMotor->Iq_pu_2q13;
-	}
-	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
-	{
-		// When forced commutation enable
 		hMotor->Id_error = hMotor->Igam_ref_pu_2q13 - hMotor->Id_pu_2q13;
 		hMotor->Iq_error = hMotor->Idel_ref_pu_2q13 - hMotor->Iq_pu_2q13;
 	}
@@ -147,14 +143,12 @@ void UpdateSpeed(Motor_TypeDef *hMotor)
 }
 
 
-/**********/
-
 
 void Motor_Init(Motor_TypeDef *hMotor)
 {
 
 
-	hMotor->RunMode = MOTOR_MODE_CC_VECTOR;
+	hMotor->RunMode = MOTOR_MODE_CV_FORCE;
 
 
 	/***** Motor parameters *****/
@@ -215,6 +209,9 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Iq_error = 0;
 	hMotor->Id_ref_pu_2q13 = 0;
 	hMotor->Iq_ref_pu_2q13 = 0;
+
+	hMotor->Vd_pu_2q13 = 0;
+	hMotor->Vq_pu_2q13 = 0;
 
 	hMotor->theta_force_int = 0;
 	hMotor->Igam_ref_pu_2q13 = 0;
@@ -291,8 +288,10 @@ void Motor_Update(Motor_TypeDef *hMotor)
 		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_force_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 	}
 
-	CurrentControl(hMotor);
-
+	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR || hMotor->RunMode == MOTOR_MODE_CC_FORCE)
+	{
+		CurrentControl(hMotor);
+	}
 
 	int16_t Vd_bef_lim = hMotor->Vd_pu_2q13;
 	int16_t Vq_bef_lim = hMotor->Vq_pu_2q13;
@@ -311,6 +310,11 @@ void Motor_Update(Motor_TypeDef *hMotor)
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 	}
 	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
+	{
+		// When forced commutation enable
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+	}
+	else if(hMotor->RunMode == MOTOR_MODE_CV_FORCE)
 	{
 		// When forced commutation enable
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
