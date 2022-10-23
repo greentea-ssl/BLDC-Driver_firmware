@@ -1,21 +1,14 @@
 
 
-#include "CurrentSensor.h"
-
+#include "currentSensor.h"
 #include "string.h"
 #include "stdlib.h"
 
 
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
-extern ADC_HandleTypeDef hadc3;
 
 const float Vref_AD = 3.3f;
 
 const int32_t AD_Range = 4096;
-
-
-CurrentSensor_TypeDef mainCS;
 
 
 int32_t median3(int32_t *buf);
@@ -23,28 +16,27 @@ int32_t median3(int32_t *buf);
 int32_t median5(int32_t *buf);
 
 
-void CurrentSensor_Init()
+void CurrentSensor_Init(CurrentSensor_TypeDef *hCS)
 {
 
-	memset(&mainCS, 0x00, sizeof(mainCS));
+	hCS->Init.CS_Type = CS_Type_3shunt;
+	hCS->Init.Iu_Gain = -10.0f;//9.0f;	// 1 / ( R * OPAmpGain) [A / V]
+	hCS->Init.Iv_Gain = -10.0f;//5.3f;	// 1 / ( R * OPAmpGain) [A / V]
+	hCS->Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	hCS->Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
+	hCS->Init.Vdc_Gain = 12.5385f; //[V / V]
 
-	mainCS.Init.CS_Type = CS_Type_3shunt;
-	mainCS.Init.Iu_Gain = -10.0f;//9.0f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Iv_Gain = -10.0f;//5.3f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Iw_Gain = -10.0f;//5.5f;	// 1 / ( R * OPAmpGain) [A / V]
-	mainCS.Init.Vdc_Gain = 12.5385f; //[V / V]
+	hCS->Init.V_Iu_offset = 1.65;
+	hCS->Init.V_Iv_offset = 1.65;
+	hCS->Init.V_Iw_offset = 1.65;
+	hCS->Init.V_Vdc_offset = 0.0;
 
-	mainCS.Init.V_Iu_offset = 1.65;
-	mainCS.Init.V_Iv_offset = 1.65;
-	mainCS.Init.V_Iw_offset = 1.65;
-	mainCS.Init.V_Vdc_offset = 0.0;
+	hCS->pos_MEDF_I = 0;
 
-	mainCS.Init.hadc[0] = &hadc1;
-	mainCS.Init.hadc[1] = &hadc2;
-	mainCS.Init.hadc[2] = &hadc3;
-
-	mainCS.pos_MEDF_I = 0;
+	hCS->Iu = 0;
+	hCS->Iv = 0;
+	hCS->Iw = 0;
+	hCS->Vdc = 0;
 
 }
 

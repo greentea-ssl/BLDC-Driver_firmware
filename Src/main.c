@@ -29,7 +29,7 @@
 #include "pwm.h"
 #include "parameters.h"
 #include "encoder.h"
-#include "CurrentSensor.h"
+#include "currentSensor.h"
 #include "drv8323.h"
 #include "canCom.h"
 #include "sin_t.h"
@@ -192,7 +192,9 @@ int main(void)
   md_sys.encoder.Init.hspi = &hspi2;
   md_sys.encoder.Init.SPI_NSS_Port = SPI2_NSS_GPIO_Port;
   md_sys.encoder.Init.SPI_NSS_Pin = SPI2_NSS_Pin;
-
+  md_sys.currentSense.Init.hadc[0] = &hadc1;
+  md_sys.currentSense.Init.hadc[1] = &hadc2;
+  md_sys.currentSense.Init.hadc[2] = &hadc3;
   MD_Init(&md_sys);
 
 
@@ -768,7 +770,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 //void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef * hadc)
 {
 
-	if(hadc->Instance != mainCS.Init.hadc[0]->Instance) return;
+	if(hadc->Instance != md_sys.currentSense.Init.hadc[0]->Instance) return;
 
 	MD_Update_SyncPWM(&md_sys);
 

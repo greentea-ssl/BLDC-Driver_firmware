@@ -7,6 +7,8 @@
 #include "motorControl.h"
 #include "pwm.h"
 #include "encoder.h"
+#include "CurrentSensor.h"
+
 
 typedef enum {
 	Seq_Init = 0,
@@ -50,6 +52,8 @@ typedef struct
 
 	Encoder_TypeDef encoder;
 
+	CurrentSensor_TypeDef currentSense;
+
 	FlashStoredData_t* pFlashData;
 
 	uint8_t timeoutEnable;
@@ -71,6 +75,8 @@ void MD_Update_SyncPWM(MD_Handler_t* h);
 int MD_Update_Async(MD_Handler_t* h);
 
 void MD_End(MD_Handler_t* h);
+
+void timeoutReset(MD_Handler_t* h);
 
 
 

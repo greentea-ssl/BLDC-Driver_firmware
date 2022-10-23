@@ -12,7 +12,7 @@
 #include "pwm.h"
 #include "parameters.h"
 #include "encoder.h"
-#include "CurrentSensor.h"
+#include "currentSensor.h"
 #include "drv8323.h"
 #include "canCom.h"
 #include "sin_t.h"
@@ -119,10 +119,9 @@ void MD_Init(MD_Handler_t* h)
 	Encoder_Init(&h->encoder);
 
 
-	CurrentSensor_Init();
+	CurrentSensor_Init(&h->currentSense);
 
-
-	CurrentSensor_Start(&mainCS);
+	CurrentSensor_Start(&h->currentSense);
 
 	PWM_Init(&h->pwm);
 
@@ -207,16 +206,16 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 
 	Encoder_Refresh(&h->encoder);
 
-	CurrentSensor_Refresh(&mainCS);
+	CurrentSensor_Refresh(&h->currentSense);
 
 
 	if(h->sequence == Seq_Running || h->sequence == Seq_PosAdj)
 	{
 
-		h->motor.AD_Iu = mainCS.AD_Iu[0];
-		h->motor.AD_Iv = mainCS.AD_Iv[0];
-		h->motor.AD_Iw = mainCS.AD_Iw[0];
-		h->motor.AD_Vdc = mainCS.AD_Vdc[0];
+		h->motor.AD_Iu = h->currentSense.AD_Iu[0];
+		h->motor.AD_Iv = h->currentSense.AD_Iv[0];
+		h->motor.AD_Iw = h->currentSense.AD_Iw[0];
+		h->motor.AD_Vdc = h->currentSense.AD_Vdc[0];
 		h->motor.raw_theta_14bit = h->encoder.raw_Angle;
 
 		// Motor Controller Update

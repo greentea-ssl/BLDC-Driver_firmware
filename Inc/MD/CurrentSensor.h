@@ -67,12 +67,7 @@ typedef struct
 
 
 
-extern CurrentSensor_TypeDef mainCS;
-
-
-
-
-void CurrentSensor_Init();
+void CurrentSensor_Init(CurrentSensor_TypeDef *hCS);
 
 void CurrentSensor_Start(CurrentSensor_TypeDef *hCS);
 
