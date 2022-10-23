@@ -52,7 +52,8 @@ HAL_StatusTypeDef Flash_clear()
 // work_ramの先頭アドレスを返す
 uint8_t* Flash_load()
 {
-    memcpy(work_ram, &_backup_flash_start, BACKUP_FLASH_SECTOR_SIZE);
+	void* p_backup_flash = &_backup_flash_start;
+    memcpy(work_ram, p_backup_flash, BACKUP_FLASH_SECTOR_SIZE);
     return work_ram;
 }
 

@@ -8,6 +8,7 @@
 #include "md_main.h"
 
 #include "main.h"
+#include "flash.h"
 #include "pwm.h"
 #include "parameters.h"
 #include "encoder.h"
@@ -58,6 +59,16 @@ void MD_Init(MD_Handler_t* h)
 {
 
 	uint8_t p_ch, ch;
+
+
+	h->led_blink.LED_blink_count = 0;
+	h->led_blink.LED_blink_state = 0;
+	h->led_blink.LED_blink_t_us = 0;
+	h->led_blink.LED_blink_times = 0;
+	h->led_blink.LED_blink_Ton_us = 50000;
+	h->led_blink.LED_blink_Toff_us = 200000;
+	h->led_blink.LED_blink_T_wait_us = 1000000;
+	h->led_blink.LED_blink_Ts_us = 100;
 
 
 	h->sequence = Seq_Init;
@@ -136,28 +147,54 @@ void MD_Init(MD_Handler_t* h)
 
 	h->sequence = Seq_PosAdj;
 
-	h->motor.Init.theta_int_offset = setZeroEncoder((p_ch != ch)? 1: 0);
+
+	//h->motor.Init.theta_int_offset = setZeroEncoder((p_ch != ch)? 1: 0);
+	h->pFlashData = (FlashStoredData_t*)Flash_load();
+	if(ch != p_ch)
+	{
+		MD_Calibration(h);
+	}
+	h->motor.Init.theta_int_offset = h->pFlashData->theta_offset;
 
 	printf("THETA_INT_OFFSET = %d\n", h->motor.Init.theta_int_offset);
-
 
 
 	h->timeoutEnable = 1;
 	h->timeoutCount = 0;
 
-	h->led_blink.LED_blink_count = 0;
-	h->led_blink.LED_blink_state = 0;
-	h->led_blink.LED_blink_t_us = 0;
-	h->led_blink.LED_blink_times = 0;
-	h->led_blink.LED_blink_Ton_us = 50000;
-	h->led_blink.LED_blink_Toff_us = 200000;
-	h->led_blink.LED_blink_T_wait_us = 1000000;
-	h->led_blink.LED_blink_Ts_us = 100;
-
 
 	h->sequence = Seq_Running; /* Start */
 
 }
+
+
+
+void MD_Calibration(MD_Handler_t* h)
+{
+
+	md_sys.motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / md_sys.motor.Init.I_base * 8192);
+	md_sys.motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / md_sys.motor.Init.I_base * 8192);
+
+	md_sys.motor.Init.theta_int_offset = 0;
+	md_sys.motor.theta_force_int = 0;
+	md_sys.motor.RunMode = MOTOR_MODE_CC_FORCE;
+
+	HAL_Delay(1000);
+
+	h->pFlashData->theta_offset = md_sys.motor.theta_re_int & SIN_TBL_MASK;
+
+	if (!Flash_store())
+	{
+#if DEBUG_PRINT_ENABLE
+		printf("Failed to write flash\n");
+#endif
+	}
+
+	Motor_Reset(&md_sys.motor);
+	md_sys.motor.RunMode = MOTOR_MODE_CC_VECTOR;
+
+}
+
 
 
 void MD_Update_SyncPWM(MD_Handler_t* h)
@@ -437,16 +474,6 @@ void MD_End(MD_Handler_t* h)
 
 
 
-/*
-volatile uint32_t LED_blink_count = 0;
-volatile uint32_t LED_blink_state = 0;
-volatile uint32_t LED_blink_t_us = 0;
-volatile uint32_t LED_blink_times = 1;
-volatile uint32_t LED_blink_Ton_us = 100000;
-volatile uint32_t LED_blink_Toff_us = 100000;
-volatile uint32_t LED_blink_T_wait_us = 1000000;
-volatile uint32_t LED_blink_Ts_us = 100;
- */
 inline void LED_blink(LED_Blink_t* h)
 {
 

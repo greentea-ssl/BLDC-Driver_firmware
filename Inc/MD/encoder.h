@@ -64,8 +64,6 @@ typedef struct
 	float cos_theta_re;
 	float sin_theta_re;
 
-	uint8_t forced_commute_enable;
-
 	// Sensing Data
 	uint8_t spi2txBuf[2];
 	uint8_t spi2rxBuf[2];
@@ -79,10 +77,6 @@ extern Encoder_TypeDef mainEncoder;
 
 
 void Encoder_Init();
-
-
-uint16_t setZeroEncoder(uint8_t exe);
-
 
 void Encoder_Request(Encoder_TypeDef *hEncoder);
 

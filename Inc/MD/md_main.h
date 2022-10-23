@@ -26,6 +26,14 @@ typedef struct
 }LED_Blink_t;
 
 
+typedef struct
+{
+	uint16_t theta_offset;
+	uint16_t AD_Iu_offset;
+	uint16_t AD_Iv_offset;
+	uint16_t AD_Iw_offset;
+}FlashStoredData_t;
+
 
 typedef struct
 {
@@ -35,6 +43,8 @@ typedef struct
 	uint32_t carrier_counter;
 
 	Motor_TypeDef motor;
+
+	FlashStoredData_t* pFlashData;
 
 	uint8_t timeoutEnable;
 	uint32_t timeoutCount;

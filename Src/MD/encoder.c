@@ -37,7 +37,6 @@ void Encoder_Init()
 
 	mainEncoder.theta = 0.0f;
 	mainEncoder.theta_re = 0.0f;
-	mainEncoder.forced_commute_enable = 0;
 	mainEncoder.cos_theta_re = 1.0f;
 	mainEncoder.sin_theta_re = 0.0f;
 
@@ -55,60 +54,6 @@ void Encoder_Init()
 
 
 }
-
-
-#if 1
-
-uint16_t setZeroEncoder(uint8_t exe)
-{
-
-	uint16_t ret_theta_offset = 0;
-
-	uint16_t *flash_data;
-
-	flash_data = (uint16_t*)Flash_load();
-
-	if(exe == 0)
-	{
-
-		memcpy(&ret_theta_offset, flash_data, 2);
-
-		return ret_theta_offset & SIN_TBL_MASK;
-	}
-
-	md_sys.motor.Igam_ref_pu_2q13 = (uint16_t)(5.0 / md_sys.motor.Init.I_base * 8192);
-	md_sys.motor.Idel_ref_pu_2q13 = (uint16_t)(0.0 / md_sys.motor.Init.I_base * 8192);
-
-	md_sys.motor.Init.theta_int_offset = 0;
-	md_sys.motor.theta_force_int = 0;
-	md_sys.motor.RunMode = MOTOR_MODE_CC_FORCE;
-
-	HAL_Delay(1000);
-
-	ret_theta_offset = md_sys.motor.theta_re_int & SIN_TBL_MASK;
-
-	memcpy(flash_data, &ret_theta_offset , 2);
-
-	if (!Flash_store())
-	{
-#if DEBUG_PRINT_ENABLE
-		printf("Failed to write flash\n");
-#endif
-	}
-
-
-#if DEBUG_PRINT_ENABLE
-	printf("flash_data:%d\n", *flash_data);
-#endif
-
-	Motor_Reset(&md_sys.motor);
-	md_sys.motor.RunMode = MOTOR_MODE_CC_VECTOR;
-
-	return ret_theta_offset;
-
-}
-
-#endif
 
 
 inline void Encoder_Request(Encoder_TypeDef *hEncoder)
