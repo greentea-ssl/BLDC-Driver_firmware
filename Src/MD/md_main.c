@@ -23,15 +23,7 @@
 
 extern MD_Handler_t md_sys;
 
-
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
-extern ADC_HandleTypeDef hadc3;
-
 extern CAN_HandleTypeDef hcan1;
-
-extern SPI_HandleTypeDef hspi2;
-extern SPI_HandleTypeDef hspi3;
 
 extern UART_HandleTypeDef huart2;
 
@@ -47,6 +39,8 @@ extern UART_HandleTypeDef huart2;
 void DRV_Setting(MD_Handler_t* h);
 
 void MD_Calibration(MD_Handler_t* h);
+
+uint8_t getChannel();
 
 inline void LED_blink(LED_Blink_t* h);
 
@@ -111,6 +105,7 @@ void MD_Init(MD_Handler_t* h)
 
 	ch = getChannel();
 
+	h->motor_channel = ch;
 	h->led_blink.LED_blink_times = ch;
 
 	CAN_Init();
@@ -471,6 +466,21 @@ void MD_End(MD_Handler_t* h)
 
 	printf("Finished.\r\n");
 }
+
+
+
+uint8_t getChannel()
+{
+	uint8_t ch = 0;
+
+	ch |= !HAL_GPIO_ReadPin(CH_b0_GPIO_Port, CH_b0_Pin) << 0;
+	ch |= !HAL_GPIO_ReadPin(CH_b1_GPIO_Port, CH_b1_Pin) << 1;
+	ch |= !HAL_GPIO_ReadPin(CH_b2_GPIO_Port, CH_b2_Pin) << 2;
+
+	return ch;
+}
+
+
 
 
 

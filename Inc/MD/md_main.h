@@ -45,6 +45,8 @@ typedef struct
 
 	Sequense_TypeDef sequence;
 
+	uint8_t motor_channel;
+
 	uint32_t carrier_counter;
 
 	Motor_TypeDef motor;
@@ -56,6 +58,8 @@ typedef struct
 	CurrentSensor_TypeDef currentSense;
 
 	DRV_TypeDef drv8323;
+
+	CAN_HandleTypeDef *hcan;
 
 	FlashStoredData_t* pFlashData;
 

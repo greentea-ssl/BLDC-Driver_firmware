@@ -198,6 +198,7 @@ int main(void)
   md_sys.drv8323.NSS_GPIOx = SPI3_NSS_GPIO_Port;
   md_sys.drv8323.NSS_GPIO_Pin = SPI3_NSS_Pin;
   md_sys.drv8323.hspi = &hspi3;
+  md_sys.hcan = &hcan1;
   MD_Init(&md_sys);
 
 
