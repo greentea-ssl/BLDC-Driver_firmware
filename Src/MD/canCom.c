@@ -16,10 +16,6 @@ extern CAN_HandleTypeDef hcan1;
 extern Encoder_TypeDef mainEncoder;
 
 
-extern void timeoutReset();
-
-
-
 uint8_t motorChannel = 0;
 
 
@@ -146,7 +142,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	md_sys.motor.Iq_ref_pu_2q13 = Iq_ref_int * 8 / md_sys.motor.Init.I_base;
 
 
-	timeoutReset();
+	timeoutReset(&md_sys);
 
 	// send response
 	sendToMain();

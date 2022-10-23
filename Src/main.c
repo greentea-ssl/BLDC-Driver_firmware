@@ -201,14 +201,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  MD_Update_Async(&md_sys);
+	MD_Update_Async(&md_sys);
 
 
 
 	if(rxFlag)
 	{
-	  printf("%d\r\n", md_sys.motor.theta_re_int);
-	  rxFlag = 0;
+		printf("%d\r\n", md_sys.motor.theta_re_int);
+		rxFlag = 0;
 	}
 
 
