@@ -185,7 +185,7 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	/***** ACR Setting *****/
 
-	hMotor->Init.acr_omega = 6283;
+	hMotor->Init.acr_omega = 2000;
 
 	float acr_Kp = hMotor->Init.acr_omega * hMotor->motorParam.Lq;
 	float acr_Ki = hMotor->Init.acr_omega * hMotor->motorParam.R;
