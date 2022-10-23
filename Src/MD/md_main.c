@@ -345,8 +345,6 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 			h->timeoutCount = 0;
 			h->timeoutState = 1;
 
-			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 		}
 	}
 
@@ -356,7 +354,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 
 
 
-	//LED_blink(&h->led_blink);
+	LED_blink(&h->led_blink);
 }
 
 
