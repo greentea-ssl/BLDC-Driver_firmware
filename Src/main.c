@@ -187,6 +187,8 @@ int main(void)
 
   HAL_UART_Receive_IT(&huart2, &rxChar, 1);
 
+  // Set peripheral handler
+  md_sys.pwm.htim = &htim8;
 
   MD_Init(&md_sys);
 

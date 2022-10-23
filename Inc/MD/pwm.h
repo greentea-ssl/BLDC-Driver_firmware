@@ -6,30 +6,25 @@
 #include "main.h"
 
 
-
-extern volatile float Vd_ref;
-extern volatile float Vq_ref;
-
-
-extern volatile int sector_SVM;
-
-
-extern volatile float amp_u;
-extern volatile float amp_v;
-extern volatile float amp_w;
-
-
-void PWM_Init();
+typedef struct
+{
+	TIM_HandleTypeDef *htim;
+	float Vd_ref;
+	float Vq_ref;
+	int sector_SVM;
+	float amp_u;
+	float amp_v;
+	float amp_w;
+}PWM_Handler_t;
 
 
-void startPWM(TIM_HandleTypeDef *htim);
+void PWM_Init(PWM_Handler_t* h);
 
-void stopPWM(TIM_HandleTypeDef *htim);
+void startPWM(PWM_Handler_t* h);
 
+void stopPWM(PWM_Handler_t* h);
 
-void setSVM(float ampl, float phase);
-
-void setSVM_dq(TIM_HandleTypeDef *htim, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re);
+void setSVM_dq(PWM_Handler_t* h, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re);
 
 
 

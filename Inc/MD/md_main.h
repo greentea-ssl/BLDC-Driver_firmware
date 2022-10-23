@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "motorControl.h"
+#include "pwm.h"
 
 typedef enum {
 	Seq_Init = 0,
@@ -43,6 +44,8 @@ typedef struct
 	uint32_t carrier_counter;
 
 	Motor_TypeDef motor;
+
+	PWM_Handler_t pwm;
 
 	FlashStoredData_t* pFlashData;
 

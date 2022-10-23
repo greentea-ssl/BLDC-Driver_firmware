@@ -33,8 +33,6 @@ extern CAN_HandleTypeDef hcan1;
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi3;
 
-extern TIM_HandleTypeDef htim8;
-
 extern UART_HandleTypeDef huart2;
 
 
@@ -125,8 +123,7 @@ void MD_Init(MD_Handler_t* h)
 
 	CurrentSensor_Start(&mainCS);
 
-	PWM_Init();
-
+	PWM_Init(&h->pwm);
 
 
 	// Offset calibration
@@ -225,9 +222,9 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		Motor_Update(&h->motor);
 
 #if 1
-		htim8.Instance->CCR1 = h->motor.duty_u;
-		htim8.Instance->CCR2 = h->motor.duty_v;
-		htim8.Instance->CCR3 = h->motor.duty_w;
+		h->pwm.htim->Instance->CCR1 = h->motor.duty_u;
+		h->pwm.htim->Instance->CCR2 = h->motor.duty_v;
+		h->pwm.htim->Instance->CCR3 = h->motor.duty_w;
 #endif
 
 		h->carrier_counter++;
@@ -443,7 +440,7 @@ void MD_End(MD_Handler_t* h)
 
 	HAL_Delay(10);
 
-	stopPWM(&htim8);
+	stopPWM(&h->pwm);
 
 	HAL_Delay(10);
 
