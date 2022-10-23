@@ -20,9 +20,9 @@ typedef struct
 
 void PWM_Init(PWM_Handler_t* h);
 
-void startPWM(PWM_Handler_t* h);
+void PWM_Start(PWM_Handler_t* h);
 
-void stopPWM(PWM_Handler_t* h);
+void PWM_Stop(PWM_Handler_t* h);
 
 void setSVM_dq(PWM_Handler_t* h, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re);
 

@@ -212,8 +212,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	MD_Update_Async(&md_sys);
-
+	if(MD_Update_Async(&md_sys) != 0) break;
 
 
 	if(rxFlag)
@@ -225,7 +224,7 @@ int main(void)
 
   }
 
-
+  MD_End(&md_sys);
 
 
   while(1);

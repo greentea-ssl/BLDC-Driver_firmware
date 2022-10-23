@@ -23,14 +23,10 @@
 
 extern MD_Handler_t md_sys;
 
-extern CAN_HandleTypeDef hcan1;
 
-extern UART_HandleTypeDef huart2;
+#define DEBUG_PRINT_ENABLE 0
 
-
-
-#define DEBUG_PRINT_ENABLE 1
-
+#define DUMP_DEBUG_ENABLE 0
 
 
 #define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
@@ -82,20 +78,12 @@ void MD_Init(MD_Handler_t* h)
 
 #endif
 
-	//printf("Hello SPI Gate Driver\n");
 
 	DRV_Setting(h);
 
-
-	/******** DEBUG ********/
-	HAL_GPIO_WritePin(DB1_GPIO_Port, DB1_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(DB2_GPIO_Port, DB2_Pin, GPIO_PIN_RESET);
-
-
 	p_ch = getChannel();
 
-	int count;
-	for(count = 0; count < 6; count++)
+	for(int count = 0; count < 6; count++)
 	{
 	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 	  HAL_Delay(100);
@@ -110,15 +98,15 @@ void MD_Init(MD_Handler_t* h)
 
 	CAN_Init();
 
-
 	Encoder_Init(&h->encoder);
-
 
 	CurrentSensor_Init(&h->currentSense);
 
 	CurrentSensor_Start(&h->currentSense);
 
 	PWM_Init(&h->pwm);
+
+	PWM_Start(&h->pwm);
 
 
 	// Offset calibration
@@ -150,8 +138,9 @@ void MD_Init(MD_Handler_t* h)
 	}
 	h->motor.Init.theta_int_offset = h->pFlashData->theta_offset;
 
+#if DEBUG_PRINT_ENABLE
 	printf("THETA_INT_OFFSET = %d\n", h->motor.Init.theta_int_offset);
-
+#endif
 
 	h->timeoutEnable = 1;
 	h->timeoutCount = 0;
@@ -194,19 +183,40 @@ void MD_Calibration(MD_Handler_t* h)
 inline void MD_Update_SyncPWM(MD_Handler_t* h)
 {
 
-	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-
-
-#if 1
-
 	Encoder_Refresh(&h->encoder);
 
 	CurrentSensor_Refresh(&h->currentSense);
 
+#if DUMP_DEBUG_ENABLE
+	if(h->sequence == Seq_Running)
+	{
+		// 5A: 2731, 10A: 5461, 15A: 8192
+		if(h->carrier_counter % 400 < 100)
+		{
+			h->motor.Id_ref_pu_2q13 = 0;
+			h->motor.Iq_ref_pu_2q13 = 0;
+		}
+		else if(h->carrier_counter % 400 < 200)
+		{
+			h->motor.Id_ref_pu_2q13 = 0;
+			h->motor.Iq_ref_pu_2q13 = 2731;
+		}
+		else if(h->carrier_counter % 400 < 300)
+		{
+			h->motor.Id_ref_pu_2q13 = 0;
+			h->motor.Iq_ref_pu_2q13 = 5461;
+		}
+		else
+		{
+			h->motor.Id_ref_pu_2q13 = 0;
+			h->motor.Iq_ref_pu_2q13 = 8192;
+		}
+		h->carrier_counter++;
+	}
+#endif
 
 	if(h->sequence == Seq_Running || h->sequence == Seq_PosAdj)
 	{
-
 		h->motor.AD_Iu = h->currentSense.AD_Iu[0];
 		h->motor.AD_Iv = h->currentSense.AD_Iv[0];
 		h->motor.AD_Iw = h->currentSense.AD_Iw[0];
@@ -222,102 +232,19 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		h->pwm.htim->Instance->CCR3 = h->motor.duty_w;
 #endif
 
-		h->carrier_counter++;
-
 	}
-
 
 	if(h->sequence == Seq_Running && !Dump_isFull())
 	{
-
-
-/*
-		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
-		dump_record[dump_counter][1] = motor.Iq_ref_pu_2q13;
-		dump_record[dump_counter][2] = motor.Id_pu_2q13;
-		dump_record[dump_counter][3] = motor.Iq_pu_2q13;
-*/
-
-#if 0
-		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
-		dump_record[dump_counter][1] = motor.Id_pu_2q13;
-		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
-		dump_record[dump_counter][3] = motor.Id_error;
-		dump_record[dump_counter][4] = motor.Id_error_integ.integ;
-		dump_record[dump_counter][5] = motor.Vdc_pu_2q13;
-#endif
-
-
-#if 0
-		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
-		dump_record[dump_counter][1] = motor.Id_pu_2q13;
-		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
-		dump_record[dump_counter][3] = motor.Vd_pu_2q13;
-		dump_record[dump_counter][4] = motor.Vq_pu_2q13;
-		dump_record[dump_counter][5] = motor.Vu_pu_2q13;
-		dump_record[dump_counter][6] = motor.Vv_pu_2q13;
-		dump_record[dump_counter][7] = motor.Vw_pu_2q13;
-#endif
-
-#if 0
-		dump_record[dump_counter][0] = htim8.Instance->CCR1;
-		dump_record[dump_counter][1] = htim8.Instance->CCR2;
-		dump_record[dump_counter][2] = htim8.Instance->CCR3;
-		dump_record[dump_counter][3] = motor.Iu_pu_2q13;
-		dump_record[dump_counter][4] = motor.Iv_pu_2q13;
-		dump_record[dump_counter][5] = motor.Iw_pu_2q13;
-#endif
-
-#if 0
-		dump_record[dump_counter][0] = htim8.Instance->CCR1;
-		dump_record[dump_counter][1] = htim8.Instance->CCR2;
-		dump_record[dump_counter][2] = htim8.Instance->CCR3;
-		dump_record[dump_counter][3] = motor.AD_Iu;
-		dump_record[dump_counter][4] = motor.AD_Iv;
-		dump_record[dump_counter][5] = motor.AD_Iw;
-		dump_record[dump_counter][6] = motor.AD_Vdc;
-#endif
-
-
-#if 0
-		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
-		dump_record[dump_counter][1] = motor.Id_pu_2q13;
-		dump_record[dump_counter][2] = motor.Iq_pu_2q13;
-		dump_record[dump_counter][3] = motor.Vd_pu_2q13;
-		dump_record[dump_counter][4] = motor.Vq_pu_2q13;
-		dump_record[dump_counter][5] = motor.Iu_pu_2q13;
-		dump_record[dump_counter][6] = motor.Iv_pu_2q13;
-		dump_record[dump_counter][7] = motor.Iw_pu_2q13;
-#endif
-
-#if 0
-		dump_record[dump_counter][0] = motor.Id_ref_pu_2q13;
-		dump_record[dump_counter][1] = motor.Id_pu_2q13;
-		dump_record[dump_counter][2] = motor.Vd_pu_2q13;
-		dump_record[dump_counter][3] = motor.Id_error;
-		dump_record[dump_counter][4] = motor.Id_error_integ.integ;
-		dump_record[dump_counter][5] = motor.Iu_pu_2q13;
-		dump_record[dump_counter][6] = motor.Iv_pu_2q13;
-		dump_record[dump_counter][7] = motor.Iw_pu_2q13;
-#endif
-
-
-		if(dump_counter < DUMP_LENGTH)
-		{
-			dump_counter++;
-		}
-
+		Dump_Update(h);
 	}
 
 
 	Encoder_Request(&h->encoder);
 
 
-#endif
-
 
 #if 1
-
 	if(h->timeoutEnable == 1)
 	{
 		// timeout control
@@ -327,24 +254,13 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		}
 		else
 		{
-			//stopPWM(&htim8);
-			// Gate Disable
-			//HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
-
 			h->motor.Id_ref_pu_2q13 = 0;
 			h->motor.Iq_ref_pu_2q13 = 0;
-
 			h->timeoutCount = 0;
 			h->timeoutState = 1;
-
 		}
 	}
-
 #endif
-
-	//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-
 
 	LED_blink(&h->led_blink);
 }
@@ -354,117 +270,43 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 int MD_Update_Async(MD_Handler_t* h)
 {
 
-
 	HAL_Delay(10);
 
-	//printf("%d\r\n", mainEncoder.raw_Angle);
-	//printf("%10d, %10d\n", motor.theta_m_int, motor.theta_re_int);
-	//printf("%6d, %6d, %6d\n", motor.theta_re_int, motor.Va_pu_2q13, motor.Vb_pu_2q13);
-	//printf("QVuvw: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13);
-	//printf("QAmp: %6d, %6d, %6d, %6d\n", motor.theta_re_int, motor.duty_u, motor.duty_v, motor.duty_w);
-
-	//printf("0x%8x, 0x%8x\n", HAL_CAN_GetState(&hcan1), HAL_CAN_GetError(&hcan1));
-
-
 	// Reset CAN Error
-	if(HAL_CAN_GetState(&hcan1) == 0x05)
+	if(HAL_CAN_GetState(md_sys.hcan) == 0x05)
 	{
-		HAL_CAN_Init(&hcan1);
+		HAL_CAN_Init(md_sys.hcan);
 		CAN_Init();
-		HAL_CAN_ResetError(&hcan1);
+		HAL_CAN_ResetError(md_sys.hcan);
 	}
 
-	//printf("%d\r\n", motor.theta_re_int);
-
-	//printf("%10d, %10d, %10d\r\n", motor.AD_Iu, motor.AD_Iv, motor.AD_Iw);
-	//printf("%d\r\n", motor.Vdc_pu_2q13);
-	//printf("%d,%d,%d,%d,%d,%d,%d\r\n", carrier_counter, motor.Vu_pu_2q13, motor.Vv_pu_2q13, motor.Vw_pu_2q13, motor.Iu_pu_2q13, motor.Iv_pu_2q13, motor.Iw_pu_2q13);
-	//printf("%10d, %10d\r\n", motor.Ia_pu_2q13, motor.Ib_pu_2q13);
-	//printf("%d,\t%10d,\t%10d\r\n", carrier_counter, motor.Id_pu_2q13, motor.Iq_pu_2q13);
-
-	//printf("%10d, %10d, %10d\r\n", motor.Vd_pu_2q13,motor.Vq_pu_2q13, motor.Vdc_pu_2q13);
-
-	//printf("%d, %d\r\n", integTest.integ, integTest.error);
-
-	//printf("%d,%d,%d,%d\r\n", motor.duty_u, motor.duty_v, motor.duty_w, motor.Vdc_pu_2q13);
-
-	//if(Dump_isFull()) printf("a");
-
+#if DUMP_DEBUG_ENABLE
+	if(Dump_isFull())
+	{
+		return 1;
+	}
+#endif
 
 	return 0; /* 0: continue, 1: End*/
 }
+
 
 void MD_End(MD_Handler_t* h)
 {
 	md_sys.motor.Id_ref_pu_2q13 = 0;
 	md_sys.motor.Iq_ref_pu_2q13 = 0;
 
-
-	//mainACR.Id_ref = 0.0f;
-	//mainACR.Iq_ref = 0.0f;
-
-	HAL_Delay(10);
-
-	#if DEBUG_PRINT_ENABLE
-
-	DRV_ReadData(&h->drv8323, ADDR_FaultStatus1);
-	DRV_ReadData(&h->drv8323, ADDR_FaultStatus2);
-	DRV_ReadData(&h->drv8323, ADDR_DriverControl);
-	DRV_ReadData(&h->drv8323, ADDR_GateDrive_HS);
-	DRV_ReadData(&h->drv8323, ADDR_GateDrive_LS);
-	DRV_ReadData(&h->drv8323, ADDR_OCP_Control);
-	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
-
-	printf("Check register..\r\n");
-
-	PRINT_HEX(h->drv8323.Reg.FaultStatus1.word);
-	PRINT_HEX(h->drv8323.Reg.FaultStatus2.word);
-	PRINT_HEX(h->drv8323.Reg.DriverControl.word);
-	PRINT_HEX(h->drv8323.Reg.GateDrive_HS.word);
-	PRINT_HEX(h->drv8323.Reg.GateDrive_LS.word);
-	PRINT_HEX(h->drv8323.Reg.OCP_Control.word);
-	PRINT_HEX(h->drv8323.Reg.CSA_Control.word);
-
-	printf("-----------------------\r\n");
-
-	#endif
-
-
 	// Gate Disable
 	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
 
-	HAL_Delay(10);
-
-	stopPWM(&h->pwm);
-
-	HAL_Delay(10);
-
+	PWM_Stop(&h->pwm);
 
 	Dump_Print();
 
-	/*
-	printf("t, Id, Iq, Id_ref, Iq_ref, Vd_ref, Vq_ref, theta_re, omega\n");
-
-	for(count = 0; count < DUMP_STEPS; count++)
-	{
-
-		printf("%.4e, ", count * DUMP_CYCLETIME);
-
-		printf("%.4f, ", record[count].Id);
-		printf("%.4f, ", record[count].Iq);
-		printf("%.4f, ", record[count].Id_ref);
-		printf("%.4f, ", record[count].Iq_ref);
-		printf("%.4f, ", record[count].Vd_ref);
-		printf("%.4f, ", record[count].Vq_ref);
-		printf("%.4f, ", record[count].theta_re);
-		printf("%.4f, ", record[count].omega);
-
-		printf("\n");
-
-	}
-	*/
-
+#if DEBUG_PRINT_ENABLE
 	printf("Finished.\r\n");
+#endif
+
 }
 
 
@@ -479,8 +321,6 @@ uint8_t getChannel()
 
 	return ch;
 }
-
-
 
 
 

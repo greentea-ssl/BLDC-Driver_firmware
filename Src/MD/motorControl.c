@@ -191,9 +191,9 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	/***** ACR Setting *****/
 
-	hMotor->Init.acr_omega = 2000.0f;
+	hMotor->Init.acr_omega = 6283;
 
-	float acr_Kp = hMotor->Init.acr_omega * hMotor->motorParam.Ld;
+	float acr_Kp = hMotor->Init.acr_omega * hMotor->motorParam.Lq;
 	float acr_Ki = hMotor->Init.acr_omega * hMotor->motorParam.R;
 
 	hMotor->Init.acr_Kp_q14 = acr_Kp * 16384;
@@ -290,15 +290,6 @@ void Motor_Update(Motor_TypeDef *hMotor)
 		// ab => gam-del
 		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_force_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 	}
-
-
-	//hMotor->Va_pu_2q13 = 0;
-	//hMotor->Vb_pu_2q13 = 0;
-	//hMotor->Vu_pu_2q13 = 4096;
-	//hMotor->Vv_pu_2q13 = -2048;
-	//hMotor->Vw_pu_2q13 = -2048;
-	//hMotor->Vd_pu_2q13 = 8192;
-	//hMotor->Vq_pu_2q13 = 8192;
 
 	CurrentControl(hMotor);
 

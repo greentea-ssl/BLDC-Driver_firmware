@@ -53,7 +53,7 @@
 #define MOTOR_Lq   (42.5E-6)
 #endif
 #ifdef _MOTOR_SUNNYSKY_V4006_KV320_
-#define MOTOR_R    (0.27)
+#define MOTOR_R    (0.14)
 #define MOTOR_Ld   (49E-6)
 #define MOTOR_Lq   (62E-6)
 #endif

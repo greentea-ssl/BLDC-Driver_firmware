@@ -35,12 +35,10 @@ void PWM_Init(PWM_Handler_t* h)
 	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_3, 4000);
 	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_4, h->htim->Init.Period - 1);
 
-	startPWM(h);
-
 }
 
 
-inline void startPWM(PWM_Handler_t* h)
+inline void PWM_Start(PWM_Handler_t* h)
 {
 
 	// 3phase PWM Starting
@@ -60,7 +58,7 @@ inline void startPWM(PWM_Handler_t* h)
 
 
 
-inline void stopPWM(PWM_Handler_t* h)
+inline void PWM_Stop(PWM_Handler_t* h)
 {
 
 	// Gate Disable
