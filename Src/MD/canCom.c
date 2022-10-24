@@ -108,7 +108,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		return;
 	}
 
-	md_sys.motor.Iq_ref_pu_2q13 = Iq_ref_int * 8 / md_sys.motor.Init.I_base;
+	md_sys.motor.Iq_ref_pu_2q13 = (int32_t)Iq_ref_int * 8 / md_sys.motor.Init.I_base;
 
 
 	timeoutReset(&md_sys);

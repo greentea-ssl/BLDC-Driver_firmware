@@ -160,7 +160,7 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	/***** Data convention setting *****/
 
-	hMotor->Init.I_base = 15.0;
+	hMotor->Init.I_base = CURRENT_RATING;
 	hMotor->Init.V_base = 24.0;
 
 	hMotor->Init.AD_Iu_offset = 2084;

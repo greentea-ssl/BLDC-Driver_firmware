@@ -39,12 +39,12 @@
 #endif
 
 // Electromotive force constant [V/(mech.rad/s)]
-#define 	KE	(60.0f / (KV * 2 * M_PI))
+#define 	MOTOR_KE	(60.0f / (KV * 2 * M_PI))
 
 // Torque Constant [N*m/A]
-#define 	KT	KE
+#define 	MOTOR_KT	MOTOR_KE
 
-#define MOTOR_psi	(KE / POLE_PAIRS)
+#define MOTOR_psi	(MOTOR_KE / POLE_PAIRS)
 
 // Motor parameters
 #ifdef _MOTOR_QUANUM_MT4108_KV370_
@@ -63,32 +63,21 @@
 #define MOTOR_Lq   (76.1E-6)
 #endif
 
-
+// Current Limit
+#ifdef _MOTOR_QUANUM_MT4108_KV370_
+#define CURRENT_RATING	(15.0)
+#endif
+#ifdef _MOTOR_SUNNYSKY_V4006_KV320_
+#define CURRENT_RATING	(15.0)
+#endif
+#ifdef _MOTOR_SUNNYSKY_V2806_KV400_
+#define CURRENT_RATING	(10.0)
+#endif
 
 
 /******************* For Encoder ****************************/
 
-// Encoder Resolution
-#define ENCODER_RESOL 16384
-
-
-// 速度検出用LPFのカットオフ周波数 [rad/s]
-#define SPEED_LPF_CUTOFF	(2.0f * M_PI * 500)
-
-// LPFのサンプリング周波数 [Hz]
-#define SPEED_LPF_FS		10000.0f
-
-// LPFフィルタ係数
-#define SPEED_LPF_COEFF		0//(SPEED_LPF_FS/(SPEED_LPF_CUTOFF + SPEED_LPF_FS))
-
-
 #define SPEED_CALC_BUF_SIZE		(14)
-
-/******************* For PWM *******************/
-
-// PWM resolution
-#define PWM_RESOL	8000.0f
-
 
 
 /******************* Timeout ***********************/
