@@ -3,14 +3,15 @@
 #include "canCom.h"
 
 #include "main.h"
-
 #include "md_main.h"
-
+#include "parameters.h"
 
 extern MD_Handler_t md_sys;
 
 
-void sendToMain();
+void SendResToMain();
+void SendParamToMain();
+void RecvCmdFromMain(uint8_t* canRxData);
 
 
 void CAN_Init()
@@ -24,7 +25,7 @@ void CAN_Init()
 	//sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
 	sFilterConfig.FilterIdHigh = 0x300 << 5;
 	sFilterConfig.FilterIdLow = 0x0000;
-	sFilterConfig.FilterMaskIdHigh = 0x7ff << 5;
+	sFilterConfig.FilterMaskIdHigh = 0x70f << 5;
 	sFilterConfig.FilterMaskIdLow = 0x0006;
 	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 	sFilterConfig.FilterActivation = ENABLE;
@@ -83,12 +84,26 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	CAN_RxHeaderTypeDef canRxHeader;
 	uint8_t canRxData[8];
-	int16_t Iq_ref_int = 0;
 
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData);
 
-	if(canRxHeader.DLC != 8) return;
+	if(canRxHeader.StdId == 0x300 && canRxHeader.DLC == 8)
+	{
+		RecvCmdFromMain(canRxData);
+		return;
+	}
+	if(canRxHeader.StdId == 0x310 && canRxHeader.DLC == 0)
+	{
+		SendParamToMain();
+		return;
+	}
 
+}
+
+
+void RecvCmdFromMain(uint8_t* canRxData)
+{
+	int16_t Iq_ref_int = 0;
 
 	switch(md_sys.motor_channel)
 	{
@@ -110,16 +125,15 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 	md_sys.motor.Iq_ref_pu_2q13 = (int32_t)Iq_ref_int * 8 / md_sys.motor.Init.I_base;
 
-
 	timeoutReset(&md_sys);
 
 	// send response
-	sendToMain();
+	SendResToMain();
 
 }
 
 
-void sendToMain()
+void SendResToMain()
 {
 
 	uint32_t canTxMailbox;
@@ -161,6 +175,34 @@ void sendToMain()
 
 
 
+void SendParamToMain()
+{
+
+	uint32_t canTxMailbox;
+	CAN_TxHeaderTypeDef canTxHeader;
+	uint8_t canTxData[8];
+
+	uint16_t Irated_uint16;
+
+	canTxHeader.StdId = 0x410 + md_sys.motor_channel;
+	canTxHeader.ExtId = 0x00;
+	canTxHeader.IDE = CAN_ID_STD;
+	canTxHeader.RTR = CAN_RTR_DATA;
+	canTxHeader.DLC = 4;
+
+	Irated_uint16 = (uint16_t)(CURRENT_RATING * 1024);
+
+	canTxData[0] = (uint16_t)MOTOR_KV & 0xff;
+	canTxData[1] = ((uint16_t)MOTOR_KV >> 8) & 0xff;
+	canTxData[2] = Irated_uint16 & 0xff;
+	canTxData[3] = (Irated_uint16 >> 8) & 0xff;
+
+	HAL_CAN_ActivateNotification(md_sys.hcan, CAN_IT_TX_MAILBOX_EMPTY);
+
+	HAL_CAN_AddTxMessage(md_sys.hcan, &canTxHeader, canTxData, &canTxMailbox);
+
+	return;
+}
 
 
 
