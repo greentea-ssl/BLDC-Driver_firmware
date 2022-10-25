@@ -17,7 +17,7 @@ void LED_Blink_Init(LED_Blink_t* h, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint
 	h->init.Ts_us = Ts_us;
 
 	h->count = 0;
-	h->state = 0;
+	h->state = LED_STATE_WAIT_OFF;
 	h->t_us = 0;
 	h->times = 0;
 
@@ -35,13 +35,13 @@ void LED_Blink_Update(LED_Blink_t* h)
 
 	switch(h->state)
 	{
-	case 0: // OFF WAIT
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	case LED_STATE_WAIT_OFF: // OFF WAIT
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
 		if(h->t_us >= h->init.T_wait_us)
 		{
 			if(h->times > 0)
 			{
-				h->state = 1;
+				h->state = LED_STATE_ON;
 				h->count = 0;
 			}
 
@@ -49,31 +49,31 @@ void LED_Blink_Update(LED_Blink_t* h)
 		}
 		break;
 
-	case 1: // ON
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	case LED_STATE_ON: // ON
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_SET);
 		if(h->t_us >= h->init.Ton_us)
 		{
 			h->count += 1;
-			h->state = 2;
+			h->state = LED_STATE_OFF;
 			h->t_us = 0;
 		}
 		break;
 
-	case 2: // OFF
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	case LED_STATE_OFF: // OFF
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
 		if(h->t_us >= h->init.Toff_us)
 		{
 			if(h->count < h->times)
-				h->state = 1;
+				h->state = LED_STATE_ON;
 			else
-				h->state = 0;
+				h->state = LED_STATE_WAIT_OFF;
 
 			h->t_us = 0;
 		}
 		break;
 
 	default:
-
+		h->state = LED_STATE_WAIT_OFF;
 		break;
 	}
 

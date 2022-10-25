@@ -18,6 +18,16 @@ typedef struct
 
 }LED_Blink_Init_t;
 
+
+typedef enum
+{
+	LED_STATE_WAIT_ON,
+	LED_STATE_WAIT_OFF,
+	LED_STATE_ON,
+	LED_STATE_OFF,
+}LED_Blink_State_t;
+
+
 typedef struct
 {
 	LED_Blink_Init_t init;
@@ -26,7 +36,7 @@ typedef struct
 	uint16_t GPIO_Pin;
 
 	uint32_t count;
-	uint32_t state;
+	LED_Blink_State_t state;
 	uint32_t t_us;
 	uint32_t times;
 
