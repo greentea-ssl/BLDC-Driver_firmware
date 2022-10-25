@@ -9,18 +9,7 @@
 #include "encoder.h"
 #include "currentSensor.h"
 #include "drv8323.h"
-
-typedef struct
-{
-	uint32_t LED_blink_count;
-	uint32_t LED_blink_state;
-	uint32_t LED_blink_t_us;
-	uint32_t LED_blink_times;
-	uint32_t LED_blink_Ton_us;
-	uint32_t LED_blink_Toff_us;
-	uint32_t LED_blink_T_wait_us;
-	uint32_t LED_blink_Ts_us;
-}LED_Blink_t;
+#include "led_blink.h"
 
 
 typedef struct

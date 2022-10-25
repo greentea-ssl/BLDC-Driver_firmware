@@ -20,6 +20,7 @@
 #include "motorControl.h"
 #include "dump_int.h"
 #include "intMath.h"
+#include "led_blink.h"
 
 
 #define DEBUG_PRINT_ENABLE 1
@@ -49,22 +50,13 @@ void MD_Init(MD_Handler_t* h)
 	uint8_t p_ch, ch;
 
 
-	h->led_blink.LED_blink_count = 0;
-	h->led_blink.LED_blink_state = 0;
-	h->led_blink.LED_blink_t_us = 0;
-	h->led_blink.LED_blink_times = 0;
-	h->led_blink.LED_blink_Ton_us = 50000;
-	h->led_blink.LED_blink_Toff_us = 200000;
-	h->led_blink.LED_blink_T_wait_us = 1000000;
-	h->led_blink.LED_blink_Ts_us = 100;
-
-
 	h->carrier_counter = 0;
 
 	DRV_Init(&h->drv8323);
 
-	// Motor Handler initialize
 	Motor_Init(&h->motor);
+
+	LED_Blink_Init(&h->led_blink, LD2_GPIO_Port, LD2_Pin, 100);
 
 	h->timeoutEnable = 1;
 
@@ -90,7 +82,7 @@ void MD_Init(MD_Handler_t* h)
 	ch = getChannel();
 
 	h->motor_channel = ch;
-	h->led_blink.LED_blink_times = ch;
+	LED_Blink_SetBlinksNum(&h->led_blink, ch);
 
 	CAN_Init();
 
@@ -266,7 +258,7 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	}
 #endif
 
-	LED_blink(&h->led_blink);
+	LED_Blink_Update(&h->led_blink);
 }
 
 
@@ -324,59 +316,6 @@ uint8_t getChannel()
 	ch |= !HAL_GPIO_ReadPin(CH_b2_GPIO_Port, CH_b2_Pin) << 2;
 
 	return ch;
-}
-
-
-
-inline void LED_blink(LED_Blink_t* h)
-{
-
-	switch(h->LED_blink_state)
-	{
-	case 0: // OFF WAIT
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-		if(h->LED_blink_t_us >= h->LED_blink_T_wait_us)
-		{
-			if(h->LED_blink_times > 0)
-			{
-				h->LED_blink_state = 1;
-				h->LED_blink_count = 0;
-			}
-
-			h->LED_blink_t_us = 0;
-		}
-		break;
-
-	case 1: // ON
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-		if(h->LED_blink_t_us >= h->LED_blink_Ton_us)
-		{
-			h->LED_blink_count += 1;
-			h->LED_blink_state = 2;
-			h->LED_blink_t_us = 0;
-		}
-		break;
-
-	case 2: // OFF
-		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-		if(h->LED_blink_t_us >= h->LED_blink_Toff_us)
-		{
-			if(h->LED_blink_count < h->LED_blink_times)
-				h->LED_blink_state = 1;
-			else
-				h->LED_blink_state = 0;
-
-			h->LED_blink_t_us = 0;
-		}
-		break;
-
-	default:
-
-		break;
-	}
-
-	h->LED_blink_t_us += h->LED_blink_Ts_us;
-
 }
 
 
