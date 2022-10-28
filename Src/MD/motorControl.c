@@ -309,6 +309,11 @@ void Motor_Update(Motor_TypeDef *hMotor)
 		// Normal vector control
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 	}
+	else if(hMotor->RunMode == MOTOR_MODE_CV_VECTOR)
+	{
+		// Normal vector control
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+	}
 	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
 	{
 		// When forced commutation enable

@@ -54,7 +54,8 @@ typedef struct
 typedef enum{
 	MOTOR_MODE_CV_FORCE = 0,
 	MOTOR_MODE_CC_FORCE = 1,
-	MOTOR_MODE_CC_VECTOR = 2,
+	MOTOR_MODE_CV_VECTOR = 2,
+	MOTOR_MODE_CC_VECTOR = 3,
 }Motor_RunMode_Enum;
 
 
