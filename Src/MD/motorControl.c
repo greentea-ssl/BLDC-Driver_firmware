@@ -169,7 +169,7 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	hMotor->Init.PWM_PRR = 8000;
 
-	hMotor->Init.DutyRateLimit_q5 = 29; //  = 0.9 * 32
+	hMotor->Init.DutyRateLimit_q5 = 32; //  = 0.9 * 32
 
 	hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
 
@@ -297,8 +297,10 @@ void Motor_Update(Motor_TypeDef *hMotor)
 	int16_t Vq_bef_lim = hMotor->Vq_pu_2q13;
 
 	// Circular voltage limit
-	// Vdq_lim = Vdc / 2 / sqrt(3/2) * DutyLimitRate
-	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
+	//	// Vdq_lim = Vdc / 2 * sqrt(3/2) * DutyLimitRate
+	//	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
+	// Vdq_lim = Vdc / sqrt(2) * DutyLimitRate
+	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5793 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
 	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 
 	hMotor->Vd_limit_error = Vd_bef_lim - hMotor->Vd_pu_2q13;
@@ -333,17 +335,23 @@ void Motor_Update(Motor_TypeDef *hMotor)
 	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 
+	//PWM_InjectCommonMode_MinMax(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+	//PWM_InjectCommonMode_TwoPhaseUp(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+	//PWM_InjectCommonMode_TwoPhaseLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+	PWM_InjectCommonMode_TwoPhaseSwDist(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+
+
 	// Duty Limit
 	if(duty_u < 0) hMotor->duty_u = 0;
-	else if(duty_u > hMotor->Init.PWM_PRR) hMotor->duty_u = hMotor->Init.PWM_PRR - 1;
+	else if(duty_u > hMotor->Init.PWM_PRR) hMotor->duty_u = hMotor->Init.PWM_PRR;
 	else hMotor->duty_u = duty_u;
 
 	if(duty_v < 0) hMotor->duty_v = 0;
-	else if(duty_v > hMotor->Init.PWM_PRR) hMotor->duty_v = hMotor->Init.PWM_PRR - 1;
+	else if(duty_v > hMotor->Init.PWM_PRR) hMotor->duty_v = hMotor->Init.PWM_PRR;
 	else hMotor->duty_v = duty_v;
 
 	if(duty_w < 0) hMotor->duty_w = 0;
-	else if(duty_w > hMotor->Init.PWM_PRR) hMotor->duty_w = hMotor->Init.PWM_PRR - 1;
+	else if(duty_w > hMotor->Init.PWM_PRR) hMotor->duty_w = hMotor->Init.PWM_PRR;
 	else hMotor->duty_w = duty_w;
 
 }

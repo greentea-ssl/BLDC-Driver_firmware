@@ -10,7 +10,7 @@
 #include "md_main.h"
 
 
-uint32_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];
+uint16_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];
 uint32_t dump_counter;
 
 
@@ -26,14 +26,12 @@ inline void Dump_Update(MD_Handler_t* sys)
 {
 
 #if 1
-	dump_record[dump_counter][0] = sys->motor.Id_ref_pu_2q13;
-	dump_record[dump_counter][1] = sys->motor.Iq_ref_pu_2q13;
-	dump_record[dump_counter][2] = sys->motor.Id_pu_2q13;
-	dump_record[dump_counter][3] = sys->motor.Iq_pu_2q13;
-	dump_record[dump_counter][4] = sys->motor.Vd_pu_2q13;
-	dump_record[dump_counter][5] = sys->motor.Vq_pu_2q13;
-	dump_record[dump_counter][6] = sys->motor.raw_theta_14bit;
-	dump_record[dump_counter][7] = sys->motor.omega_q5;
+	dump_record[dump_counter][0] = sys->motor.duty_u;
+	dump_record[dump_counter][1] = sys->motor.duty_v;
+	dump_record[dump_counter][2] = sys->motor.duty_w;
+	dump_record[dump_counter][3] = sys->motor.AD_Iu;
+	dump_record[dump_counter][4] = sys->motor.AD_Iv;
+	dump_record[dump_counter][5] = sys->motor.AD_Iw;
 #endif
 
 	if(dump_counter < DUMP_LENGTH)

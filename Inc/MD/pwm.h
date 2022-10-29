@@ -9,12 +9,9 @@
 typedef struct
 {
 	TIM_HandleTypeDef *htim;
-	float Vd_ref;
-	float Vq_ref;
-	int sector_SVM;
-	float amp_u;
-	float amp_v;
-	float amp_w;
+	uint16_t duty_u;
+	uint16_t duty_v;
+	uint16_t duty_w;
 }PWM_Handler_t;
 
 
@@ -24,8 +21,15 @@ void PWM_Start(PWM_Handler_t* h);
 
 void PWM_Stop(PWM_Handler_t* h);
 
-void setSVM_dq(PWM_Handler_t* h, float Vd_ref, float Vq_ref, float Vdc, float cos_theta_re, float sin_theta_re);
+void PWM_SetDuty(PWM_Handler_t* h);
 
+void PWM_InjectCommonMode_MinMax(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
+
+void PWM_InjectCommonMode_TwoPhaseUp(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
+
+void PWM_InjectCommonMode_TwoPhaseLow(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
+
+void PWM_InjectCommonMode_TwoPhaseSwDist(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
 
 #endif /* _PWM_H_ */

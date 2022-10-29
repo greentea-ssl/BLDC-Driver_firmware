@@ -7,11 +7,11 @@
 
 
 
-#define DUMP_CHANNELS (8)
-#define DUMP_LENGTH	(2000)
+#define DUMP_CHANNELS (6)
+#define DUMP_LENGTH	(5000)
 
 
-extern uint32_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];
+//extern uint32_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];
 extern uint32_t dump_counter;
 
 
