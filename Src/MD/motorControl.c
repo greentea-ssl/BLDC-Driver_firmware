@@ -335,7 +335,8 @@ void Motor_Update(Motor_TypeDef *hMotor)
 	//PWM_InjectCommonMode_MinMax(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 	//PWM_InjectCommonMode_TwoPhaseUp(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 	//PWM_InjectCommonMode_TwoPhaseLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
-	PWM_InjectCommonMode_AwayFromSwitching(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+	//PWM_InjectCommonMode_AwayFromSwitching(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+	PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 
 
 	// Duty Limit

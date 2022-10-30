@@ -33,6 +33,8 @@ void PWM_InjectCommonMode_TwoPhaseLow(int32_t* duty_u, int32_t* duty_v, int32_t*
 
 void PWM_InjectCommonMode_AwayFromSwitching(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
+void PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
+
 
 #endif /* _PWM_H_ */
 

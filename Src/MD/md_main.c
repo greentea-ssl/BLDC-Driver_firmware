@@ -197,25 +197,15 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR)
 	{
 		// 5A: 2731, 10A: 5461, 15A: 8192
-		if(h->carrier_counter % 400 < 100)
-		{
-			h->motor.Id_ref_pu_2q13 = 0;
-			h->motor.Iq_ref_pu_2q13 = 0;
-		}
-		else if(h->carrier_counter % 400 < 200)
+		if(h->carrier_counter % 4 < 2)
 		{
 			h->motor.Id_ref_pu_2q13 = 0;
 			h->motor.Iq_ref_pu_2q13 = 2731;
 		}
-		else if(h->carrier_counter % 400 < 300)
-		{
-			h->motor.Id_ref_pu_2q13 = 0;
-			h->motor.Iq_ref_pu_2q13 = 5461;
-		}
 		else
 		{
 			h->motor.Id_ref_pu_2q13 = 0;
-			h->motor.Iq_ref_pu_2q13 = 8192;
+			h->motor.Iq_ref_pu_2q13 = -2731;
 		}
 		h->carrier_counter++;
 	}
@@ -231,8 +221,8 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		{
 			h->motor.Vq_pu_2q13 = period * 2;
 		}
-//		h->motor.Vd_pu_2q13 = 341;
-//		h->motor.Vq_pu_2q13 = 0;
+//		h->motor.Vd_pu_2q13 = 0;
+//		h->motor.Vq_pu_2q13 = 341;
 		h->carrier_counter++;
 	}
 #endif
@@ -251,10 +241,12 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	h->pwm.duty_w = h->motor.duty_w;
 	PWM_SetDuty(&h->pwm);
 
-	//if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR && !Dump_isFull())
-	if(h->motor.RunMode == MOTOR_MODE_CV_VECTOR && !Dump_isFull())
+	if(!Dump_isFull())
 	{
-		Dump_Update(h);
+		if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR || h->motor.RunMode == MOTOR_MODE_CV_VECTOR)
+		{
+			Dump_Update(h);
+		}
 	}
 
 

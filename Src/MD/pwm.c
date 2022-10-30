@@ -283,3 +283,72 @@ void PWM_InjectCommonMode_AwayFromSwitching(int32_t* duty_u, int32_t* duty_v, in
 }
 
 
+
+void PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period)
+{
+	int32_t min, mid, max;
+	if(*duty_u > *duty_v)
+	{
+		if(*duty_v > *duty_w) // U > V > W
+		{
+			max = *duty_u;
+			mid = *duty_v;
+			min = *duty_w;
+		}
+		else if(*duty_w > *duty_u) // W > U > V
+		{
+			max = *duty_w;
+			mid = *duty_u;
+			min = *duty_v;
+		}
+		else // U > W > V
+		{
+			max = *duty_u;
+			mid = *duty_w;
+			min = *duty_v;
+		}
+	}
+	else
+	{
+		if(*duty_u > *duty_w) // V > U > W
+		{
+			max = *duty_v;
+			mid = *duty_u;
+			min = *duty_w;
+		}
+		else if(*duty_w > *duty_v) // W > V > U
+		{
+			max = *duty_w;
+			mid = *duty_v;
+			min = *duty_u;
+		}
+		else // V > W > U
+		{
+			max = *duty_v;
+			mid = *duty_w;
+			min = *duty_u;
+		}
+	}
+	if(max - min < 6400) // 8000 * 0.8
+	{
+		int32_t Vcom = (mid - (period >> 1)) >> 1;
+		*duty_u += Vcom;
+		*duty_v += Vcom;
+		*duty_w += Vcom;
+	}
+	else if(max - mid > period - (max - min))
+	{
+		*duty_u += period - max;
+		*duty_v += period - max;
+		*duty_w += period - max;
+	}
+	else
+	{
+		*duty_u -= min;
+		*duty_v -= min;
+		*duty_w -= min;
+	}
+	return;
+}
+
+
