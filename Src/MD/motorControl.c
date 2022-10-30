@@ -324,12 +324,12 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 	int32_t Gain_Vref2duty_s14 = ((int32_t)hMotor->Init.PWM_PRR << 14) / hMotor->Vdc_pu_2q13;
 
-	int32_t duty_u = ((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14;
-	int32_t duty_v = ((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14;
-	int32_t duty_w = ((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14;
 //	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 //	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 //	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 
 
 	//PWM_InjectCommonMode_MinMax(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
