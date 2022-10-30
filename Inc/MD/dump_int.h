@@ -7,7 +7,7 @@
 
 
 
-#define DUMP_CHANNELS (6)
+#define DUMP_CHANNELS (16)
 #define DUMP_LENGTH	(2000)
 
 

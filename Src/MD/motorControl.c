@@ -2,10 +2,10 @@
 
 
 #include "motorControl.h"
-
 #include "parameters.h"
-
 #include "sin_t.h"
+#include "pwm.h"
+
 
 
 #include <string.h>
@@ -171,7 +171,8 @@ void Motor_Init(Motor_TypeDef *hMotor)
 
 	hMotor->Init.DutyRateLimit_q5 = 32; //  = 0.9 * 32
 
-	hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
+	//hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * -10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
+	hMotor->Init.Gain_Iad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * 10.0/*[A/V]*/ / hMotor->Init.I_base * 8192/*q.13*/;
 
 	hMotor->Init.Gain_Vad2pu_s14 = 16384/*shift:14bit*/ / 4096.0/*ADC Range*/ * 3.3/*V_ref*/ * 12.5385f/*[V/V]*/ / hMotor->Init.V_base * 8192/*q.13*/;
 
@@ -247,29 +248,21 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 	hMotor->Vdc_pu_2q13 = ( (int32_t)hMotor->AD_Vdc * (int32_t)hMotor->Init.Gain_Vad2pu_s14 ) >> 14;
 
-	// Sector detection
-	uint8_t sign_uv = (hMotor->Vu_pu_2q13 >= hMotor->Vv_pu_2q13)? 1: 0;
-	uint8_t sign_vw = (hMotor->Vv_pu_2q13 >= hMotor->Vw_pu_2q13)? 1: 0;
-	uint8_t sign_wu = (hMotor->Vw_pu_2q13 >= hMotor->Vu_pu_2q13)? 1: 0;
-
-	switch((sign_uv << 2) | (sign_vw << 1) | sign_wu)
-	{
-	case 0b110: hMotor->sector = 1; break;
-	case 0b010: hMotor->sector = 2; break;
-	case 0b011: hMotor->sector = 3; break;
-	case 0b001: hMotor->sector = 4; break;
-	case 0b101: hMotor->sector = 5; break;
-	case 0b100: hMotor->sector = 6; break;
-	default: hMotor->sector = 0; break;
-	}
-
 	// Current source selection
-	switch(hMotor->sector)
+	if(hMotor->duty_u > hMotor->duty_v && hMotor->duty_u > hMotor->duty_w)
 	{
-	case 1: case 2: hMotor->Iw_pu_2q13 = - hMotor->Iu_pu_2q13 - hMotor->Iv_pu_2q13; break;
-	case 3: case 4: hMotor->Iu_pu_2q13 = - hMotor->Iv_pu_2q13 - hMotor->Iw_pu_2q13; break;
-	case 5: case 6: hMotor->Iv_pu_2q13 = - hMotor->Iw_pu_2q13 - hMotor->Iu_pu_2q13; break;
-	default: break;
+		// Sector: 6,1
+		hMotor->Iu_pu_2q13 = - hMotor->Iv_pu_2q13 - hMotor->Iw_pu_2q13;
+	}
+	else if(hMotor->duty_v > hMotor->duty_u && hMotor->duty_v > hMotor->duty_w)
+	{
+		// Sector: 2,3
+		hMotor->Iv_pu_2q13 = - hMotor->Iw_pu_2q13 - hMotor->Iu_pu_2q13;
+	}
+	else
+	{
+		// Sector: 4,5
+		hMotor->Iw_pu_2q13 = - hMotor->Iu_pu_2q13 - hMotor->Iv_pu_2q13;
 	}
 
 	// UVW => ab
@@ -331,9 +324,13 @@ void Motor_Update(Motor_TypeDef *hMotor)
 
 	int32_t Gain_Vref2duty_s14 = ((int32_t)hMotor->Init.PWM_PRR << 14) / hMotor->Vdc_pu_2q13;
 
-	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
-	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
-	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+	int32_t duty_u = ((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14;
+	int32_t duty_v = ((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14;
+	int32_t duty_w = ((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14;
+//	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+//	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+//	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+
 
 	//PWM_InjectCommonMode_MinMax(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 	//PWM_InjectCommonMode_TwoPhaseUp(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);

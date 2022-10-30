@@ -25,13 +25,28 @@ void Dump_Init()
 inline void Dump_Update(MD_Handler_t* sys)
 {
 
-#if 1
+#if 1 /* Current sense check */
 	dump_record[dump_counter][0] = sys->motor.duty_u;
 	dump_record[dump_counter][1] = sys->motor.duty_v;
 	dump_record[dump_counter][2] = sys->motor.duty_w;
 	dump_record[dump_counter][3] = sys->motor.AD_Iu;
 	dump_record[dump_counter][4] = sys->motor.AD_Iv;
 	dump_record[dump_counter][5] = sys->motor.AD_Iw;
+	dump_record[dump_counter][6] = sys->motor.Iu_pu_2q13;
+	dump_record[dump_counter][7] = sys->motor.Iv_pu_2q13;
+	dump_record[dump_counter][8] = sys->motor.Iw_pu_2q13;
+#endif
+
+#if 0 /* ACR check */
+	dump_record[dump_counter][0] = sys->motor.Id_ref_pu_2q13;
+	dump_record[dump_counter][1] = sys->motor.Iq_ref_pu_2q13;
+	dump_record[dump_counter][2] = sys->motor.Id_pu_2q13;
+	dump_record[dump_counter][3] = sys->motor.Iq_pu_2q13;
+	dump_record[dump_counter][4] = sys->motor.Vd_pu_2q13;
+	dump_record[dump_counter][5] = sys->motor.Vq_pu_2q13;
+	dump_record[dump_counter][6] = sys->motor.theta_m_int;
+	dump_record[dump_counter][7] = sys->motor.theta_re_int;
+	dump_record[dump_counter][8] = sys->motor.omega_q5;
 #endif
 
 	if(dump_counter < DUMP_LENGTH)

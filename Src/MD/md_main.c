@@ -129,7 +129,6 @@ void MD_Init(MD_Handler_t* h)
 
 	h->motor.Vd_pu_2q13 = 0;
 	h->motor.Vq_pu_2q13 = 0;
-
 	h->motor.RunMode = MOTOR_MODE_CV_VECTOR;
 
 	/* Start */
@@ -157,6 +156,9 @@ void MD_Calibration(MD_Handler_t* h)
 	h->pFlashData->AD_Iv_offset_err = sum_offset_err[1] / cal_sample_num;
 	h->pFlashData->AD_Iw_offset_err = sum_offset_err[2] / cal_sample_num;
 
+	h->motor.Init.AD_Iu_offset = h->pFlashData->AD_Iu_offset_err + 2048;
+	h->motor.Init.AD_Iv_offset = h->pFlashData->AD_Iv_offset_err + 2048;
+	h->motor.Init.AD_Iw_offset = h->pFlashData->AD_Iw_offset_err + 2048;
 
 	/***** Encoder offset calibration *****/
 
@@ -229,6 +231,8 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		{
 			h->motor.Vq_pu_2q13 = period * 2;
 		}
+//		h->motor.Vd_pu_2q13 = 341;
+//		h->motor.Vq_pu_2q13 = 0;
 		h->carrier_counter++;
 	}
 #endif
