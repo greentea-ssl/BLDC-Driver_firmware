@@ -48,9 +48,6 @@ int32_t printFloat(float val);
 void MD_Init(MD_Handler_t* h)
 {
 
-	uint8_t p_ch, ch;
-
-
 	h->carrier_counter = 0;
 
 	DRV_Init(&h->drv8323);
@@ -70,20 +67,8 @@ void MD_Init(MD_Handler_t* h)
 
 	DRV_Setting(h);
 
-	p_ch = getSwitchCh();
-
-	for(int count = 0; count < 6; count++)
-	{
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	  HAL_Delay(100);
-	}
-
-	ch = getSwitchCh();
-
-	h->motor_channel = ch;
-	LED_Blink_SetBlinksNum(&h->led_blink, ch);
+	h->motor_channel = getSwitchCh();
+	LED_Blink_SetBlinksNum(&h->led_blink, h->motor_channel);
 
 	CAN_Init();
 
@@ -98,7 +83,7 @@ void MD_Init(MD_Handler_t* h)
 	PWM_Start(&h->pwm);
 
 	h->pFlashData = (FlashStoredData_t*)Flash_load();
-	if(ch != p_ch || getSwitchCalc() == 1)
+	if(getSwitchCalc() == 1)
 	{
 		h->led_blink.init.mode = LED_BLINK_MODE_CALIBRATION;
 		MD_Calibration(h);
@@ -145,6 +130,8 @@ void MD_Init(MD_Handler_t* h)
 
 void MD_Calibration(MD_Handler_t* h)
 {
+
+	HAL_Delay(1000);
 
 	/***** Current sense offset calibration *****/
 	const int cal_sample_num = 1000;
