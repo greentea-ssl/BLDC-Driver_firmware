@@ -2,7 +2,7 @@
 
 #include "pwm.h"
 #include "parameters.h"
-
+#include "main.h"
 
 // reference vectors for SVM
 const float refVector[6+1][2] = {
@@ -81,15 +81,27 @@ inline void PWM_Stop(PWM_Handler_t* h)
 
 inline void PWM_SetDuty(PWM_Handler_t* h)
 {
-
-	h->htim->Instance->CCR1 = h->duty_u;
-	h->htim->Instance->CCR2 = h->duty_v;
-	h->htim->Instance->CCR3 = h->duty_w;
-
+#if NO_UPDATE_ON_BOTTOM
+	if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(h->htim))
+	{
+#endif
+		h->htim->Instance->CCR1 = h->duty_u;
+		h->htim->Instance->CCR2 = h->duty_v;
+		h->htim->Instance->CCR3 = h->duty_w;
+#if NO_UPDATE_ON_BOTTOM
+	}
+#endif
 	return;
 }
 
 
+void PWM_UpdateDuty(PWM_Handler_t* h)
+{
+	h->htim->Instance->CCR1 = h->duty_u;
+	h->htim->Instance->CCR2 = h->duty_v;
+	h->htim->Instance->CCR3 = h->duty_w;
+	return;
+}
 
 
 
@@ -210,7 +222,7 @@ void PWM_InjectCommonMode_TwoPhaseLow(int32_t* duty_u, int32_t* duty_v, int32_t*
 }
 
 
-void PWM_InjectCommonMode_TwoPhaseSwDist(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period)
+void PWM_InjectCommonMode_AwayFromSwitching(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period)
 {
 	int32_t min, mid, max;
 	if(*duty_u > *duty_v)

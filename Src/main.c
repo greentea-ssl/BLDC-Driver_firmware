@@ -172,13 +172,13 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_ADC3_Init();
   MX_CAN1_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
-  MX_USART2_UART_Init();
   MX_TIM8_Init();
+  MX_USART2_UART_Init();
+  MX_ADC2_Init();
+  MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -784,18 +784,10 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-
-	if(htim->Instance == TIM8 && __HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+	if(htim->Instance == TIM8 && !__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
 	{
+		PWM_UpdateDuty(&md_sys.pwm);
 	}
-
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 }
 
 

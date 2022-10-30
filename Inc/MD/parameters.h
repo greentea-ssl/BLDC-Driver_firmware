@@ -4,14 +4,11 @@
 #define _PARAMETERS_H_
 
 
-
 // Motor Select
 
 //#define _MOTOR_QUANUM_MT4108_KV370_
 //#define _MOTOR_SUNNYSKY_V4006_KV320_
 #define _MOTOR_SUNNYSKY_V2806_KV400_
-
-
 
 
 /******************* For Motor ****************************/
@@ -73,6 +70,11 @@
 #ifdef _MOTOR_SUNNYSKY_V2806_KV400_
 #define CURRENT_RATING	(10.0)
 #endif
+
+
+/******************* For PWM ************************/
+
+#define NO_UPDATE_ON_BOTTOM 	0
 
 
 /******************* For Encoder ****************************/

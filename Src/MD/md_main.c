@@ -242,12 +242,10 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	// Motor Controller Update
 	Motor_Update(&h->motor);
 
-#if 1
-	h->pwm.htim->Instance->CCR1 = h->motor.duty_u;
-	h->pwm.htim->Instance->CCR2 = h->motor.duty_v;
-	h->pwm.htim->Instance->CCR3 = h->motor.duty_w;
-#endif
-
+	h->pwm.duty_u = h->motor.duty_u;
+	h->pwm.duty_v = h->motor.duty_v;
+	h->pwm.duty_w = h->motor.duty_w;
+	PWM_SetDuty(&h->pwm);
 
 	//if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR && !Dump_isFull())
 	if(h->motor.RunMode == MOTOR_MODE_CV_VECTOR && !Dump_isFull())

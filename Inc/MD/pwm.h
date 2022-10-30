@@ -23,13 +23,15 @@ void PWM_Stop(PWM_Handler_t* h);
 
 void PWM_SetDuty(PWM_Handler_t* h);
 
+void PWM_UpdateDuty(PWM_Handler_t* h);
+
 void PWM_InjectCommonMode_MinMax(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
 void PWM_InjectCommonMode_TwoPhaseUp(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
 void PWM_InjectCommonMode_TwoPhaseLow(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
-void PWM_InjectCommonMode_TwoPhaseSwDist(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
+void PWM_InjectCommonMode_AwayFromSwitching(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period);
 
 
 #endif /* _PWM_H_ */
