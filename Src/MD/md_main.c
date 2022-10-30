@@ -423,8 +423,7 @@ void DRV_Setting(MD_Handler_t* h)
 	h->drv8323.Reg.OCP_Control.DEAD_TIME = 0b01; // Dead Time : 100ns
 	h->drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
 	h->drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
-	//drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
-	h->drv8323.Reg.OCP_Control.VDS_LVL = 0b0000; // VDS = 1.88V -> ID = 75A
+	h->drv8323.Reg.OCP_Control.VDS_LVL = 0b0100; // VDS = 0.2V -> ID = 30A
 	DRV_WriteData(&h->drv8323, ADDR_OCP_Control);
 
 	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
