@@ -152,7 +152,8 @@ void SendResToMain()
 	theta_uint16 = md_sys.encoder.raw_Angle;
 	omega_int16 = md_sys.motor.omega_q5;
 
-	canTxData[0] = 0;
+	canTxData[0] = !HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin);
+	canTxData[0] |= (md_sys.calibration_is_running & 0x01) << 1;
 
 	canTxData[1] = Iq_int16 & 0xff;
 	canTxData[2] = (Iq_int16 >> 8) & 0xff;

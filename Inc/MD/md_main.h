@@ -26,6 +26,8 @@ typedef struct
 
 	uint8_t motor_channel;
 
+	uint8_t calibration_is_running;
+
 	uint32_t carrier_counter;
 
 	Motor_TypeDef motor;

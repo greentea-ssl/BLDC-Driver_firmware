@@ -85,10 +85,12 @@ void MD_Init(MD_Handler_t* h)
 	h->pFlashData = (FlashStoredData_t*)Flash_load();
 	if(getSwitchCalc() == 1)
 	{
+		h->calibration_is_running = 1;
 		h->led_blink.init.mode = LED_BLINK_MODE_CALIBRATION;
 		MD_Calibration(h);
 		/* program stop, gate is off. */
 	}
+	h->calibration_is_running = 0;
 	h->led_blink.init.mode = LED_BLINK_MODE_CHANNEL;
 	const int cs_offset_err_limit = 512;
 	const int theta_offset_limit = 8192;
@@ -422,7 +424,7 @@ void DRV_Setting(MD_Handler_t* h)
 	h->drv8323.Reg.OCP_Control.OCP_MODE = 0b00; // Overcurrent causes a latched fault
 	h->drv8323.Reg.OCP_Control.OCP_DEG = 0b11; // Deglitch Time of 8us
 	//drv8323.Reg.OCP_Control.VDS_LVL = 0b1001; // VDS = 0.75V -> ID = 75A
-	h->drv8323.Reg.OCP_Control.VDS_LVL = 0b1111; // VDS = 1.88V -> ID = 75A
+	h->drv8323.Reg.OCP_Control.VDS_LVL = 0b0000; // VDS = 1.88V -> ID = 75A
 	DRV_WriteData(&h->drv8323, ADDR_OCP_Control);
 
 	DRV_ReadData(&h->drv8323, ADDR_CSA_Control);
