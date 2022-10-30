@@ -6,6 +6,13 @@
 #include "main.h"
 
 
+typedef enum
+{
+	LED_BLINK_MODE_CHANNEL,
+	LED_BLINK_MODE_CALIBRATION,
+}LED_Blink_Mode_t;
+
+
 typedef struct
 {
 
@@ -15,6 +22,7 @@ typedef struct
 	uint32_t Toff_us;
 	uint32_t T_wait_us;
 	uint32_t Ts_us;
+	LED_Blink_Mode_t mode;
 
 }LED_Blink_Init_t;
 
@@ -45,6 +53,8 @@ typedef struct
 
 
 void LED_Blink_Init(LED_Blink_t* h, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t Ts_us);
+
+void LED_Blink_ResetState(LED_Blink_t* h);
 
 void LED_Blink_SetBlinksNum(LED_Blink_t* h, uint32_t blinksNum);
 

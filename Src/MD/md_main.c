@@ -35,7 +35,8 @@ void DRV_Setting(MD_Handler_t* h);
 
 void MD_Calibration(MD_Handler_t* h);
 
-uint8_t getChannel();
+uint8_t getSwitchCh();
+uint8_t getSwitchCalc();
 
 inline void LED_blink(LED_Blink_t* h);
 
@@ -69,7 +70,7 @@ void MD_Init(MD_Handler_t* h)
 
 	DRV_Setting(h);
 
-	p_ch = getChannel();
+	p_ch = getSwitchCh();
 
 	for(int count = 0; count < 6; count++)
 	{
@@ -79,7 +80,7 @@ void MD_Init(MD_Handler_t* h)
 	  HAL_Delay(100);
 	}
 
-	ch = getChannel();
+	ch = getSwitchCh();
 
 	h->motor_channel = ch;
 	LED_Blink_SetBlinksNum(&h->led_blink, ch);
@@ -97,10 +98,13 @@ void MD_Init(MD_Handler_t* h)
 	PWM_Start(&h->pwm);
 
 	h->pFlashData = (FlashStoredData_t*)Flash_load();
-	if(ch != p_ch)
+	if(ch != p_ch || getSwitchCalc() == 1)
 	{
+		h->led_blink.init.mode = LED_BLINK_MODE_CALIBRATION;
 		MD_Calibration(h);
+		/* program stop, gate is off. */
 	}
+	h->led_blink.init.mode = LED_BLINK_MODE_CHANNEL;
 	const int cs_offset_err_limit = 512;
 	const int theta_offset_limit = 8192;
 	if(h->pFlashData->theta_offset >= theta_offset_limit ||
@@ -173,6 +177,13 @@ void MD_Calibration(MD_Handler_t* h)
 
 	h->pFlashData->theta_offset = h->motor.theta_re_int & SIN_TBL_MASK;
 
+	/***** End of calibration *****/
+
+	h->motor.RunMode = MOTOR_MODE_CV_FORCE;
+
+	// Gate Disable
+	HAL_GPIO_WritePin(GATE_EN_GPIO_Port, GATE_EN_Pin, GPIO_PIN_RESET);
+
 	if (!Flash_store())
 	{
 #if DEBUG_PRINT_ENABLE
@@ -180,7 +191,7 @@ void MD_Calibration(MD_Handler_t* h)
 #endif
 	}
 
-	h->motor.RunMode = MOTOR_MODE_CV_FORCE;
+	while(1){ HAL_Delay(100); }
 
 }
 
@@ -321,17 +332,20 @@ void MD_End(MD_Handler_t* h)
 
 
 
-uint8_t getChannel()
+uint8_t getSwitchCh()
 {
 	uint8_t ch = 0;
 
 	ch |= !HAL_GPIO_ReadPin(CH_b0_GPIO_Port, CH_b0_Pin) << 0;
 	ch |= !HAL_GPIO_ReadPin(CH_b1_GPIO_Port, CH_b1_Pin) << 1;
-	ch |= !HAL_GPIO_ReadPin(CH_b2_GPIO_Port, CH_b2_Pin) << 2;
 
 	return ch;
 }
 
+uint8_t getSwitchCalc()
+{
+	return !HAL_GPIO_ReadPin(CH_b2_GPIO_Port, CH_b2_Pin);
+}
 
 
 

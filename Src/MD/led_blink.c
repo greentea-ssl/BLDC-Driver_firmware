@@ -15,6 +15,7 @@ void LED_Blink_Init(LED_Blink_t* h, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint
 	h->init.Toff_us = 400000;
 	h->init.T_wait_us = 1000000;
 	h->init.Ts_us = Ts_us;
+	h->init.mode = LED_BLINK_MODE_CHANNEL;
 
 	h->count = 0;
 	h->state = LED_STATE_WAIT_ON;
@@ -23,6 +24,13 @@ void LED_Blink_Init(LED_Blink_t* h, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint
 
 }
 
+void LED_Blink_ResetState(LED_Blink_t* h)
+{
+	h->count = 0;
+	h->state = LED_STATE_WAIT_ON;
+	h->t_us = 0;
+	h->times = 0;
+}
 
 void LED_Blink_SetBlinksNum(LED_Blink_t* h, uint32_t blinksNum)
 {
@@ -32,6 +40,36 @@ void LED_Blink_SetBlinksNum(LED_Blink_t* h, uint32_t blinksNum)
 
 void LED_Blink_Update(LED_Blink_t* h)
 {
+
+	if(h->init.mode == LED_BLINK_MODE_CALIBRATION)
+	{
+		switch(h->state)
+		{
+		case LED_STATE_OFF:
+			HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
+			if(h->t_us >= h->init.Ton_us)
+			{
+				h->state = LED_STATE_ON;
+				h->t_us = 0;
+			}
+			break;
+
+		case LED_STATE_ON:
+			HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_SET);
+			if(h->t_us >= h->init.Ton_us)
+			{
+				h->state = LED_STATE_OFF;
+				h->t_us = 0;
+			}
+			break;
+		default:
+			h->state = LED_STATE_OFF;
+			break;
+		}
+		h->t_us += h->init.Ts_us;
+		return;
+	}
+
 
 	switch(h->state)
 	{
