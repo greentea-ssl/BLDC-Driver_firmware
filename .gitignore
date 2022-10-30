@@ -54,5 +54,6 @@ dkms.conf
 .settings/language.settings.xml
 
 Debug/
+Release/
 
 .settings/
