@@ -4,6 +4,8 @@
 #include "main.h"
 
 
+void LED_Blink_Update_ChannelMode(LED_Blink_t* h);
+void LED_Blink_Update_CalibrationMode(LED_Blink_t* h);
 
 
 void LED_Blink_Init(LED_Blink_t* h, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t Ts_us)
@@ -41,36 +43,34 @@ void LED_Blink_SetBlinksNum(LED_Blink_t* h, uint32_t blinksNum)
 void LED_Blink_Update(LED_Blink_t* h)
 {
 
-	if(h->init.mode == LED_BLINK_MODE_CALIBRATION)
+	switch(h->init.mode)
 	{
-		switch(h->state)
-		{
-		case LED_STATE_OFF:
-			HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
-			if(h->t_us >= h->init.Ton_us)
-			{
-				h->state = LED_STATE_ON;
-				h->t_us = 0;
-			}
-			break;
+	case LED_BLINK_MODE_CALIBRATION:
+		LED_Blink_Update_CalibrationMode(h);
+		break;
 
-		case LED_STATE_ON:
-			HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_SET);
-			if(h->t_us >= h->init.Ton_us)
-			{
-				h->state = LED_STATE_OFF;
-				h->t_us = 0;
-			}
-			break;
-		default:
-			h->state = LED_STATE_OFF;
-			break;
-		}
-		h->t_us += h->init.Ts_us;
-		return;
+	case LED_BLINK_MODE_CHANNEL:
+		LED_Blink_Update_ChannelMode(h);
+		break;
+
+	case LED_BLINK_MODE_CONT_ON:
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_SET);
+		break;
+
+	case LED_BLINK_MODE_CONT_OFF:
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
+		break;
+
+	default:
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
+		break;
 	}
 
+}
 
+
+void LED_Blink_Update_ChannelMode(LED_Blink_t* h)
+{
 	switch(h->state)
 	{
 	case LED_STATE_WAIT_ON:
@@ -130,14 +130,36 @@ void LED_Blink_Update(LED_Blink_t* h)
 		h->state = LED_STATE_WAIT_OFF;
 		break;
 	}
-
 	h->t_us += h->init.Ts_us;
-
 }
 
 
+void LED_Blink_Update_CalibrationMode(LED_Blink_t* h)
+{
+	switch(h->state)
+	{
+	case LED_STATE_OFF:
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_RESET);
+		if(h->t_us >= h->init.Ton_us)
+		{
+			h->state = LED_STATE_ON;
+			h->t_us = 0;
+		}
+		break;
 
-
-
+	case LED_STATE_ON:
+		HAL_GPIO_WritePin(h->init.GPIOx, h->init.GPIO_Pin, GPIO_PIN_SET);
+		if(h->t_us >= h->init.Ton_us)
+		{
+			h->state = LED_STATE_OFF;
+			h->t_us = 0;
+		}
+		break;
+	default:
+		h->state = LED_STATE_OFF;
+		break;
+	}
+	h->t_us += h->init.Ts_us;
+}
 
 

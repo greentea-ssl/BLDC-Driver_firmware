@@ -131,7 +131,7 @@ void MD_Init(MD_Handler_t* h)
 void MD_Calibration(MD_Handler_t* h)
 {
 
-	HAL_Delay(1000);
+	HAL_Delay(500);
 
 	/***** Current sense offset calibration *****/
 	const int cal_sample_num = 1000;
@@ -166,6 +166,7 @@ void MD_Calibration(MD_Handler_t* h)
 
 	/***** End of calibration *****/
 
+	h->led_blink.init.mode = LED_BLINK_MODE_CONT_ON;
 	h->motor.RunMode = MOTOR_MODE_CV_FORCE;
 
 	// Gate Disable
