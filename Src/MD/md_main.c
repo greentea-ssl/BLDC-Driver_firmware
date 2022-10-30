@@ -25,7 +25,7 @@
 
 #define DEBUG_PRINT_ENABLE 0
 
-#define DUMP_DEBUG_ENABLE 1
+#define DUMP_DEBUG_ENABLE 0
 
 
 #define  PRINT_HEX(x)  printf(#x " = %04x\n", (x))
@@ -127,13 +127,13 @@ void MD_Init(MD_Handler_t* h)
 	h->timeoutEnable = 1;
 	h->timeoutCount = 0;
 
-	h->motor.Vd_pu_2q13 = 0;
-	h->motor.Vq_pu_2q13 = 0;
-	h->motor.RunMode = MOTOR_MODE_CV_VECTOR;
+//	h->motor.Vd_pu_2q13 = 0;
+//	h->motor.Vq_pu_2q13 = 0;
+//	h->motor.RunMode = MOTOR_MODE_CV_VECTOR;
 
 	/* Start */
-//	Motor_Reset(&h->motor);
-//	h->motor.RunMode = MOTOR_MODE_CC_VECTOR;
+	Motor_Reset(&h->motor);
+	h->motor.RunMode = MOTOR_MODE_CC_VECTOR;
 
 }
 
