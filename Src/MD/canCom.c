@@ -150,7 +150,7 @@ void SendResToMain()
 
 	Iq_int16 = (int16_t)((int32_t)(md_sys.motor.Iq_pu_2q13 * md_sys.motor.Init.I_base) >> 3);
 	theta_uint16 = md_sys.encoder.raw_Angle;
-	omega_int16 = md_sys.motor.omega_q5;
+	omega_int16 = md_sys.encoder.speedCalc.omega_q5_filtered;
 
 	canTxData[0] = !HAL_GPIO_ReadPin(BR_FLT_GPIO_Port, BR_FLT_Pin);
 	canTxData[0] |= (md_sys.calibration_is_running & 0x01) << 1;
