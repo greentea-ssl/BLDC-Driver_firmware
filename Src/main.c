@@ -775,7 +775,7 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 	if(hadc->Instance != md_sys.currentSense.Init.hadc[0]->Instance) return;
 
-	MD_Update_SyncPWM(&md_sys);
+	MD_Update_SyncADC(&md_sys);
 
 }
 
@@ -784,10 +784,12 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 {
-	if(htim->Instance == TIM8 && !__HAL_TIM_IS_TIM_COUNTING_DOWN(htim))
+
+	if(htim->Instance == TIM8)
 	{
-		PWM_UpdateDuty(&md_sys.pwm);
+		MD_Update_SyncPWM(&md_sys);
 	}
+
 }
 
 

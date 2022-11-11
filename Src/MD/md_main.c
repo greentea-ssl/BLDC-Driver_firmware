@@ -187,10 +187,8 @@ void MD_Calibration(MD_Handler_t* h)
 
 
 
-inline void MD_Update_SyncPWM(MD_Handler_t* h)
+inline void MD_Update_SyncADC(MD_Handler_t* h)
 {
-
-	Encoder_Refresh(&h->encoder);
 
 	CurrentSensor_Refresh(&h->currentSense);
 
@@ -250,11 +248,6 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 		}
 	}
 
-
-	Encoder_Request(&h->encoder);
-
-
-
 #if 1
 	if(h->timeoutEnable == 1)
 	{
@@ -276,6 +269,17 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 	LED_Blink_Update(&h->led_blink);
 }
 
+
+inline void MD_Update_SyncPWM(MD_Handler_t* h)
+{
+
+	Encoder_Update(&h->encoder);
+
+	if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(h->pwm.htim))
+	{
+		PWM_UpdateDuty(&h->pwm);
+	}
+}
 
 
 int MD_Update_Async(MD_Handler_t* h)

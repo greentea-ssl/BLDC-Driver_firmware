@@ -9,32 +9,19 @@
 #include "sin_t.h"
 
 
+void Encoder_Request(Encoder_TypeDef *hEncoder);
+int Encoder_Refresh(Encoder_TypeDef *hEncoder);
+
+void SpeedCalc_Init(SpeedCalc_TypeDef* h, float Fs_enc, int MAF_period);
+void SpeedCalc_Update(SpeedCalc_TypeDef* h, uint16_t angle_14bit);
+
+
 void Encoder_Init(Encoder_TypeDef *hEncoder)
 {
-
-	int count;
-
-	hEncoder->Init.theta_offset = 0.0f;
-	hEncoder->Init.theta_re_offset = -3.0723f;
-	hEncoder->Init.cycleTime = 100E-6;
-
-	hEncoder->theta = 0.0f;
-	hEncoder->theta_re = 0.0f;
-	hEncoder->cos_theta_re = 1.0f;
-	hEncoder->sin_theta_re = 0.0f;
-
-	for(count = 0; count < SPEED_CALC_BUF_SIZE; count++)
-	{
-		hEncoder->prev_theta_buf[count] = 0;
-	}
-
-	hEncoder->prev_theta_buf_count = 0;
-
-	hEncoder->firstLaunch = 1;
+	SpeedCalc_Init(&hEncoder->speedCalc, 11.25E+3, 20);
 
 	// SPI Interrupt Setting
 	__HAL_SPI_ENABLE_IT(hEncoder->Init.hspi, SPI_IT_TXE | SPI_IT_RXNE);
-
 }
 
 
@@ -54,7 +41,6 @@ inline void Encoder_Request(Encoder_TypeDef *hEncoder)
 
 inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 {
-
 	static uint16_t rawData;
 	static uint16_t parity;
 
@@ -63,29 +49,91 @@ inline int Encoder_Refresh(Encoder_TypeDef *hEncoder)
 
 	rawData = (hEncoder->spi2rxBuf[1] << 8) | hEncoder->spi2rxBuf[0];
 
-#if 0
-	parity = 0;
-	for(i = 0; i < 16; i++)
-	{
-		parity += (rawData >> i) & 0x01;
-	}
-	if((parity & 0x01) != 0) return -1;
-#else
 	parity = rawData;
 	parity ^= parity >> 8;
 	parity ^= parity >> 4;
 	parity ^= parity >> 2;
 	parity ^= parity >> 1;
 	if((parity & 0x01) != 0) return -1;
-#endif
 
 	hEncoder->raw_Angle = rawData & 0x3FFF;
 
 	return 0;
+}
 
+int Encoder_Update(Encoder_TypeDef *h)
+{
+	int ret;
+
+	ret = Encoder_Refresh(h);
+	Encoder_Request(h);
+	if(ret != 0) return -1;
+
+	SpeedCalc_Update(&h->speedCalc, h->raw_Angle);
+
+	return 0;
 }
 
 
+
+void SpeedCalc_Init(SpeedCalc_TypeDef* h, float Fs_enc, int MAF_period)
+{
+	h->Fs_enc = Fs_enc;
+	h->MAF_period = MAF_period;
+
+	h->firstSample = 1;
+	h->p_rawAngle = 0;
+	h->omega_q5 = 0;
+	memset(h->MAF_buf, 0x00, sizeof(h->MAF_buf));
+	h->MAF_sum = 0;
+	h->MAF_buf_size = h->MAF_period;
+	h->MAF_cursor = 0;
+	h->MAF_elem_en = 0xffffffff;
+
+	h->Gain_CountToSpeedQ21 = 2*M_PI / 16384 * h->Fs_enc * powf(2,21) + 0.5f;
+}
+
+inline void SpeedCalc_Update(SpeedCalc_TypeDef* h, uint16_t angle_14bit)
+{
+	if(h->firstSample != 0)
+	{
+		h->p_rawAngle = angle_14bit;
+		h->firstSample = 0;
+		return;
+	}
+	h->diff = (angle_14bit << 2) - (h->p_rawAngle << 2);
+	h->diff = h->diff >> 2;
+	h->p_rawAngle = angle_14bit;
+
+	if((h->MAF_elem_en & (1 << h->MAF_cursor)) != 0)
+	{
+		h->MAF_sum -= h->MAF_buf[h->MAF_cursor];
+		h->MAF_buf_size--;
+	}
+	if(h->diff != 0)
+	{
+		h->omega_q5 = (h->Gain_CountToSpeedQ21 * h->diff) >> 16;
+		h->MAF_buf[h->MAF_cursor] = h->omega_q5;
+		h->MAF_sum += h->MAF_buf[h->MAF_cursor];
+		h->MAF_buf_size++;
+		h->MAF_elem_en |= 1 << h->MAF_cursor;
+	}
+	else
+	{
+		h->MAF_buf[h->MAF_cursor] = 0;
+		h->MAF_elem_en &= ~(1 << h->MAF_cursor);
+	}
+	h->MAF_cursor++;
+	if(h->MAF_cursor >= h->MAF_period)
+	{
+		h->MAF_cursor = 0;
+	}
+	if(h->MAF_buf_size > 0)
+	{
+		h->omega_q5_filtered = h->MAF_sum / h->MAF_buf_size;
+	}
+
+}
 
 
 
