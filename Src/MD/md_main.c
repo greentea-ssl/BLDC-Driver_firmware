@@ -137,7 +137,7 @@ void MD_Calibration(MD_Handler_t* h)
 
 	/***** Current sense offset calibration *****/
 	const int cal_sample_num = 1000;
-	uint32_t sum_offset_err[3] = {0, 0, 0};
+	int32_t sum_offset_err[3] = {0, 0, 0};
 	for(int i = 0; i < cal_sample_num; i++)
 	{
 		HAL_Delay(1);
