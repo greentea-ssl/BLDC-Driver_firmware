@@ -25,7 +25,7 @@ void Dump_Init()
 inline void Dump_Update(MD_Handler_t* sys)
 {
 
-#if 0 /* Current sense check */
+#if 1 /* Current sense check */
 	dump_record[dump_counter][0] = sys->motor.duty_u;
 	dump_record[dump_counter][1] = sys->motor.duty_v;
 	dump_record[dump_counter][2] = sys->motor.duty_w;
@@ -49,7 +49,7 @@ inline void Dump_Update(MD_Handler_t* sys)
 	dump_record[dump_counter][8] = sys->motor.omega_q5;
 #endif
 
-#if 1 /* SpeedCalc check */
+#if 0 /* SpeedCalc check */
 	dump_record[dump_counter][0] = sys->encoder.speedCalc.diff;
 	dump_record[dump_counter][1] = sys->motor.omega_q5;
 	dump_record[dump_counter][2] = sys->encoder.speedCalc.omega_q5;

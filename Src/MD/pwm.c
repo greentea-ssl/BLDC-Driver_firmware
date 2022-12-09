@@ -28,11 +28,13 @@ void PWM_Init(PWM_Handler_t* h)
 
 
 	  // Timer Init
-	__HAL_TIM_SET_AUTORELOAD(h->htim, 8000);
 
-	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_1, 4000);
-	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_2, 4000);
-	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_3, 4000);
+	//__HAL_TIM_SET_AUTORELOAD(h->htim, pwm_period);
+	// ARR set in generated code
+
+	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_1, h->htim->Init.Period >> 1);
+	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_2, h->htim->Init.Period >> 1);
+	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_3, h->htim->Init.Period >> 1);
 	__HAL_TIM_SET_COMPARE(h->htim, TIM_CHANNEL_4, h->htim->Init.Period - 1);
 
 }
@@ -287,6 +289,7 @@ void PWM_InjectCommonMode_AwayFromSwitching(int32_t* duty_u, int32_t* duty_v, in
 void PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(int32_t* duty_u, int32_t* duty_v, int32_t* duty_w, int32_t period)
 {
 	int32_t min, mid, max;
+	uint16_t threthold = (period * 3) >> 2;
 	if(*duty_u > *duty_v)
 	{
 		if(*duty_v > *duty_w) // U > V > W
@@ -329,7 +332,7 @@ void PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(int32_t* duty_u, int32_t
 			min = *duty_u;
 		}
 	}
-	if(max - min < 6400) // 8000 * 0.8
+	if(max - min < threthold)
 	{
 		int32_t Vcom = (mid - (period >> 1)) >> 1;
 		*duty_u += Vcom;

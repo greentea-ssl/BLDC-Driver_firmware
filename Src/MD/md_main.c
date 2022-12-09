@@ -38,7 +38,6 @@ void MD_Calibration(MD_Handler_t* h);
 uint8_t getSwitchCh();
 uint8_t getSwitchCalc();
 
-inline void LED_blink(LED_Blink_t* h);
 
 inline static int32_t UartPrintf(UART_HandleTypeDef *huart, char *format, ...);
 
@@ -52,7 +51,7 @@ void MD_Init(MD_Handler_t* h)
 
 	DRV_Init(&h->drv8323);
 
-	Motor_Init(&h->motor);
+	Motor_Init(&h->motor, h->pwm.htim->Init.Period);
 
 	LED_Blink_Init(&h->led_blink, LD2_GPIO_Port, LD2_Pin, 100);
 
@@ -186,13 +185,8 @@ void MD_Calibration(MD_Handler_t* h)
 }
 
 
-
-inline void MD_Update_SyncADC(MD_Handler_t* h)
+inline void MD_Generate_DebugCommand(MD_Handler_t* h)
 {
-
-	CurrentSensor_Refresh(&h->currentSense);
-
-#if DUMP_DEBUG_ENABLE
 	if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR)
 	{
 		// 5A: 2731, 10A: 5461, 15A: 8192
@@ -210,20 +204,30 @@ inline void MD_Update_SyncADC(MD_Handler_t* h)
 	}
 	if(h->motor.RunMode == MOTOR_MODE_CV_VECTOR)
 	{
-		int period = 2000;
+		int period = 4000;
 		if(h->carrier_counter < period)
 		{
 			h->motor.Vd_pu_2q13 = 0;
-			h->motor.Vq_pu_2q13 = h->carrier_counter * 2;
+			h->motor.Vq_pu_2q13 = h->carrier_counter * 1;
 		}
 		else
 		{
-			h->motor.Vq_pu_2q13 = period * 2;
+			h->motor.Vq_pu_2q13 = period * 1;
 		}
 //		h->motor.Vd_pu_2q13 = 0;
 //		h->motor.Vq_pu_2q13 = 341;
 		h->carrier_counter++;
 	}
+}
+
+
+inline void MD_Update_SyncADC(MD_Handler_t* h)
+{
+
+	CurrentSensor_Refresh(&h->currentSense);
+
+#if DUMP_DEBUG_ENABLE
+	MD_Generate_DebugCommand(h);
 #endif
 
 	h->motor.AD_Iu = h->currentSense.AD_Iu[0];

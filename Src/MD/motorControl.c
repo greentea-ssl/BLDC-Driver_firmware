@@ -144,7 +144,7 @@ void UpdateSpeed(Motor_TypeDef *hMotor)
 
 
 
-void Motor_Init(Motor_TypeDef *hMotor)
+void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period)
 {
 
 
@@ -167,7 +167,7 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Init.AD_Iv_offset = 2067;
 	hMotor->Init.AD_Iw_offset = 2077;
 
-	hMotor->Init.PWM_PRR = 8000;
+	hMotor->Init.PWM_PRR = pwm_period;
 
 	hMotor->Init.DutyRateLimit_q5 = 32; //  = 0.9 * 32
 
@@ -194,8 +194,8 @@ void Motor_Init(Motor_TypeDef *hMotor)
 	hMotor->Init.acr_Kp_q14 = acr_Kp * 16384;
 	hMotor->Init.acr_Ki_q2 = acr_Ki * 4;
 
-	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456/10000, 32768);
-	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456/10000, 32768);
+	IntInteg_Init(&hMotor->Id_error_integ, 12, 268435456 / 20000, 32768);
+	IntInteg_Init(&hMotor->Iq_error_integ, 12, 268435456 / 20000, 32768);
 
 	hMotor->Init.acr_limErrFB_gain_q10 = hMotor->Init.V_base / hMotor->Init.I_base / acr_Kp * 1024;
 

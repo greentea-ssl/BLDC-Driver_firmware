@@ -109,7 +109,7 @@ typedef struct
 
 
 
-void Motor_Init(Motor_TypeDef *hMotor);
+void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period);
 
 
 void Motor_Update(Motor_TypeDef *hMotor);
