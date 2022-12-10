@@ -56,6 +56,7 @@ typedef enum{
 	MOTOR_MODE_CC_FORCE = 1,
 	MOTOR_MODE_CV_VECTOR = 2,
 	MOTOR_MODE_CC_VECTOR = 3,
+	MOTOR_MODE_CV_MIDI = 4,
 }Motor_RunMode_Enum;
 
 
@@ -99,6 +100,13 @@ typedef struct
 	int32_t Id_error, Iq_error;
 	int32_t Id_ref_pu_2q13, Iq_ref_pu_2q13;
 
+	// MIDI output
+	uint32_t MIDI_periodTable_us[128];
+	uint32_t MIDI_cycle_us;
+	uint32_t MIDI_count_us;
+	uint8_t MIDI_notenum;
+	uint8_t MIDI_vel;
+
 	int32_t Vd_limit_error, Vq_limit_error;
 
 	IntInteg_TypeDef Id_error_integ, Iq_error_integ;
@@ -112,7 +120,7 @@ typedef struct
 void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period);
 
 
-void Motor_Update(Motor_TypeDef *hMotor);
+void Motor_ADCUpdate(Motor_TypeDef *hMotor);
 
 
 void Motor_Reset(Motor_TypeDef *hMotor);

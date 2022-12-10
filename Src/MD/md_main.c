@@ -237,7 +237,7 @@ inline void MD_Update_SyncADC(MD_Handler_t* h)
 	h->motor.raw_theta_14bit = h->encoder.raw_Angle;
 
 	// Motor Controller Update
-	Motor_Update(&h->motor);
+	Motor_ADCUpdate(&h->motor);
 
 	h->pwm.duty_u = h->motor.duty_u;
 	h->pwm.duty_v = h->motor.duty_v;
@@ -279,10 +279,8 @@ inline void MD_Update_SyncPWM(MD_Handler_t* h)
 
 	Encoder_Update(&h->encoder);
 
-	if(!__HAL_TIM_IS_TIM_COUNTING_DOWN(h->pwm.htim))
-	{
-		PWM_UpdateDuty(&h->pwm);
-	}
+	Motor_PWMUpdate(&h->motor);
+
 }
 
 

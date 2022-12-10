@@ -12,6 +12,7 @@ extern MD_Handler_t md_sys;
 void SendResToMain();
 void SendParamToMain();
 void RecvCmdFromMain(uint8_t* canRxData);
+void RecvMidiFromMain(uint8_t* canRxData);
 
 
 void CAN_Init()
@@ -25,7 +26,7 @@ void CAN_Init()
 	//sFilterConfig.FilterIdHigh = 0x4000 | motorChannel << 10;
 	sFilterConfig.FilterIdHigh = 0x300 << 5;
 	sFilterConfig.FilterIdLow = 0x0000;
-	sFilterConfig.FilterMaskIdHigh = 0x70f << 5;
+	sFilterConfig.FilterMaskIdHigh = 0x70F << 5;
 	sFilterConfig.FilterMaskIdLow = 0x0006;
 	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 	sFilterConfig.FilterActivation = ENABLE;
@@ -97,6 +98,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		SendParamToMain();
 		return;
 	}
+	if(canRxHeader.StdId == 0x320 && canRxHeader.DLC == 8)
+	{
+		RecvMidiFromMain(canRxData);
+		return;
+	}
 
 }
 
@@ -104,6 +110,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 void RecvCmdFromMain(uint8_t* canRxData)
 {
 	int16_t Iq_ref_int = 0;
+
+	if(md_sys.motor.RunMode != MOTOR_MODE_CC_VECTOR)
+	{
+		md_sys.motor.RunMode = MOTOR_MODE_CC_VECTOR;
+		Motor_Reset(&md_sys.motor);
+	}
 
 	switch(md_sys.motor_channel)
 	{
@@ -130,6 +142,40 @@ void RecvCmdFromMain(uint8_t* canRxData)
 	// send response
 	SendResToMain();
 
+}
+
+void RecvMidiFromMain(uint8_t* canRxData)
+{
+	int16_t Iq_ref_int = 0;
+
+	md_sys.motor.RunMode = MOTOR_MODE_CV_MIDI;
+
+	switch(md_sys.motor_channel)
+	{
+	case 0:
+		md_sys.motor.MIDI_notenum = canRxData[0];
+		md_sys.motor.MIDI_vel = canRxData[1];
+		break;
+	case 1:
+		md_sys.motor.MIDI_notenum = canRxData[2];
+		md_sys.motor.MIDI_vel = canRxData[3];
+		break;
+	case 2:
+		md_sys.motor.MIDI_notenum = canRxData[4];
+		md_sys.motor.MIDI_vel = canRxData[5];
+		break;
+	case 3:
+		md_sys.motor.MIDI_notenum = canRxData[6];
+		md_sys.motor.MIDI_vel = canRxData[7];
+		break;
+	default:
+		return;
+	}
+
+	timeoutReset(&md_sys);
+
+	// send response
+	SendResToMain();
 }
 
 

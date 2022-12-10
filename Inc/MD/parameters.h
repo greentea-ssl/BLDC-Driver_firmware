@@ -72,6 +72,11 @@
 #endif
 
 
+/******************* MIDI Output ********************/
+
+#define MIDI_GAIN_Q5	(1) // 0~31
+
+
 /******************* For PWM ************************/
 
 #define NO_UPDATE_ON_BOTTOM 	0

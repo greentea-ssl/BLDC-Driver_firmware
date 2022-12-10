@@ -54,7 +54,19 @@ inline void sqLimit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x
 
 	*dst_x = (src_x * dec) >> 14;
 	*dst_y = (src_y * dec) >> 14;
+}
 
+inline int32_t limitter_int32(int32_t val, int32_t min, int32_t max)
+{
+	if(val < min)
+	{
+		return min;
+	}
+	if(val > max)
+	{
+		return max;
+	}
+	return val;
 }
 
 
@@ -104,7 +116,61 @@ void CurrentControl(Motor_TypeDef *hMotor)
 			* hMotor->Init.Gain_Ib_by_Vb_q10 >> 10;
 	hMotor->Vq_pu_2q13 = ((hMotor->Init.acr_Kp_q14 * hMotor->Iq_error >> 14) + (hMotor->Init.acr_Ki_q2 * hMotor->Iq_error_integ.integ >> 14))
 			* hMotor->Init.Gain_Ib_by_Vb_q10 >> 10;
+}
 
+void Midi_Init(Motor_TypeDef *hMotor)
+{
+	for(int n = 0; n < 128; n++)
+	{
+		float f = 440.0f * powf(2.0, (n - 69) / 12.0f);
+		hMotor->MIDI_periodTable_us[n] = (uint32_t)(1000000 / f + 0.5);
+	}
+	hMotor->MIDI_cycle_us = 25;
+	hMotor->MIDI_count_us = 0;
+	hMotor->MIDI_notenum = 69;
+	hMotor->MIDI_vel = 0;
+}
+
+void Midi_Update(Motor_TypeDef *hMotor)
+{
+	uint32_t period_us = hMotor->MIDI_periodTable_us[hMotor->MIDI_notenum];
+
+	// Counter update
+	hMotor->MIDI_count_us += hMotor->MIDI_cycle_us;
+	if(hMotor->MIDI_count_us >= period_us)
+	{
+		//hMotor->MIDI_count_us -= period_us; // 周波数に忠実
+		hMotor->MIDI_count_us = 0; // 音質が良い
+	}
+
+	// Generate square wave
+	if(hMotor->MIDI_count_us * 2 > period_us)
+	{
+		hMotor->Vd_pu_2q13 = 0;
+		hMotor->Vq_pu_2q13 = -1 * hMotor->MIDI_vel * MIDI_GAIN_Q5;
+	}
+	else
+	{
+		hMotor->Vd_pu_2q13 = 0;
+		hMotor->Vq_pu_2q13 = hMotor->MIDI_vel * MIDI_GAIN_Q5;
+	}
+}
+
+
+void Limitter_Vdq(Motor_TypeDef *hMotor)
+{
+	int16_t Vd_bef_lim = hMotor->Vd_pu_2q13;
+	int16_t Vq_bef_lim = hMotor->Vq_pu_2q13;
+
+	// Circular voltage limit
+	//	// Vdq_lim = Vdc / 2 * sqrt(3/2) * DutyLimitRate
+	//	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
+	// Vdq_lim = Vdc / sqrt(2) * DutyLimitRate
+	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5793 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
+	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+
+	hMotor->Vd_limit_error = Vd_bef_lim - hMotor->Vd_pu_2q13;
+	hMotor->Vq_limit_error = Vq_bef_lim - hMotor->Vq_pu_2q13;
 }
 
 
@@ -218,6 +284,8 @@ void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period)
 	hMotor->Igam_ref_pu_2q13 = 0;
 	hMotor->Idel_ref_pu_2q13 = 0;
 
+	Midi_Init(hMotor);
+
 	hMotor->Vd_limit_error = 0;
 	hMotor->Vq_limit_error = 0;
 
@@ -234,7 +302,7 @@ void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period)
 }
 
 
-void Motor_Update(Motor_TypeDef *hMotor)
+void Motor_ADCUpdate(Motor_TypeDef *hMotor)
 {
 
 	hMotor->theta_m_int = (hMotor->raw_theta_14bit >> 1) & SIN_TBL_MASK;
@@ -245,116 +313,100 @@ void Motor_Update(Motor_TypeDef *hMotor)
 	hMotor->Iu_pu_2q13 = ( ((int32_t)hMotor->AD_Iu - (int32_t)hMotor->Init.AD_Iu_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
 	hMotor->Iv_pu_2q13 = ( ((int32_t)hMotor->AD_Iv - (int32_t)hMotor->Init.AD_Iv_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
 	hMotor->Iw_pu_2q13 = ( ((int32_t)hMotor->AD_Iw - (int32_t)hMotor->Init.AD_Iw_offset) * hMotor->Init.Gain_Iad2pu_s14 ) >> 14;
-
 	hMotor->Vdc_pu_2q13 = ( (int32_t)hMotor->AD_Vdc * (int32_t)hMotor->Init.Gain_Vad2pu_s14 ) >> 14;
 
 	// Current source selection
 	if(hMotor->duty_u > hMotor->duty_v && hMotor->duty_u > hMotor->duty_w)
 	{
-		// Sector: 6,1
-		hMotor->Iu_pu_2q13 = - hMotor->Iv_pu_2q13 - hMotor->Iw_pu_2q13;
+		hMotor->Iu_pu_2q13 = - hMotor->Iv_pu_2q13 - hMotor->Iw_pu_2q13; // Sector: 6,1
 	}
 	else if(hMotor->duty_v > hMotor->duty_u && hMotor->duty_v > hMotor->duty_w)
 	{
-		// Sector: 2,3
-		hMotor->Iv_pu_2q13 = - hMotor->Iw_pu_2q13 - hMotor->Iu_pu_2q13;
+		hMotor->Iv_pu_2q13 = - hMotor->Iw_pu_2q13 - hMotor->Iu_pu_2q13; // Sector: 2,3
 	}
 	else
 	{
-		// Sector: 4,5
-		hMotor->Iw_pu_2q13 = - hMotor->Iu_pu_2q13 - hMotor->Iv_pu_2q13;
+		hMotor->Iw_pu_2q13 = - hMotor->Iu_pu_2q13 - hMotor->Iv_pu_2q13; // Sector: 4,5
 	}
 
 	// UVW => ab
 	uvw2ab(&hMotor->Ia_pu_2q13, &hMotor->Ib_pu_2q13, hMotor->Iu_pu_2q13, hMotor->Iv_pu_2q13, hMotor->Iw_pu_2q13);
 
-	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR)
+	// MIDI出力モードの時はキャリア同期タイミングでduty更新をする
+	if(hMotor->RunMode == MOTOR_MODE_CV_MIDI)
 	{
-		// Normal vector control
-		// ab => dq
-		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+		return;
 	}
-	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
+
+	switch(hMotor->RunMode)
 	{
-		// When forced commutation active
-		// ab => gam-del
+	case MOTOR_MODE_CV_FORCE:
 		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_force_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
-	}
-
-	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR || hMotor->RunMode == MOTOR_MODE_CC_FORCE)
-	{
+		Limitter_Vdq(hMotor);
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		break;
+	case MOTOR_MODE_CV_VECTOR:
+		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+		Limitter_Vdq(hMotor);
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		break;
+	case MOTOR_MODE_CC_FORCE:
+		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_force_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 		CurrentControl(hMotor);
-	}
-
-	int16_t Vd_bef_lim = hMotor->Vd_pu_2q13;
-	int16_t Vq_bef_lim = hMotor->Vq_pu_2q13;
-
-	// Circular voltage limit
-	//	// Vdq_lim = Vdc / 2 * sqrt(3/2) * DutyLimitRate
-	//	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
-	// Vdq_lim = Vdc / sqrt(2) * DutyLimitRate
-	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5793 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
-	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
-
-	hMotor->Vd_limit_error = Vd_bef_lim - hMotor->Vd_pu_2q13;
-	hMotor->Vq_limit_error = Vq_bef_lim - hMotor->Vq_pu_2q13;
-
-	if(hMotor->RunMode == MOTOR_MODE_CC_VECTOR)
-	{
-		// Normal vector control
-		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
-	}
-	else if(hMotor->RunMode == MOTOR_MODE_CV_VECTOR)
-	{
-		// Normal vector control
-		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
-	}
-	else if(hMotor->RunMode == MOTOR_MODE_CC_FORCE)
-	{
-		// When forced commutation enable
+		Limitter_Vdq(hMotor);
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
-	}
-	else if(hMotor->RunMode == MOTOR_MODE_CV_FORCE)
-	{
-		// When forced commutation enable
-		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		break;
+	case MOTOR_MODE_CC_VECTOR:
+		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+		CurrentControl(hMotor);
+		Limitter_Vdq(hMotor);
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		break;
 	}
 
 	ab2uvw(&hMotor->Vu_pu_2q13, &hMotor->Vv_pu_2q13, &hMotor->Vw_pu_2q13, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
 
 	int32_t Gain_Vref2duty_s14 = ((int32_t)hMotor->Init.PWM_PRR << 14) / hMotor->Vdc_pu_2q13;
-
-//	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
-//	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
-//	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) - (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 	int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 	int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 	int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
 
-
-	//PWM_InjectCommonMode_MinMax(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
-	//PWM_InjectCommonMode_TwoPhaseUp(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
-	//PWM_InjectCommonMode_TwoPhaseLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
-	//PWM_InjectCommonMode_AwayFromSwitching(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 	PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
 
-
 	// Duty Limit
-	if(duty_u < 0) hMotor->duty_u = 0;
-	else if(duty_u > hMotor->Init.PWM_PRR) hMotor->duty_u = hMotor->Init.PWM_PRR;
-	else hMotor->duty_u = duty_u;
-
-	if(duty_v < 0) hMotor->duty_v = 0;
-	else if(duty_v > hMotor->Init.PWM_PRR) hMotor->duty_v = hMotor->Init.PWM_PRR;
-	else hMotor->duty_v = duty_v;
-
-	if(duty_w < 0) hMotor->duty_w = 0;
-	else if(duty_w > hMotor->Init.PWM_PRR) hMotor->duty_w = hMotor->Init.PWM_PRR;
-	else hMotor->duty_w = duty_w;
-
+	hMotor->duty_u = limitter_int32(duty_u, 0, hMotor->Init.PWM_PRR);
+	hMotor->duty_v = limitter_int32(duty_v, 0, hMotor->Init.PWM_PRR);
+	hMotor->duty_w = limitter_int32(duty_w, 0, hMotor->Init.PWM_PRR);
 }
 
+void Motor_PWMUpdate(Motor_TypeDef *hMotor)
+{
 
+	if(hMotor->RunMode == MOTOR_MODE_CV_MIDI)
+	{
+		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+
+		Midi_Update(hMotor);
+
+		Limitter_Vdq(hMotor);
+
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		ab2uvw(&hMotor->Vu_pu_2q13, &hMotor->Vv_pu_2q13, &hMotor->Vw_pu_2q13, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
+
+		int32_t Gain_Vref2duty_s14 = ((int32_t)hMotor->Init.PWM_PRR << 14) / hMotor->Vdc_pu_2q13;
+		int32_t duty_u = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vu_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+		int32_t duty_v = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vv_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+		int32_t duty_w = (hMotor->Init.PWM_PRR >> 1) + (((int32_t)hMotor->Vw_pu_2q13 * Gain_Vref2duty_s14) >> 14);
+
+		PWM_InjectCommonMode_AwayFromSwitching_MinMaxInLow(&duty_u, &duty_v, &duty_w, hMotor->Init.PWM_PRR);
+
+		// Duty Limit
+		hMotor->duty_u = limitter_int32(duty_u, 0, hMotor->Init.PWM_PRR);
+		hMotor->duty_v = limitter_int32(duty_v, 0, hMotor->Init.PWM_PRR);
+		hMotor->duty_w = limitter_int32(duty_w, 0, hMotor->Init.PWM_PRR);
+	}
+
+}
 
 
 void Motor_Reset(Motor_TypeDef *hMotor)
