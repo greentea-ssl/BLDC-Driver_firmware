@@ -53,7 +53,7 @@ void MD_Init(MD_Handler_t* h)
 
 	Motor_Init(&h->motor, h->pwm.htim->Init.Period);
 
-	LED_Blink_Init(&h->led_blink, LD2_GPIO_Port, LD2_Pin, 100);
+	LED_Blink_Init(&h->led_blink, LD2_GPIO_Port, LD2_Pin, 50);
 
 	h->timeoutEnable = 1;
 
