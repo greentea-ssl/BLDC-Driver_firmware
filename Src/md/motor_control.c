@@ -1,13 +1,11 @@
 
 
 
-#include "motorControl.h"
-#include "parameters.h"
-#include "sin_t.h"
-#include "pwm.h"
+#include "motor_control.h"
 
-
-
+#include <md/parameters.h>
+#include <md/pwm.h>
+#include <md/sin_t.h>
 #include <string.h>
 
 /***** Private functions prototypes *****/
@@ -43,7 +41,7 @@ inline void dq2ab(int16_t *a, int16_t *b, uint16_t theta_re, int16_t d, int16_t 
 	*b = (sin_theta_re * d + cos_theta_re * q) >> 14;
 }
 
-inline void sqLimit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x, int16_t src_y)
+inline void circular_limit(int16_t *dst_x, int16_t *dst_y, int16_t limit, int16_t src_x, int16_t src_y)
 {
 	int32_t r2 = (int32_t)src_x * (int32_t)src_x + (int32_t)src_y * (int32_t)src_y;
 	int32_t limit2 = (int32_t)limit * (int32_t)limit;
@@ -167,7 +165,7 @@ void Limitter_Vdq(Motor_TypeDef *hMotor)
 	//	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5017 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
 	// Vdq_lim = Vdc / sqrt(2) * DutyLimitRate
 	const int16_t Vdq_lim_pu_2q13 = ((int32_t)hMotor->Vdc_pu_2q13 * 5793 * hMotor->Init.DutyRateLimit_q5) >> (13 + 5);
-	sqLimit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+	circular_limit(&hMotor->Vd_pu_2q13, &hMotor->Vq_pu_2q13, Vdq_lim_pu_2q13, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
 
 	hMotor->Vd_limit_error = Vd_bef_lim - hMotor->Vd_pu_2q13;
 	hMotor->Vq_limit_error = Vq_bef_lim - hMotor->Vq_pu_2q13;

@@ -1,10 +1,10 @@
 
 
-#include "canCom.h"
+#include "can_com.h"
 
+#include <md/md_main.h>
+#include <md/parameters.h>
 #include "main.h"
-#include "md_main.h"
-#include "parameters.h"
 
 extern MD_Handler_t md_sys;
 

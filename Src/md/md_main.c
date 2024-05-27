@@ -1,26 +1,25 @@
 
 
 
+#include <can_com.h>
+#include <current_sensor.h>
+#include <drv8323.h>
+#include <int_math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-
-#include "md_main.h"
+#include <md/dump_int.h>
+#include <md/encoder.h>
+#include <md/flash.h>
+#include <md/led_blink.h>
+#include <md/md_main.h>
+#include <md/parameters.h>
+#include <md/pwm.h>
+#include <md/sin_t.h>
+#include <motor_control.h>
 
 #include "main.h"
-#include "flash.h"
-#include "pwm.h"
-#include "parameters.h"
-#include "encoder.h"
-#include "currentSensor.h"
-#include "drv8323.h"
-#include "canCom.h"
-#include "sin_t.h"
-#include "motorControl.h"
-#include "dump_int.h"
-#include "intMath.h"
-#include "led_blink.h"
 
 
 #define DEBUG_PRINT_ENABLE 0

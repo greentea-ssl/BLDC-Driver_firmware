@@ -1,12 +1,11 @@
 
 
-#include "encoder.h"
-
+#include <md/encoder.h>
+#include <md/parameters.h>
+#include <md/sin_t.h>
 #include <string.h>
 
-#include "parameters.h"
 #include "math.h"
-#include "sin_t.h"
 
 
 void Encoder_Request(Encoder_TypeDef *hEncoder);

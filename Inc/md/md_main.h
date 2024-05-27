@@ -4,10 +4,10 @@
 
 #include <stdio.h>
 
-#include "motorControl.h"
+#include "motor_control.h"
 #include "pwm.h"
 #include "encoder.h"
-#include "currentSensor.h"
+#include "current_sensor.h"
 #include "drv8323.h"
 #include "led_blink.h"
 

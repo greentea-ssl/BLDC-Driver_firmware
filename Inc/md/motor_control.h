@@ -7,7 +7,7 @@
 
 #include "parameters.h"
 
-#include "intMath.h"
+#include "int_math.h"
 
 
 typedef struct

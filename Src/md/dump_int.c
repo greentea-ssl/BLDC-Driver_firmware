@@ -1,13 +1,12 @@
 
 
 
-#include "dump_int.h"
-
+#include <md/dump_int.h>
+#include <md/md_main.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 
-#include "md_main.h"
 
 
 uint16_t dump_record[DUMP_LENGTH][DUMP_CHANNELS];

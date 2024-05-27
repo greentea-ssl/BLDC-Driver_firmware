@@ -1,7 +1,6 @@
 
-#include "sin_t.h"
-
 #include <math.h>
+#include <md/sin_t.h>
 
 
 

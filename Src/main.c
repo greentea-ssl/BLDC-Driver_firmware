@@ -18,6 +18,10 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <can_com.h>
+#include <current_sensor.h>
+#include <drv8323.h>
+#include <int_math.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -26,17 +30,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-#include "pwm.h"
-#include "parameters.h"
-#include "encoder.h"
-#include "currentSensor.h"
-#include "drv8323.h"
-#include "canCom.h"
-#include "sin_t.h"
-#include "motorControl.h"
-#include "dump_int.h"
-#include "intMath.h"
-#include "md_main.h"
+#include <md/dump_int.h>
+#include <md/encoder.h>
+#include <md/md_main.h>
+#include <md/parameters.h>
+#include <md/pwm.h>
+#include <md/sin_t.h>
+#include <motor_control.h>
 
 
 

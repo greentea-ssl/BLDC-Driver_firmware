@@ -1,7 +1,7 @@
 
 
-#include "pwm.h"
-#include "parameters.h"
+#include <md/parameters.h>
+#include <md/pwm.h>
 #include "main.h"
 
 // reference vectors for SVM
