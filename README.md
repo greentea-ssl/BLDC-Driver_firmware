@@ -33,7 +33,7 @@ Inc/parameters.h 内の10行目付近で使用モータの型番を選んでコ�
 - [STM32F446RET6](https://www.stmcu.jp/stm32/stm32f4/stm32f446/12361/)
 
 ### ゲートドライバ
-- [DRV8323RH](http://www.ti.com/lit/ds/symlink/drv8323r.pdf)
+- [DRV8323RS](http://www.ti.com/lit/ds/symlink/drv8323r.pdf)
   * MOSFETx6個分の回路内蔵
   * シャント抵抗用のアンプ付き
   * 各種保護回路付き
