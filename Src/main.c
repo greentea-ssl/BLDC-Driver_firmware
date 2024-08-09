@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <math.h>
-#include <md/dump_int.h>
+//#include <md/dump_int.h>
 #include <md/encoder.h>
 #include <md/md_main.h>
 #include <md/parameters.h>
@@ -39,7 +39,7 @@
 #include <int_math.h>
 #include "ntshell.h"
 #include "usrcmd.h"
-
+#include "wave_capture.h"
 
 
 /* USER CODE END Includes */
@@ -84,8 +84,12 @@ MD_Handler_t md_sys;
 
 ntshell_t nts;
 
-uint8_t rxChar = 0;
-uint8_t rxFlag = 0;
+WaveCapture_t wavecap;
+
+
+uint16_t timestamp_start = 0;
+uint16_t timestamp_mid = 0;
+uint16_t timestamp_end = 0;
 
 
 
@@ -139,6 +143,19 @@ int _write(int file, char *ptr, int len)
 extern void initialise_monitor_handles(void);
 #endif
 
+
+int wave_tx_func(const uint8_t *buf, int length)
+{
+	HAL_StatusTypeDef status;
+	status = HAL_UART_Transmit(&huart2, buf, (uint16_t)length, 1000);
+	if(status != HAL_OK)
+	{
+		return 0;
+	}
+	return length;
+}
+
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -187,13 +204,45 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
+  printf("Hello !!\r\n");
+
   //initialise_monitor_handles();
 
 
   ntshell_usr_init(&nts);
 
 
-//  HAL_UART_Receive_IT(&huart2, &rxChar, 1);
+
+  // WWave Capture settings
+  WaveCapture_Init_ChannelInfo_t wave_ch_init[] = {
+		  {"Vu_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Vu_pu_2q13)},
+		  {"Vv_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Vv_pu_2q13)},
+		  {"Vw_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Vw_pu_2q13)},
+		  {"Vdc_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Vdc_pu_2q13)},
+		  {"Iu_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iu_pu_2q13)},
+		  {"Iv_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iv_pu_2q13)},
+		  {"Iw_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iw_pu_2q13)},
+		  {"theta_rm", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_re_int)},
+		  {"theta_re", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_m_int)},
+		  {"timestamp_start", WAVECAPTURE_TYPE_INT16, &(timestamp_start)},
+		  {"timestamp_mid", WAVECAPTURE_TYPE_INT16, &(timestamp_mid)},
+		  {"timestamp_end", WAVECAPTURE_TYPE_INT16, &(timestamp_end)},
+  };
+  WaveCapture_Init_t wave_init;
+  wave_init.channel_num = sizeof(wave_ch_init) / sizeof(WaveCapture_Init_ChannelInfo_t);
+  wave_init.func_write = wave_tx_func;
+  wave_init.sampling_length = 1024;
+  wave_init.sampling_freq = 40000;
+  wave_init.ch_info_array = wave_ch_init;
+  int rtn = WaveCapture_Init(&wavecap, &wave_init);
+  if(rtn != 0)
+  {
+	  printf("WaveCap Error !!\r\n");
+	  Error_Handler();
+  }
+
+
+
 
   // Set peripheral handler
   md_sys.pwm.htim = &htim8;
@@ -210,6 +259,12 @@ int main(void)
   MD_Init(&md_sys);
 
 
+
+
+
+
+
+
   ntshell_execute(&nts);
 
 
@@ -224,14 +279,6 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	if(MD_Update_Async(&md_sys) != 0) break;
-
-
-	if(rxFlag)
-	{
-		printf("%d\r\n", md_sys.motor.theta_re_int);
-		rxFlag = 0;
-	}
-
 
   }
 
@@ -700,7 +747,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 2000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -802,8 +849,15 @@ void HAL_ADCEx_InjectedConvCpltCallback (ADC_HandleTypeDef * hadc)
 
 	if(hadc->Instance != md_sys.currentSense.Init.hadc[0]->Instance) return;
 
+	timestamp_start = htim8.Instance->CNT;
+
 	MD_Update_SyncADC(&md_sys);
 
+	timestamp_mid = htim8.Instance->CNT;
+
+	WaveCapture_Sampling(&wavecap);
+
+	timestamp_end = htim8.Instance->CNT;
 }
 
 #endif
@@ -814,31 +868,11 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim)
 
 	if(htim->Instance == TIM8)
 	{
+
+
 		MD_Update_SyncPWM(&md_sys);
+
 	}
-
-}
-
-
-
-
-
-void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
-{
-
-	//WaveSampler_TxCplt(&hWave, huart);
-
-}
-
-
-void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
-{
-
-	//WaveSampler_RxCplt(&hWave, huart);
-
-	rxFlag = 1;
-
-	HAL_UART_Receive_IT(&huart2, &rxChar, 1);
 
 }
 

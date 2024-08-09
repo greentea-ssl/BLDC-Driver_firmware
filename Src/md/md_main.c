@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-#include <md/dump_int.h>
+//#include <md/dump_int.h>
 #include <md/encoder.h>
 #include <md/flash.h>
 #include <md/led_blink.h>
@@ -243,13 +243,13 @@ inline void MD_Update_SyncADC(MD_Handler_t* h)
 	h->pwm.duty_w = h->motor.duty_w;
 	PWM_SetDuty(&h->pwm);
 
-	if(!Dump_isFull())
-	{
-		if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR || h->motor.RunMode == MOTOR_MODE_CV_VECTOR)
-		{
-			Dump_Update(h);
-		}
-	}
+//	if(!Dump_isFull())
+//	{
+//		if(h->motor.RunMode == MOTOR_MODE_CC_VECTOR || h->motor.RunMode == MOTOR_MODE_CV_VECTOR)
+//		{
+//			Dump_Update(h);
+//		}
+//	}
 
 #if 1
 	if(h->timeoutEnable == 1)
@@ -317,7 +317,7 @@ void MD_End(MD_Handler_t* h)
 
 	PWM_Stop(&h->pwm);
 
-	Dump_Print();
+//	Dump_Print();
 
 #if DEBUG_PRINT_ENABLE
 	printf("Finished.\r\n");

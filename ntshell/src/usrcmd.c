@@ -39,6 +39,10 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "wave_capture.h"
+
+
+extern WaveCapture_t wavecap;
 
 
 #define UartHandler (huart2)
@@ -67,6 +71,7 @@ int usrcmd_execute(const char *text);
 static int usrcmd_ntopt_callback(int argc, char **argv, void *extobj);
 static int usrcmd_help(int argc, char **argv);
 static int usrcmd_info(int argc, char **argv);
+static int usrcmd_wavecap(int argc, char **argv);
 
 typedef struct {
     char *cmd;
@@ -77,6 +82,7 @@ typedef struct {
 static const cmd_table_t cmdlist[] = {
     { "help", "This is a description text string for help command.", usrcmd_help },
     { "info", "This is a description text string for info command.", usrcmd_info },
+    { "wavecap", "This is a description text string for info command.", usrcmd_wavecap },
 };
 
 
@@ -253,7 +259,272 @@ static int usrcmd_info(int argc, char **argv)
 }
 
 
-
+static int usrcmd_wavecap(int argc, char **argv)
+{
+	if (argc < 2)
+	{
+		uart_puts("wavecap set channel\r\n");
+		uart_puts("wavecap set triglevel\r\n");
+		uart_puts("wavecap set trigch\r\n");
+		uart_puts("wavecap set trigpos\r\n");
+		uart_puts("wavecap set trigslope\r\n");
+		uart_puts("wavecap set trigmode\r\n");
+		uart_puts("wavecap set decimate\r\n");
+		uart_puts("wavecap get wave\r\n");
+		return -1;
+	}
+	if (ntlibc_strcmp(argv[1], "set") == 0)
+	{
+		if(argc < 4)
+		{
+			uart_puts("wavecap set channel [channel]\r\n");
+			uart_puts("wavecap set triglevel [level]\r\n");
+			uart_puts("wavecap set trigch [channel]\r\n");
+			uart_puts("wavecap set trigpos [pos]\r\n");
+			uart_puts("wavecap set trigslope [slope]\r\n");
+			uart_puts("wavecap set trigmode [mode]\r\n");
+			uart_puts("wavecap set decimate [deimate]\r\n");
+			return -1;
+		}
+		if(ntlibc_strcmp(argv[2], "channel") == 0)
+		{
+			char *endptr;
+			uint32_t ch_config = strtoul(argv[3], &endptr, 16);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			int rtn = WaveCapture_Set_Channel(&wavecap, ch_config);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("ch_config = %08x\r\n", ch_config);
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "triglevel") == 0)
+		{
+			char *endptr_f;
+			char *endptr_i;
+			float triglevel_f = strtof(argv[3], &endptr_f);
+			int32_t triglevel_i = strtol(argv[3], &endptr_i, 10);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr_f)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			WaveCapture_Set_TriggerLevel(&wavecap, triglevel_f, triglevel_i);
+			int rtn = WaveCapture_Set_TriggerLevel(&wavecap, triglevel_f, triglevel_i);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("triglevel_f = %f, triglevel_i = %d\r\n", triglevel_f, triglevel_i);
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "trigch") == 0)
+		{
+			char *endptr;
+			uint32_t trigch = strtoul(argv[3], &endptr, 10);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			int rtn = WaveCapture_Set_TriggerChannel(&wavecap, trigch);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("trigch = %d\r\n", trigch);
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "trigpos") == 0)
+		{
+			char *endptr;
+			int32_t trigpos = strtol(argv[3], &endptr, 10);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("trigpos = %d\r\n", trigpos);
+			int rtn = WaveCapture_Set_TriggerPos(&wavecap, trigpos);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "trigslope") == 0)
+		{
+			if(ntlibc_strcmp(argv[3], "rise") == 0)
+			{
+				int rtn = WaveCapture_Set_TriggerEdgeSlope(&wavecap, WAVECAPTURE_TRIG_SLOPE_RISE);
+				if(rtn != 0)
+				{
+					uart_puts("ERROR\r\n");
+					return -1;
+				}
+				uart_puts("OK\r\n");
+				return 0;
+			}
+			if(ntlibc_strcmp(argv[3], "fall") == 0)
+			{
+				int rtn = WaveCapture_Set_TriggerEdgeSlope(&wavecap, WAVECAPTURE_TRIG_SLOPE_FALL);
+				if(rtn != 0)
+				{
+					uart_puts("ERROR\r\n");
+					return -1;
+				}
+				uart_puts("OK\r\n");
+				return 0;
+			}
+			uart_puts("ERROR\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "trigmode") == 0)
+		{
+			if(ntlibc_strcmp(argv[3], "auto") == 0)
+			{
+				int rtn = WaveCapture_Set_TriggerMode(&wavecap, WAVECAPTURE_MODE_AUTO);
+				if(rtn != 0)
+				{
+					uart_puts("ERROR\r\n");
+					return -1;
+				}
+				uart_puts("OK\r\n");
+				return 0;
+			}
+			if(ntlibc_strcmp(argv[3], "normal") == 0)
+			{
+				int rtn = WaveCapture_Set_TriggerMode(&wavecap, WAVECAPTURE_MODE_NORMAL);
+				if(rtn != 0)
+				{
+					uart_puts("ERROR\r\n");
+					return -1;
+				}
+				uart_puts("OK\r\n");
+				return 0;
+			}
+			if(ntlibc_strcmp(argv[3], "single") == 0)
+			{
+				int rtn = WaveCapture_Set_TriggerMode(&wavecap, WAVECAPTURE_MODE_SINGLE);
+				if(rtn != 0)
+				{
+					uart_puts("ERROR\r\n");
+					return -1;
+				}
+				uart_puts("OK\r\n");
+				return 0;
+			}
+			uart_puts("ERROR\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "decimate") == 0)
+		{
+			char *endptr;
+			uint32_t decimate = strtoul(argv[3], &endptr, 10);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("decimate = %d\r\n", decimate);
+			int rtn = WaveCapture_Set_Decimate(&wavecap, decimate);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		if(ntlibc_strcmp(argv[2], "timeout") == 0)
+		{
+			char *endptr;
+			uint32_t timeout = strtoul(argv[3], &endptr, 10);
+			uint32_t len = strlen(argv[3]);
+			if(len > 8 || argv[3] + len != endptr)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			printf("timeout = %d\r\n", timeout);
+			int rtn = WaveCapture_Set_Timeout(&wavecap, timeout);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		uart_puts("Unknown sub command found\r\n");
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "start") == 0)
+	{
+		WaveCapture_Start_Sampling(&wavecap);
+		uart_puts("OK\r\n");
+		return 0;
+	}
+	if (ntlibc_strcmp(argv[1], "get") == 0)
+	{
+		if(ntlibc_strcmp(argv[2], "wave") == 0)
+		{
+			int rtn = WaveCapture_Get_WaveForm(&wavecap);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		else if(ntlibc_strcmp(argv[2], "info") == 0)
+		{
+			int rtn = WaveCapture_Get_WaveInfo(&wavecap);
+			if(rtn != 0)
+			{
+				uart_puts("ERROR\r\n");
+				return -1;
+			}
+			uart_puts("OK\r\n");
+			return 0;
+		}
+		uart_puts("Unknown sub command found\r\n");
+		return -1;
+	}
+	if (ntlibc_strcmp(argv[1], "dump") == 0)
+	{
+		wavecap.status = WAVECAPTURE_SAMPLE_STOPPED;
+		for(int i = 0; i < wavecap.init.sampling_length; i++)
+		{
+			int32_t val = ((int32_t*)(wavecap.wavedata[0]))[i];
+			printf("%d, ", val);
+		}
+		printf("\r\n");
+		wavecap.status = WAVECAPTURE_SAMPLE_FREERUN;
+		return 0;
+	}
+	uart_puts("Unknown sub command found\r\n");
+	return -1;
+}
 
 
 
