@@ -23,6 +23,8 @@
 #include <drv8323.h>
 #include <int_math.h>
 #include "main.h"
+#include "ntshell.h"
+#include "usrcmd.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -80,6 +82,7 @@ UART_HandleTypeDef huart2;
 
 MD_Handler_t md_sys;
 
+ntshell_t nts;
 
 uint8_t rxChar = 0;
 uint8_t rxFlag = 0;
@@ -185,7 +188,10 @@ int main(void)
   //initialise_monitor_handles();
 
 
-  HAL_UART_Receive_IT(&huart2, &rxChar, 1);
+  ntshell_usr_init(&nts);
+
+
+//  HAL_UART_Receive_IT(&huart2, &rxChar, 1);
 
   // Set peripheral handler
   md_sys.pwm.htim = &htim8;
@@ -200,6 +206,9 @@ int main(void)
   md_sys.drv8323.hspi = &hspi3;
   md_sys.hcan = &hcan1;
   MD_Init(&md_sys);
+
+
+  ntshell_execute(&nts);
 
 
   /* USER CODE END 2 */

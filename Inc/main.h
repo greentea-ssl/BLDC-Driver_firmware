@@ -47,6 +47,9 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
+
+
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -107,6 +110,10 @@ void Error_Handler(void);
 #define DB0_Pin GPIO_PIN_6
 #define DB0_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
+
+
+extern UART_HandleTypeDef huart2;
+
 
 /* USER CODE END Private defines */
 
