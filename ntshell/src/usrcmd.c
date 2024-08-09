@@ -41,8 +41,16 @@
 #include "main.h"
 
 
+#define UartHandler (huart2)
+
+
 #define uart_puts(str) puts(str)
 #define uart_putc(str) putc(str)
+
+
+#define UART_BUF_LENGTH 128
+uint8_t uart_rx_buf[UART_BUF_LENGTH] __attribute__ ((aligned (4)));
+uint32_t uart_rx_cursor = 0;
 
 
 typedef int (*USRCMDFUNC)(int argc, char **argv);
@@ -76,6 +84,8 @@ static const cmd_table_t cmdlist[] = {
 void ntshell_usr_init(ntshell_t *p)
 {
 
+	HAL_UART_Receive_DMA(&UartHandler, uart_rx_buf, sizeof(uart_rx_buf));
+
 	void *extobj = 0;
 	ntshell_init(p, ntshell_serial_read, ntshell_serial_write, ntshell_callback, extobj);
 	ntshell_set_prompt(p, "ntshell>");
@@ -84,10 +94,31 @@ void ntshell_usr_init(ntshell_t *p)
 
 static int ntshell_serial_read(char *buf, int cnt, void *extobj)
 {
-
-	while(HAL_UART_Receive(&huart2, (uint8_t*)buf, cnt, 1000) != HAL_OK);
-
-	return cnt;
+	int rx_counter = 0;
+	while(rx_counter < cnt)
+	{
+		int next_idx = UART_BUF_LENGTH - __HAL_DMA_GET_COUNTER(UartHandler.hdmarx);
+		int new_data_length = next_idx - uart_rx_cursor;
+		if(new_data_length < 0)
+		{
+			new_data_length += UART_BUF_LENGTH;
+		}
+		for(int i = 0; i < cnt; i++)
+		{
+			if(i >= new_data_length)
+			{
+				break;
+			}
+			rx_counter++;
+			buf[i] = uart_rx_buf[uart_rx_cursor];
+			uart_rx_cursor++;
+			if(uart_rx_cursor >= UART_BUF_LENGTH)
+			{
+				uart_rx_cursor = 0;
+			}
+		}
+	}
+	return rx_counter;
 }
 
 static int ntshell_serial_write(const char *buf, int cnt, void *extobj)
@@ -120,17 +151,46 @@ static int ntshell_callback(const char *text, void *extobj)
 
 static char ntshell_serial_getc_timeout(int timeout_ms)
 {
-	char c;
+	char c = 0;
+	uint32_t tickstart = HAL_GetTick();
 
-	if(HAL_UART_Receive(&huart2, (uint8_t*)(&c), 1, timeout_ms) != HAL_OK)
+	while((HAL_GetTick() - tickstart) < timeout_ms)
 	{
-		return 0;
+		int next_idx = UART_BUF_LENGTH - __HAL_DMA_GET_COUNTER(UartHandler.hdmarx);
+		int new_data_length = next_idx - uart_rx_cursor;
+		if(new_data_length < 0)
+		{
+			new_data_length += UART_BUF_LENGTH;
+		}
+
+		if(new_data_length > 0)
+		{
+			c = uart_rx_buf[uart_rx_cursor];
+			uart_rx_cursor++;
+			if(uart_rx_cursor >= UART_BUF_LENGTH)
+			{
+				uart_rx_cursor = 0;
+			}
+			break;
+		}
+
 	}
 
 	return c;
 }
 
 
+static int checkSuspens()
+{
+	char c;
+	c = ntshell_serial_getc_timeout(1);
+	if(c == 0x03)
+	{
+		puts("\r\n^C\r\n");
+		return 1;
+	}
+	return 0;
+}
 
 
 /*
