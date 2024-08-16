@@ -122,6 +122,7 @@ void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period);
 
 void Motor_ADCUpdate(Motor_TypeDef *hMotor);
 
+void Motor_PWMUpdate(Motor_TypeDef *hMotor);
 
 void Motor_Reset(Motor_TypeDef *hMotor);
 
