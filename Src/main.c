@@ -222,8 +222,9 @@ int main(void)
 		  {"Iu_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iu_pu_2q13)},
 		  {"Iv_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iv_pu_2q13)},
 		  {"Iw_pu_2q13", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.Iw_pu_2q13)},
-		  {"theta_rm", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_re_int)},
-		  {"theta_re", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_m_int)},
+		  {"Iq_ref_pu_2q13", WAVECAPTURE_TYPE_INT32, &(md_sys.motor.Iq_ref_pu_2q13)},
+		  {"theta_re", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_re_int)},
+		  {"theta_rm", WAVECAPTURE_TYPE_INT16, &(md_sys.motor.theta_m_int)},
 		  {"timestamp_start", WAVECAPTURE_TYPE_INT16, &(timestamp_start)},
 		  {"timestamp_mid", WAVECAPTURE_TYPE_INT16, &(timestamp_mid)},
 		  {"timestamp_end", WAVECAPTURE_TYPE_INT16, &(timestamp_end)},
@@ -775,7 +776,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
 }
