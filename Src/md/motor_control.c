@@ -7,6 +7,7 @@
 #include <md/pwm.h>
 #include <md/sin_t.h>
 #include <string.h>
+#include <math.h>
 
 /***** Private functions prototypes *****/
 
@@ -115,6 +116,26 @@ void CurrentControl(Motor_TypeDef *hMotor)
 	hMotor->Vq_pu_2q13 = ((hMotor->Init.acr_Kp_q14 * hMotor->Iq_error >> 14) + (hMotor->Init.acr_Ki_q2 * hMotor->Iq_error_integ.integ >> 14))
 			* hMotor->Init.Gain_Ib_by_Vb_q10 >> 10;
 }
+
+
+void PositionEstimation(Motor_TypeDef *hMotor)
+{
+
+//	hMotor->Egam_pu_2q13 = hMotor->Vgam_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Igam_pu_2q13) >> 13) + ((hMotor->Init.Gain_wIdel_to_Egam_q26 * hMotor->omega_q5 * hMotor->Idel_pu_2q13) >> 26);
+//	hMotor->Edel_pu_2q13 = hMotor->Vdel_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Idel_pu_2q13) >> 13) + ((hMotor->Init.Gain_wIgam_to_Edel_q26 * hMotor->omega_q5 * hMotor->Igam_pu_2q13) >> 26);
+
+	hMotor->Egam_pu_2q13 = hMotor->Vgam_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Igam_pu_2q13) >> 13);
+	hMotor->Edel_pu_2q13 = hMotor->Vdel_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Idel_pu_2q13) >> 13);
+
+	if(hMotor->Edel_pu_2q13 > 300 || hMotor->Edel_pu_2q13 < -300)
+	{
+		int32_t d_theta = hMotor->Egam_pu_2q13 >> 1;
+		hMotor->theta_re_est_int = (hMotor->theta_re_est_int - d_theta) & 8191;
+	}
+
+
+}
+
 
 void Midi_Init(Motor_TypeDef *hMotor)
 {
@@ -246,6 +267,13 @@ void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period)
 
 	hMotor->Init.Gain_dOmegaInt_to_omegaQ5_q8 = (62831.85 + 0.5) / SPEED_CALC_BUF_SIZE;
 
+	hMotor->Init.R_pu_2q13 = hMotor->motorParam.R * hMotor->Init.I_base / hMotor->Init.V_base * 8192;
+
+	// omega_q5[rad/s, q5], Idel_pu_q13
+	// omega_re[rad/s] = omega_q5 / 32 * 2*M_PI * Pn
+	// (hMotor->Init.coeff_wIdel_to_Egam_q26 * omega_q5 * Idel_pu_2q13) >> 26
+	hMotor->Init.Gain_wIdel_to_Egam_q26 = hMotor->motorParam.Lq * hMotor->Init.I_base / hMotor->Init.V_base * 8192*8192 * 2*M_PI / 32 * hMotor->motorParam.Pn;
+	hMotor->Init.Gain_wIgam_to_Edel_q26 = -hMotor->motorParam.Ld * hMotor->Init.I_base / hMotor->Init.V_base * 8192*8192 * 2*M_PI / 32 * hMotor->motorParam.Pn;
 
 
 	/***** ACR Setting *****/
@@ -277,6 +305,10 @@ void Motor_Init(Motor_TypeDef *hMotor, uint16_t pwm_period)
 
 	hMotor->Vd_pu_2q13 = 0;
 	hMotor->Vq_pu_2q13 = 0;
+	hMotor->Vgam_pu_2q13 = 0;
+	hMotor->Vdel_pu_2q13 = 0;
+
+	hMotor->theta_re_est_int = 0;
 
 	hMotor->theta_force_int = 0;
 	hMotor->Igam_ref_pu_2q13 = 0;
@@ -305,6 +337,7 @@ void Motor_ADCUpdate(Motor_TypeDef *hMotor)
 
 	hMotor->theta_m_int = (hMotor->raw_theta_14bit >> 1) & SIN_TBL_MASK;
 	hMotor->theta_re_int = ( ( ((uint32_t)hMotor->raw_theta_14bit * hMotor->motorParam.Pn) >> 1 ) - hMotor->Init.theta_int_offset) & SIN_TBL_MASK;
+//	hMotor->theta_re_est_int = hMotor->theta_re_int;
 
 	UpdateSpeed(hMotor);
 
@@ -356,9 +389,12 @@ void Motor_ADCUpdate(Motor_TypeDef *hMotor)
 		break;
 	case MOTOR_MODE_CC_VECTOR:
 		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
+		ab2dq(&hMotor->Igam_pu_2q13, &hMotor->Idel_pu_2q13, hMotor->theta_re_est_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 		CurrentControl(hMotor);
 		Limitter_Vdq(hMotor);
+		PositionEstimation(hMotor);
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
+		ab2dq(&hMotor->Vgam_pu_2q13, &hMotor->Vdel_pu_2q13, hMotor->theta_re_est_int, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
 		break;
 	}
 

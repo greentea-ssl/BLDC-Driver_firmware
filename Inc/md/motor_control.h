@@ -48,6 +48,10 @@ typedef struct
 
 	int16_t theta_int_offset;
 
+	int32_t R_pu_2q13;
+	int32_t Gain_wIdel_to_Egam_q26; // omega_re[rad/s], Idel_pu_q13
+	int32_t Gain_wIgam_to_Edel_q26;
+
 }MotorInit_TypeDef;
 
 
@@ -73,9 +77,12 @@ typedef struct
 	int16_t Iu_pu_2q13, Iv_pu_2q13, Iw_pu_2q13;
 	int16_t Ia_pu_2q13, Ib_pu_2q13;
 	int16_t Id_pu_2q13, Iq_pu_2q13;
+	int16_t Igam_pu_2q13, Idel_pu_2q13;
 
 	int16_t Vdc_pu_2q13;
 
+	int16_t Egam_pu_2q13, Edel_pu_2q13;
+	int16_t Vgam_pu_2q13, Vdel_pu_2q13;
 	int16_t Vd_pu_2q13, Vq_pu_2q13;
 	int16_t Va_pu_2q13, Vb_pu_2q13;
 	int16_t Vu_pu_2q13, Vv_pu_2q13, Vw_pu_2q13;
@@ -86,6 +93,7 @@ typedef struct
 
 	uint16_t raw_theta_14bit;
 	int16_t theta_m_int, theta_re_int;
+	int16_t theta_re_est_int;
 
 	int16_t p_theta_int_buf[SPEED_CALC_BUF_SIZE];
 	int16_t p_theta_buf_count;
