@@ -118,19 +118,48 @@ void CurrentControl(Motor_TypeDef *hMotor)
 }
 
 
-void PositionEstimation(Motor_TypeDef *hMotor)
+void SensorlessControl(Motor_TypeDef *hMotor)
 {
 
-//	hMotor->Egam_pu_2q13 = hMotor->Vgam_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Igam_pu_2q13) >> 13) + ((hMotor->Init.Gain_wIdel_to_Egam_q26 * hMotor->omega_q5 * hMotor->Idel_pu_2q13) >> 26);
-//	hMotor->Edel_pu_2q13 = hMotor->Vdel_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Idel_pu_2q13) >> 13) + ((hMotor->Init.Gain_wIgam_to_Edel_q26 * hMotor->omega_q5 * hMotor->Igam_pu_2q13) >> 26);
+	ab2dq(&hMotor->Igam_pu_2q13, &hMotor->Idel_pu_2q13, hMotor->theta_re_est_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 
-	hMotor->Egam_pu_2q13 = hMotor->Vgam_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Igam_pu_2q13) >> 13);
-	hMotor->Edel_pu_2q13 = hMotor->Vdel_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Idel_pu_2q13) >> 13);
 
-	if(hMotor->Edel_pu_2q13 > 300 || hMotor->Edel_pu_2q13 < -300)
+	hMotor->Ea_pu_2q13 = hMotor->Va_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Ia_pu_2q13) >> 13);
+	hMotor->Eb_pu_2q13 = hMotor->Vb_pu_2q13 - ((hMotor->Init.R_pu_2q13 * hMotor->Ib_pu_2q13) >> 13);
+
+	hMotor->theta_re_est_int = atan2_int(-hMotor->Ea_pu_2q13, hMotor->Eb_pu_2q13);
+
+
+	if(hMotor->force_commutate_count > 0)
 	{
-		int32_t d_theta = hMotor->Egam_pu_2q13 >> 1;
-		hMotor->theta_re_est_int = (hMotor->theta_re_est_int - d_theta) & 8191;
+
+		if(hMotor->force_commutate_count > 30000)
+		{
+			hMotor->Vgam_pu_2q13 = 1000; //2.0 / 24 * 8192;
+			hMotor->Vdel_pu_2q13 = 0;
+			hMotor->theta_force_int += 0;
+		}
+		else
+		{
+			hMotor->Vgam_pu_2q13 = 1000; //2.0 / 24 * 8192;
+			hMotor->Vdel_pu_2q13 = 0;
+			hMotor->theta_force_int += ((30000 - hMotor->force_commutate_count) >> 9);
+		}
+
+
+		hMotor->force_commutate_count--;
+
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_force_int, hMotor->Vgam_pu_2q13, hMotor->Vdel_pu_2q13);
+
+	}
+	else
+	{
+
+		hMotor->Vgam_pu_2q13 = 0; //2.0 / 24 * 8192;
+		hMotor->Vdel_pu_2q13 = 800;
+
+		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_est_int, hMotor->Vgam_pu_2q13, hMotor->Vdel_pu_2q13);
+
 	}
 
 
@@ -389,12 +418,12 @@ void Motor_ADCUpdate(Motor_TypeDef *hMotor)
 		break;
 	case MOTOR_MODE_CC_VECTOR:
 		ab2dq(&hMotor->Id_pu_2q13, &hMotor->Iq_pu_2q13, hMotor->theta_re_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
-		ab2dq(&hMotor->Igam_pu_2q13, &hMotor->Idel_pu_2q13, hMotor->theta_re_est_int, hMotor->Ia_pu_2q13, hMotor->Ib_pu_2q13);
 		CurrentControl(hMotor);
 		Limitter_Vdq(hMotor);
-		PositionEstimation(hMotor);
 		dq2ab(&hMotor->Va_pu_2q13, &hMotor->Vb_pu_2q13, hMotor->theta_re_int, hMotor->Vd_pu_2q13, hMotor->Vq_pu_2q13);
-		ab2dq(&hMotor->Vgam_pu_2q13, &hMotor->Vdel_pu_2q13, hMotor->theta_re_est_int, hMotor->Va_pu_2q13, hMotor->Vb_pu_2q13);
+		break;
+	case MOTOR_MODE_CV_SENSORLESS:
+		SensorlessControl(hMotor);
 		break;
 	}
 

@@ -122,7 +122,10 @@ void MD_Init(MD_Handler_t* h)
 
 	/* Start */
 	Motor_Reset(&h->motor);
-	h->motor.RunMode = MOTOR_MODE_CC_VECTOR;
+//	h->motor.RunMode = MOTOR_MODE_CC_VECTOR;
+	h->motor.force_commutate_count = 40000;
+	h->motor.RunMode = MOTOR_MODE_CV_SENSORLESS;
+
 
 }
 

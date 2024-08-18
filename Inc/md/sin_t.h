@@ -19,17 +19,11 @@ extern const int16_t sin_table_q14[SIN_TBL_LEN];
 #define SIN_Q14(IDX)	(sin_table_q14[(uint32_t)(IDX) & SIN_TBL_MASK])
 
 
-//const float sin_table2[];
+#define ATAN_TBL_LEN 	(2048)
+#define ATAN_TBL_MASK	(ATAN_TBL_LEN - 1)
+#define ATAN_T_SHIFT	(ATAN_TBL_LEN >> 2)
 
-/*
-const float sin_table[];
-
-
-
-float sin_t(float rad);
-
-*/
-
+int16_t atan2_int(int16_t b, int16_t a);
 
 #endif
 

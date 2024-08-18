@@ -61,6 +61,7 @@ typedef enum{
 	MOTOR_MODE_CV_VECTOR = 2,
 	MOTOR_MODE_CC_VECTOR = 3,
 	MOTOR_MODE_CV_MIDI = 4,
+	MOTOR_MODE_CV_SENSORLESS = 5,
 }Motor_RunMode_Enum;
 
 
@@ -82,6 +83,7 @@ typedef struct
 	int16_t Vdc_pu_2q13;
 
 	int16_t Egam_pu_2q13, Edel_pu_2q13;
+	int16_t Ea_pu_2q13, Eb_pu_2q13;
 	int16_t Vgam_pu_2q13, Vdel_pu_2q13;
 	int16_t Vd_pu_2q13, Vq_pu_2q13;
 	int16_t Va_pu_2q13, Vb_pu_2q13;
@@ -114,6 +116,8 @@ typedef struct
 	uint32_t MIDI_count_us;
 	uint8_t MIDI_notenum;
 	uint8_t MIDI_vel;
+
+	uint32_t force_commutate_count;
 
 	int32_t Vd_limit_error, Vq_limit_error;
 
